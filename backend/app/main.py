@@ -5,11 +5,14 @@ import time
 import psycopg
 import redis
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import (activity, companies, composer, csv_import, leads, notes_tasks, profile, safety, settings,
-                 suppressions, templates)
+from app import (activity, companies, composer, csv_import, leads, mail_account, notes_tasks, profile, safety,
+                 settings, suppressions, templates)
 from app.auth import verify_password
 from app.deps import require_owner
 from app.worker import celery_app
@@ -31,6 +34,13 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    # Never echo rejected values back (they can be secrets, e.g. an app password of the wrong type).
+    errors = [{k: v for k, v in e.items() if k not in ("input", "ctx", "url")} for e in exc.errors()]
+    return JSONResponse(status_code=422, content={"detail": jsonable_encoder(errors)})
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start = time.perf_counter()
@@ -50,6 +60,7 @@ app.include_router(templates.router)
 app.include_router(notes_tasks.router)
 app.include_router(safety.router)
 app.include_router(composer.router)
+app.include_router(mail_account.router)
 
 
 class LoginIn(BaseModel):

@@ -70,7 +70,9 @@ export default function Email() {
 
       <h2>Exact preview</h2>
       <div style={box}>
-        <div><b>From:</b> {e.from.name || <i>(no name in profile)</i>} &lt;{e.from.email || "sending account, set up in M11"}&gt;</div>
+        <div><b>From:</b> {e.from.name || <i>(no name in profile)</i>} &lt;{e.from.email || "no address"}&gt;
+          {!e.from.account_connected && <small style={{ color: "crimson" }}> (no Gmail connected: <Link href="/email-account">connect one</Link>)</small>}
+        </div>
         <div><b>To:</b> {e.contact_name ? `${e.contact_name} ` : ""}&lt;{e.to_email}&gt; <mark>{e.email_class}</mark></div>
         <div><b>Subject:</b> {e.subject}</div>
         <div><b>Attachment:</b> {e.cv_version_id ? `${e.cv_filename} (${e.cv_label})` : "none"}</div>

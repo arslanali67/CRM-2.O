@@ -114,7 +114,11 @@ def get_email(email_id: int, conn=Depends(get_db)):
     """The exact email as it will be sent, plus the safety check results for its next step."""
     e = load_email(conn, email_id)
     profile = conn.execute("SELECT full_name, email FROM profile WHERE id = 1").fetchone()
-    e["from"] = {"name": profile["full_name"], "email": profile["email"]}  # the sending account is connected in M11
+    account = conn.execute("SELECT email_address, display_name FROM email_account WHERE id = 1 "
+                           "AND password_encrypted IS NOT NULL").fetchone()
+    e["from"] = ({"name": account["display_name"] or profile["full_name"], "email": account["email_address"],
+                  "account_connected": True} if account else
+                 {"name": profile["full_name"], "email": profile["email"], "account_connected": False})
     stage = "send" if e["status"] in ("approved", "queued") else "approval" if e["status"] == "draft" else None
     if stage:
         raw = conn.execute("SELECT * FROM outbound_emails WHERE id = %s", (email_id,)).fetchone()

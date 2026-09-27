@@ -44,6 +44,9 @@ export function describe(e) {
     "task.reopened": `Task reopened: ${d.title}`,
     "task.deleted": `Task deleted: ${d.title}`,
     "compose.drafts_created": `${d.created} draft(s) created from template v${d.version}${d.skipped ? `, ${d.skipped} skipped` : ""}`,
+    "email_account.saved": `Email account saved: ${d.email_address}`,
+    "email_account.tested": `Email account test: ${d.ok ? "connected" : `failed (SMTP ${d.smtp_ok ? "ok" : "failed"}, IMAP ${d.imap_ok ? "ok" : "failed"})`}`,
+    "email_account.disconnected": "Email account disconnected (app password deleted)",
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

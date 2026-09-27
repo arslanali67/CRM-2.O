@@ -7,6 +7,8 @@ server from TEST_DATABASE_URL, or DATABASE_URL with the name swapped, so the rea
 import os
 from pathlib import Path
 
+from cryptography.fernet import Fernet
+
 from app.auth import hash_password
 
 TEST_EMAIL = "owner@example.com"
@@ -15,6 +17,7 @@ os.environ.update(
     OWNER_EMAIL="Owner@Example.com",
     OWNER_PASSWORD_HASH=hash_password(TEST_PASSWORD),
     SESSION_SECRET="test-secret",
+    CREDENTIALS_KEY=Fernet.generate_key().decode(),
 )
 
 import psycopg  # noqa: E402
@@ -83,6 +86,7 @@ def client(test_url, monkeypatch):
         conn.execute("DELETE FROM outbound_emails")
         conn.execute("DELETE FROM app_settings")
         conn.execute("INSERT INTO app_settings DEFAULT VALUES")
+        conn.execute("DELETE FROM email_account")
         conn.execute("DELETE FROM profile")
         conn.execute("INSERT INTO profile DEFAULT VALUES")
         conn.execute("DELETE FROM cv_versions")

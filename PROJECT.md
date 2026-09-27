@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.12
+- **Spec version:** 1.13
 - **Last updated:** 2026-09-27
 
 ---
@@ -172,6 +172,13 @@ Goal: approve every email, send exactly once.
   - **Approval:** per email only, one click "Approve & queue": the UI sends the content hash it displayed; a mismatch is refused; then M26 `approve()` runs all checks; on success the email is queued. No bulk-approve endpoint or button exists (tested). Queued emails can be pulled back to draft (clears the approval).
   - Depends on: M8, M26. Done when: nothing is queued without per-email approval.
 - **M11 Email provider integration [CORE].** SMTP+IMAP adapter for personal Gmail using an app password (no OAuth), credentials encrypted at rest. Other providers are Phase 3.
+  - **Encryption (pulled forward from M30):** app password encrypted with Fernet (`cryptography` dependency); key only in `.env` as `CREDENTIALS_KEY`, never in the DB. Lost key = re-enter the app password.
+  - **Account record (single):** Gmail address, display name, fixed Gmail servers (smtp.gmail.com:465 SSL, imap.gmail.com:993 SSL), encrypted password, connected / last-tested times and result.
+  - **Secrecy:** the password is never returned by the API (only whether one is stored), never logged or audited, never pre-filled; spaces are stripped.
+  - **Test connection:** SMTP login without sending and IMAP login with read-only inbox select; per-protocol result; 15 s timeouts.
+  - **UI:** Email account page (connect, test, disconnect = wipe password). Composer "From" shows the connected address.
+  - Sending is M12; inbox reading is M14. Tests use a fake mail server.
+  - The owner enters the real app password themselves (Claude never handles it).
   - Depends on: M1, M30. Done when: the Gmail account is connected and credentials are encrypted.
 - **M12 Email sending [SAFETY].** Single-lane queue, daily cap and minimum gap, idempotency, Message-ID recovery, kill switch.
   - Depends on: M10, M11, M26. Done when: sending is exactly-once and the safety tests are green.
@@ -315,3 +322,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.10 | M21 detailed: notes on companies/contacts/templates, owner tasks with date-only due dates judged by the browser's date, Tasks page and per-page panels. | Owner |
 | 2026-09-27 | 1.11 | M26 detailed: the 12 safety checks (closes §7 gap), approval/send semantics, `outbound_emails` links, `app_settings` with sending off by default. | Owner |
 | 2026-09-27 | 1.12 | M10 detailed: drafts from compose list + template, optional CV attachment chosen in the UI and bound into the content hash, outbox and draft page, one-click per-email "Approve & queue" bound to the displayed hash, no bulk approve. | Owner |
+| 2026-09-27 | 1.13 | M11 detailed: Fernet credential encryption pulled forward from M30 (new dependency `cryptography`, key in `.env`), single Gmail account with connect / test (no send) / disconnect, password never exposed. | Owner |

@@ -71,7 +71,7 @@ def test_drafts_are_rendered_linked_and_leave_the_compose_list(client, ready):
     assert (e["status"], e["to_email"], e["subject"]) == ("draft", "anna@acme.de", "Application at Acme")
     assert e["body"] == "Hi Anna,\n\nI'm Arslan Ali."
     assert (e["company_name"], e["contact_name"], e["template_name"], e["template_version"]) == ("Acme", "Anna Schmidt", "Intro", 1)
-    assert e["from"] == {"name": "Arslan Ali", "email": "me@example.com"}
+    assert e["from"] == {"name": "Arslan Ali", "email": "me@example.com", "account_connected": False}
     assert e["cv_version_id"] is None
     assert e["checks"]["stage"] == "approval" and all(c["ok"] for c in e["checks"]["results"])
 
