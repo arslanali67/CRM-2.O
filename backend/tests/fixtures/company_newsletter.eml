@@ -1,0 +1,11 @@
+From: Acme News <news@acme.de>
+To: me@gmail.com
+Subject: Acme product update
+Date: Sun, 27 Sep 2026 12:00:00 +0000
+Message-ID: <news-1@acme.de>
+List-Id: <news.acme.de>
+List-Unsubscribe: <mailto:unsubscribe@acme.de>
+Precedence: bulk
+Content-Type: text/plain; charset="utf-8"
+
+Our new release is out.

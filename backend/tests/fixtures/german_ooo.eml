@@ -1,0 +1,9 @@
+From: Anna Schmidt <{{RCPT}}>
+To: me@gmail.com
+Subject: Abwesenheitsnotiz: Hello Acme
+Date: Sun, 27 Sep 2026 12:00:00 +0000
+Message-ID: <ooo-de-1@acme.de>
+In-Reply-To: {{OUR_MSGID}}
+Content-Type: text/plain; charset="utf-8"
+
+Vielen Dank für Ihre Nachricht. Ich bin bis zum 12.10. nicht im Büro.

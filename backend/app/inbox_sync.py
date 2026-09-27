@@ -15,13 +15,17 @@ from datetime import datetime, timedelta, timezone
 from email import policy
 from email.parser import BytesHeaderParser, BytesParser
 from email.utils import getaddresses, parseaddr, parsedate_to_datetime
+from typing import Literal
 
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg.rows import dict_row
 
+from psycopg.types.json import Jsonb
+
 from app import settings
 from app.deps import get_db, require_owner
+from app.detection import is_bounce_sender, label_message, parse_dsn
 from app.mail_account import TIMEOUT
 from app.sender import active_account
 
@@ -32,10 +36,11 @@ RESCAN_EVERY = timedelta(hours=24)
 BATCH = 50
 MAX_PER_RUN = 500
 BODY_MAX = 100_000
-HEADER_FIELDS = "FROM TO CC SUBJECT DATE MESSAGE-ID IN-REPLY-TO REFERENCES"
+EXTRA_HEADERS = ("Auto-Submitted", "Precedence", "X-Autoreply", "X-Autorespond", "List-Id", "List-Unsubscribe",
+                 "Content-Type")
+HEADER_FIELDS = "FROM TO CC SUBJECT DATE MESSAGE-ID IN-REPLY-TO REFERENCES " + " ".join(h.upper() for h in EXTRA_HEADERS)
 HEADER_ITEMS = f"(UID X-GM-MSGID X-GM-THRID INTERNALDATE BODY.PEEK[HEADER.FIELDS ({HEADER_FIELDS})])"
 MAILBOXES = (("all", b"\\All"), ("spam", b"\\Junk"))
-BOUNCE_SENDERS = ("mailer-daemon", "postmaster")
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -80,11 +85,18 @@ def parse_headers(raw: bytes) -> dict:
     to = ", ".join(a for _, a in getaddresses([get("To"), get("Cc")]) if a)
     return {"from_email": addr.lower(), "from_name": name, "to_emails": to, "subject": get("Subject"),
             "sent_date": date, "message_id": (message_ids(get("Message-ID")) or [""])[0],
-            "in_reply_to": " ".join(message_ids(get("In-Reply-To"))), "refs": " ".join(message_ids(get("References")))}
+            "in_reply_to": " ".join(message_ids(get("In-Reply-To"))), "refs": " ".join(message_ids(get("References"))),
+            "extra_headers": {k: get(k)[:500] for k in EXTRA_HEADERS if get(k)}}
 
 
-def parse_body(raw: bytes) -> dict:
+def is_bounce_candidate(h: dict) -> bool:
+    ctype = h["extra_headers"].get("Content-Type", "").lower()
+    return is_bounce_sender(h["from_email"]) or ("multipart/report" in ctype and "delivery-status" in ctype)
+
+
+def parse_body(raw: bytes, bounce: bool = False) -> dict:
     msg = BytesParser(policy=policy.default).parsebytes(raw)
+    dsn = parse_dsn(msg) if bounce else None
     text = ""
     try:
         part = msg.get_body(preferencelist=("plain", "html"))
@@ -101,7 +113,8 @@ def parse_body(raw: bytes) -> dict:
             names.append(att.get_filename() or "(unnamed)")
         except Exception:
             names.append("(unnamed)")
-    return {"body_text": text[:BODY_MAX], "body_truncated": len(text) > BODY_MAX, "attachment_names": names}
+    return {"body_text": text[:BODY_MAX], "body_truncated": len(text) > BODY_MAX, "attachment_names": names,
+            "dsn": Jsonb(dsn) if dsn is not None else None}
 
 
 # ---------- relevance ----------
@@ -122,8 +135,8 @@ def relevance(conn, h: dict, thrid: str | None, received: datetime | None = None
         if e:
             return {"relevance": "thread", "outbound_email_id": e["id"], "company_id": e["company_id"],
                     "contact_id": e["contact_id"]}
-    local, _, domain = h["from_email"].partition("@")
-    if local in BOUNCE_SENDERS or local.startswith("mailer-daemon"):
+    domain = h["from_email"].partition("@")[2]
+    if is_bounce_candidate(h):
         at = received or datetime.now(timezone.utc)
         if conn.execute("SELECT 1 FROM outbound_emails WHERE status = 'sent' AND sent_at BETWEEN %s AND %s LIMIT 1",
                         (at - timedelta(days=3), at + timedelta(hours=1))).fetchone():
@@ -215,19 +228,22 @@ def sync_mailbox(conn, imap, key: str, name: str, account: dict) -> dict:
             parts = parse_fetch(body)
             if typ != "OK" or not parts:
                 raise imaplib.IMAP4.error("body fetch failed")
-            b = parse_body(parts[0][1])
+            b = parse_body(parts[0][1], bounce=why["relevance"] == "bounce" or is_bounce_candidate(h))
             added = conn.execute(
                 "INSERT INTO inbound_messages (gmail_msgid, gmail_thrid, mailbox, uid, uidvalidity, message_id, "
                 "in_reply_to, refs, from_email, from_name, to_emails, subject, sent_date, received_at, body_text, "
-                "body_truncated, attachment_names, relevance, outbound_email_id, company_id, contact_id) VALUES "
+                "body_truncated, attachment_names, relevance, outbound_email_id, company_id, contact_id, "
+                "extra_headers, dsn) VALUES "
                 "(%(msgid)s, %(thrid)s, %(key)s, %(uid)s, %(uv)s, %(message_id)s, %(in_reply_to)s, %(refs)s, "
                 "%(from_email)s, %(from_name)s, %(to_emails)s, %(subject)s, %(sent_date)s, %(received)s, "
                 "%(body_text)s, %(body_truncated)s, %(attachment_names)s, %(relevance)s, %(outbound_email_id)s, "
-                "%(company_id)s, %(contact_id)s) ON CONFLICT (gmail_msgid) DO NOTHING RETURNING id",
+                "%(company_id)s, %(contact_id)s, %(extra)s, %(dsn)s) ON CONFLICT (gmail_msgid) DO NOTHING RETURNING id",
                 {**h, **b, **why, "msgid": msgid, "thrid": thrid, "key": key, "uid": int(uid), "uv": uidvalidity,
-                 "received": internaldate(meta)},
+                 "received": internaldate(meta), "extra": Jsonb(h["extra_headers"])},
             ).fetchone()
-            stored += bool(added)
+            if added:
+                stored += 1
+                label_message(conn, added["id"])  # M15: rules only; effects never send anything
         last_uid = max(last_uid, max(batch))
         # The cursor moves in the same transaction as the batch it covers: a crash re-fetches, never skips.
         conn.execute("UPDATE mailbox_sync SET uidvalidity = %s, last_uid = %s, seen_count = seen_count + %s, "
@@ -287,17 +303,31 @@ def sync_once() -> dict:
 
 INBOX_COLUMNS = ("m.id, m.gmail_thrid, coalesce(m.gmail_thrid, 'in-' || m.id) AS thread_key, m.mailbox, m.from_email, "
                  "m.from_name, m.subject, m.sent_date, m.received_at, m.relevance, m.outbound_email_id, m.company_id, "
-                 "c.name AS company_name, m.contact_id, m.attachment_names, left(m.body_text, 200) AS snippet")
+                 "c.name AS company_name, m.contact_id, m.attachment_names, left(m.body_text, 200) AS snippet, "
+                 "m.label, m.label_rule, m.bounce_type")
 
 
 @router.get("/inbox")
-def inbox(company_id: int | None = None, q: str | None = None, conn=Depends(get_db)):
+def inbox(company_id: int | None = None, q: str | None = None,
+          label: Literal["bounce", "auto_reply", "reply", "unrelated"] | None = None, conn=Depends(get_db)):
     q = q.strip() if q and q.strip() else None
     return conn.execute(
         f"SELECT {INBOX_COLUMNS} FROM inbound_messages m LEFT JOIN companies c ON c.id = m.company_id "
-        "WHERE (%(co)s::bigint IS NULL OR m.company_id = %(co)s) AND (%(q)s::text IS NULL OR "
+        "WHERE (%(co)s::bigint IS NULL OR m.company_id = %(co)s) AND (%(label)s::text IS NULL OR m.label = %(label)s) "
+        "AND (%(q)s::text IS NULL OR "
         "strpos(lower(m.from_email || ' ' || m.from_name || ' ' || m.subject), lower(%(q)s)) > 0) "
-        "ORDER BY m.received_at DESC NULLS LAST, m.id DESC LIMIT 500", {"co": company_id, "q": q}).fetchall()
+        "ORDER BY m.received_at DESC NULLS LAST, m.id DESC LIMIT 500",
+        {"co": company_id, "q": q, "label": label}).fetchall()
+
+
+@router.post("/inbox/relabel")
+def relabel(conn=Depends(get_db)):
+    """Re-run the rules over every stored message; effects apply only where a label changed."""
+    changed = 0
+    for row in conn.execute("SELECT id FROM inbound_messages ORDER BY id").fetchall():
+        r = label_message(conn, row["id"], force=True)
+        changed += bool(r and r["changed"])
+    return {"relabeled": changed}
 
 
 @router.get("/inbox/{message_id}")

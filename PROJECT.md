@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.16
+- **Spec version:** 1.18
 - **Last updated:** 2026-09-27
 
 ---
@@ -214,6 +214,11 @@ Goal: never miss a reply, never answer automatically.
   - **Soak:** simulated 24 h in tests, plus a real read-only 24 h run with a stored-vs-Gmail reconciliation.
   - Depends on: M11, M13. Done when: a 24 h soak test shows no missed and no duplicate messages.
 - **M15 Reply detection.** Rule-based, no AI, in this order: bounce → auto-reply/OOO → thread match → sender match → unrelated.
+  - **Rules (first match wins):** (1) **bounce**: `multipart/report` delivery-status or Mailer-Daemon/postmaster sender; DSN parsed for failed recipient, status (5.x.x hard, 4.x.x soft/delayed) and original Message-ID (links the bounced CRM email). (2) **auto_reply**: `Auto-Submitted: auto-replied/auto-generated`, `X-Autoreply`, `X-Autorespond`, `Precedence: auto_reply/bulk`, or OOO subjects (Out of Office, Automatic reply, Abwesenheitsnotiz, Automatische Antwort, …). (3) **reply** by thread: references one of our Message-IDs or is in one of our Gmail threads. (4) **reply** by sender: known contact or company domain that was emailed in the last 60 days, and not mailing-list mail (`List-Id` / `List-Unsubscribe`) nor machine mail (`Auto-Submitted`, or an unsuitable sender such as noreply@). (5) **unrelated**: everything else.
+  - Runs on ingestion and can be re-run over all stored messages. M14 additionally stores Auto-Submitted, Precedence, X-Autoreply, X-Autorespond, List-Id, List-Unsubscribe, Content-Type and the parsed DSN fields.
+  - **Effects (never sends anything):** reply → lead stage `replied`; auto-reply → recorded only; bounce → CRM email marked bounced (hard/soft). Owner-approved protective actions: **hard bounce → do-not-contact** for that address (reason with status code; liftable); **reply → cancel pending** approved/queued emails to that company (reason "company replied; review first").
+  - **UI:** label badge and filter in Inbox; labels in threads and on company pages. Notifications are M17.
+  - Tests: realistic `.eml` fixture corpus (hard/soft bounces incl. Exchange NDR, Outlook and German OOO, header-only auto-reply, in-thread reply, colleague reply, company newsletter, personal mail).
   - Depends on: M14. Done when: 100% correct on bounce/OOO/reply fixtures.
 - **M16 AI reply analysis [AI].** 12 classification labels; extraction of dates, links and documents, each field with a verbatim evidence quote.
   - Depends on: M15. Done when: ≥90% label accuracy and 0 extracted fields without evidence.
@@ -300,6 +305,8 @@ Sequential, single developer. Rows marked **GATE** must pass before the next row
 
 MVP effort estimate: 95–135 developer-days.
 
+**Gate waiver (2026-09-27, Owner):** the Wk 11–12 gate's real test send to the owner's second inbox is waived until the owner chooses to do it (the owner instructed that no email be sent). All automated gate checks pass. M13, M14 and M15 were/are built under this waiver. The test send stays pending in MILESTONES.md.
+
 ## 6. Out of scope
 
 Anything not listed in this file, including:
@@ -346,3 +353,5 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.14 | M12 detailed: beat + single-lane worker with advisory lock, Message-ID stored before send and recovered from Gmail Sent (no auto-resend), kill switch on Outbox, stage → contacted; no real sends during build. | Owner |
 | 2026-09-27 | 1.15 | M13 detailed: Gmail message/thread IDs fetched read-only after sending, History page with filters, per-email status timeline, thread view, company Emails section. | Owner |
 | 2026-09-27 | 1.16 | M14 detailed: read-only IMAP sync of All Mail + Spam with UID cursors, 14-day first look-back, resync + daily re-scan, only outreach-relevant messages stored, Inbox page, simulated and real 24 h soak. Refined during build: bounces count only within 3 days after a CRM send (privacy; narrows the approved rule). | Owner |
+| 2026-09-27 | 1.17 | Gate waiver recorded: Wk 11–12 real test send deferred by the owner; M13–M15 built under the waiver. | Owner |
+| 2026-09-27 | 1.18 | M15 detailed: five ordered rules with DSN parsing and auto-reply headers; effects: replied stage, bounced marking, hard bounce → do-not-contact, reply → cancel pending emails to that company. | Owner |

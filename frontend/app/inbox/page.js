@@ -2,11 +2,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
+import { LabelBadge } from "./label";
 
-const WHY = {
-  reply_header: "replies to your email", thread: "in your thread", bounce: "bounce",
-  contact: "from a contact", company_domain: "from a company domain",
-};
 
 function SyncStatus({ onSynced }) {
   const [s, setS] = useState(null);
@@ -48,11 +45,13 @@ function SyncStatus({ onSynced }) {
 export default function Inbox() {
   const router = useRouter();
   const [q, setQ] = useState("");
+  const [label, setLabel] = useState("");
   const [msgs, setMsgs] = useState(null);
   const [open, setOpen] = useState(null);
 
-  async function load(query = q) {
-    const res = await fetch(`/api/inbox${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+  async function load(query = q, lab = label) {
+    const params = new URLSearchParams(Object.entries({ q: query, label: lab }).filter(([, v]) => v));
+    const res = await fetch(`/api/inbox?${params}`);
     if (res.status === 401) return router.replace("/login");
     setMsgs(await res.json());
   }
@@ -72,10 +71,15 @@ export default function Inbox() {
       <SyncStatus onSynced={() => load()} />
       <form onSubmit={(e) => { e.preventDefault(); load(); }} style={{ display: "flex", gap: 6 }}>
         <input placeholder="Search sender or subject" aria-label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select aria-label="Label" value={label} onChange={(e) => { setLabel(e.target.value); load(q, e.target.value); }}>
+          <option value="">All labels</option>
+          <option value="reply">replies</option><option value="auto_reply">auto-replies</option>
+          <option value="bounce">bounces</option><option value="unrelated">unrelated</option>
+        </select>
         <button type="submit">Search</button>
       </form>
       <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
-        <thead><tr><th align="left">From</th><th align="left">Subject</th><th align="left">Company</th><th align="left">Why</th><th align="left">Received</th></tr></thead>
+        <thead><tr><th align="left">From</th><th align="left">Subject</th><th align="left">Company</th><th align="left">Label</th><th align="left">Received</th></tr></thead>
         <tbody>
           {msgs.map((m) => (
             <Fragment key={m.id}>
@@ -84,7 +88,7 @@ export default function Inbox() {
                 <td>{m.subject}{m.mailbox === "spam" && <mark> spam</mark>}{m.attachment_names.length > 0 && " 📎"}
                   <div><small style={{ color: "gray" }}>{m.snippet}</small></div></td>
                 <td>{m.company_id ? <Link href={`/companies/${m.company_id}`}>{m.company_name}</Link> : "—"}</td>
-                <td><small>{WHY[m.relevance]}</small></td>
+                <td><LabelBadge m={m} /><div><small style={{ color: "gray" }}>{m.label_rule}</small></div></td>
                 <td><small>{m.received_at && new Date(m.received_at).toLocaleString()}</small></td>
               </tr>
               {open?.id === m.id && (

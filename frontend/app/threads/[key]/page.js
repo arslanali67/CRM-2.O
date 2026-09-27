@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LabelBadge } from "../../inbox/label";
 
 export default function Thread() {
   const { key } = useParams();
@@ -41,7 +42,7 @@ export default function Thread() {
             <div><b>You → {x.to_email}</b> · <Link href={`/outbox/${x.id}`}>{x.status}</Link>
               {x.sent_at && <> · {new Date(x.sent_at).toLocaleString()}</>}</div>
           ) : (
-            <div><b>{x.from_name || x.from_email} → you</b> · {x.when && new Date(x.when).toLocaleString()}
+            <div><b>{x.from_name || x.from_email} → you</b> <LabelBadge m={x} /> · {x.when && new Date(x.when).toLocaleString()}
               {x.attachment_names?.length > 0 && <small> · attachments: {x.attachment_names.join(", ")}</small>}</div>
           )}
           <div><b>Subject:</b> {x.subject}</div>

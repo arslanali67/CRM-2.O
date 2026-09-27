@@ -14,19 +14,6 @@ from app.main import app
 from fakes import ALL, SPAM, age_last_send, db, enable
 
 
-@pytest.fixture
-def sent(world, client, gmail, test_url):
-    """Both world emails actually sent (fake), so replies have something to refer to."""
-    enable(client)
-    for _ in range(3):
-        sender.process_once()
-        age_last_send(test_url)
-    rows = db(test_url, "SELECT id, provider_message_id, gmail_thrid, company_id FROM outbound_emails "
-                        "WHERE status = 'sent' ORDER BY id")
-    assert len(rows) == 2
-    return {"acme": rows[0], "beta": rows[1]}
-
-
 def stored(test_url):
     return {r[0]: r[1] for r in db(test_url, "SELECT gmail_msgid, relevance FROM inbound_messages")}
 

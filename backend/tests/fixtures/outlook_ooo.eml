@@ -1,0 +1,12 @@
+From: Anna Schmidt <{{RCPT}}>
+To: me@gmail.com
+Subject: Automatic reply: Hello Acme
+Date: Sun, 27 Sep 2026 12:00:00 +0000
+Message-ID: <ooo-1@acme.de>
+In-Reply-To: {{OUR_MSGID}}
+References: {{OUR_MSGID}}
+Auto-Submitted: auto-generated
+X-Auto-Response-Suppress: All
+Content-Type: text/plain; charset="utf-8"
+
+Thank you for your email. I am out of the office until 12 October with limited access to email.

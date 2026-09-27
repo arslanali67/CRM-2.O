@@ -90,10 +90,15 @@ class FakeGmail:
             m.set_content(body)
         for name in attachments:
             m.add_attachment(b"%PDF-1.4 secret contents", maintype="application", subtype="pdf", filename=name)
+        return self.inbound_raw(m.as_bytes(), box=box, thrid=thrid, date=date, gm_msgid=gm_msgid)
+
+    def inbound_raw(self, raw: bytes, box: str = ALL, thrid: str | None = None, date: datetime | None = None,
+                    gm_msgid: str | None = None) -> str:
+        """Deliver a raw RFC 5322 message (e.g. an .eml fixture); returns its X-GM-MSGID."""
         gm = gm_msgid or str(self.next_gm)
         self.next_gm += 1
         self.boxes[box].add({"gm_msgid": gm, "gm_thrid": thrid or gm, "date": date or datetime.now(timezone.utc),
-                             "raw": m.as_bytes()})
+                             "raw": raw})
         return gm
 
     def gm_ids(self, index: int, msg) -> tuple[str, str]:

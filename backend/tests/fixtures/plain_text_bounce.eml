@@ -1,0 +1,16 @@
+From: postmaster@acme.de
+To: me@gmail.com
+Subject: Returned mail: see transcript for details
+Date: Sun, 27 Sep 2026 12:00:00 +0000
+Message-ID: <plainbounce-1@acme.de>
+Content-Type: text/plain; charset=us-ascii
+
+The original message was received at Sun, 27 Sep 2026.
+
+   ----- The following addresses had permanent fatal errors -----
+Recipient: {{RCPT}}
+    (reason: 550 5.1.1 User unknown)
+
+   ----- Original message headers -----
+Message-ID: {{OUR_MSGID}}
+Subject: Hello Acme

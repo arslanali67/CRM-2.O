@@ -17,6 +17,8 @@ export function describe(e) {
     if (verb === "send_retry") return `Send attempt did not reach Gmail (${d.reason}); will retry`;
     if (verb === "send_interrupted") return `Send interrupted (${d.reason}); checking Gmail Sent before doing anything else`;
     if (verb === "recovered") return "Interrupted send confirmed in Gmail Sent";
+    if (verb === "bounced") return `Email to ${d.to_email} bounced (${d.bounce_type}${d.status ? `, ${d.status}` : ""})`;
+    if (verb === "cancelled" && d.reason === "company_replied") return `Pending email to ${d.to_email} cancelled: the company replied`;
     const why = d.reason === "do_not_contact" ? " (recipient blocked)" : "";
     return `Email to ${d.to_email} ${verb}${why}`;
   }
@@ -56,6 +58,7 @@ export function describe(e) {
     "email_account.disconnected": "Email account disconnected (app password deleted)",
     "sending.enabled": "Sending switched ON",
     "sending.disabled": "Sending switched OFF",
+    "inbound.labeled": `${{ reply: "Reply", auto_reply: "Auto-reply", bounce: "Bounce", unrelated: "Unrelated message" }[d.label] || "Message"} from ${d.from_email}: ${d.subject}${d.effects?.length ? ` (${d.effects.join(", ")})` : ""}`,
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

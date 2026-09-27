@@ -162,3 +162,19 @@ def client(test_url, monkeypatch):
     c = TestClient(app)
     assert c.post("/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD}).status_code == 200
     return c
+
+
+@pytest.fixture
+def sent(world, client, gmail, test_url):
+    """Both world emails actually sent through the fake Gmail, so replies have something to refer to.
+    Returns {"acme": (id, provider_message_id, gmail_thrid, company_id), "beta": (...)}."""
+    from app import sender
+    from fakes import age_last_send, db, enable
+    enable(client)
+    for _ in range(3):
+        sender.process_once()
+        age_last_send(test_url)
+    rows = db(test_url, "SELECT id, provider_message_id, gmail_thrid, company_id FROM outbound_emails "
+                        "WHERE status = 'sent' ORDER BY id")
+    assert len(rows) == 2
+    return {"acme": rows[0], "beta": rows[1]}

@@ -1,0 +1,33 @@
+From: Microsoft Outlook <MicrosoftExchange329e71ec88ae4615bbc36ab6ce41109e@acme.de>
+To: me@gmail.com
+Subject: Undeliverable: Hello Acme
+Date: Sun, 27 Sep 2026 12:00:00 +0000
+Message-ID: <ndr-1@acme.de>
+Auto-Submitted: auto-replied
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=delivery-status; boundary="BOUND"
+
+--BOUND
+Content-Type: text/plain; charset="utf-8"
+
+Your message to {{RCPT}} couldn't be delivered.
+{{RCPT}} wasn't found at acme.de.
+
+--BOUND
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns;AM0PR01MB1234.eurprd01.prod.exchangelabs.com
+
+Final-recipient: RFC822; {{RCPT}}
+Action: failed
+Status: 5.1.10
+Diagnostic-code: smtp;550 5.1.10 RESOLVER.ADR.RecipientNotFound; Recipient not found by SMTP address lookup
+
+--BOUND
+Content-Type: text/rfc822-headers
+
+From: Arslan Ali <me@gmail.com>
+To: {{RCPT}}
+Subject: Hello Acme
+Message-ID: {{OUR_MSGID}}
+--BOUND--

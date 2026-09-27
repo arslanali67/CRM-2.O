@@ -59,6 +59,7 @@ def timeline(email_id: int, conn=Depends(get_db)):
 
 INBOUND_THREAD_KEY = "coalesce(m.gmail_thrid, 'in-' || m.id)"
 INBOUND_COLUMNS = (f"m.id, m.from_email, m.from_name, m.subject, m.received_at, m.relevance, m.company_id, "
+                   f"m.label, m.label_rule, m.bounce_type, "
                    f"m.gmail_thrid, {INBOUND_THREAD_KEY} AS thread_key, m.received_at AS last_activity_at")
 
 
