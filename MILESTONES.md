@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 16 / 35**
+**Progress: 17 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -28,7 +28,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 
 ## Phase 1C: Replies (Wk 13–16)
 - [ ] M14 Inbox synchronization
-- [ ] M15 Reply detection
+- [x] M15 Reply detection
 - [ ] M16 AI reply analysis
 - [ ] M17 Notifications
 - [ ] M18 Dashboard
