@@ -9,8 +9,8 @@ down:      ## Stop everything (data is kept)
 logs:      ## Follow logs of all services
 	docker compose logs -f
 
-test:      ## Run backend tests inside the api image
-	docker compose run --rm --no-deps api python -m pytest -q
+test:      ## Run backend tests inside the api image (uses a throwaway crm_test database)
+	docker compose run --rm api python -m pytest -q
 
 password:  ## Generate OWNER_PASSWORD_HASH for .env
 	docker compose run --rm --no-deps api python -m app.auth

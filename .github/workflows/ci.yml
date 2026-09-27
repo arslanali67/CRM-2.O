@@ -5,6 +5,15 @@ jobs:
   backend:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: backend } }
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_USER: crm, POSTGRES_PASSWORD: ci, POSTGRES_DB: crm }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://crm:ci@localhost:5432/crm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

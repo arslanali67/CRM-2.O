@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.1
+- **Spec version:** 1.2
 - **Last updated:** 2026-09-27
 
 ---
@@ -69,6 +69,15 @@ Goal: clean companies in, nothing sent out yet.
 - **M1 Project foundation [CORE].** Docker Compose (Next.js, FastAPI, Postgres, Redis, Celery), owner login, logging, CI.
   - Depends on: M0. Done when: `make up` works, login works, CI is green.
 - **M2 Database foundation [SAFETY].** Migrations, partial unique indexes, a database constraint enforcing "no send without approval", append-only audit log.
+  - **Migrations:** plain `.sql` files in `backend/migrations/`, applied in order by a small psycopg runner, tracked in `schema_migrations`. Run automatically on API start. No ORM/Alembic.
+  - **`outbound_emails`:** recipient, subject, body, status (`draft` / `approved` / `queued` / `sending` / `sent` / `failed` / `cancelled`), DB-generated `content_hash` (SHA-256 of recipient+subject+body), `approved_at`, `approved_content_hash`, `sent_at`, `provider_message_id`, `idempotency_key`, timestamps.
+    - CHECK: status `approved`/`queued`/`sending`/`sent` requires `approved_at` set and `approved_content_hash = content_hash` (editing content after approval is rejected unless reset to draft).
+    - CHECK: status `sent` requires `sent_at`.
+    - Partial unique index: at most one in-flight (`approved`/`queued`/`sending`) email per recipient (case-insensitive).
+    - Unique: `idempotency_key`; `provider_message_id` where not null.
+  - **`audit_log`:** timestamp, actor, action, entity type/id, JSON data. Append-only: triggers reject UPDATE, DELETE and TRUNCATE.
+  - **Tests:** every constraint tested against a real Postgres test database, locally and in CI.
+  - Company/contact tables and the duplicate-domain index are M5; automatic activity logging is M24.
   - Depends on: M1. Done when: constraint tests pass on real Postgres.
 - **M3 Personal profile & CV.** Skills, experience, links, preferences; CV versions; `{{my_*}}` template variables.
   - Depends on: M2. Done when: all `my_*` variables resolve and a default CV is set.
@@ -231,3 +240,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 |---|---|---|---|
 | 2026-09-27 | 1.0 | Initial spec from CRM_MILESTONES.pdf v1.0 | Owner |
 | 2026-09-27 | 1.1 | Answered Q1–Q4: Gmail SMTP+IMAP, Gemini free tier (testing), laptop only, 20/day with 90 s gap. M11 narrowed to SMTP+IMAP (no OAuth). | Owner |
+| 2026-09-27 | 1.2 | M2 detailed: plain SQL migrations, `outbound_emails` with DB-enforced approval-hash constraint and partial unique indexes, append-only `audit_log`. M1: API has no published port (only reachable via web). | Owner |
