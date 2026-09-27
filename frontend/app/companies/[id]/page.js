@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EventList } from "../../activity/describe";
-import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, errorText } from "../shared";
+import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, STAGES, errorText } from "../shared";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
 const full = { display: "block", width: "100%" };
@@ -56,6 +56,14 @@ export default function Company() {
     if (await run(call(`/api/contacts/${cid}`, "PUT", body), "Contact saved.")) setEditing(null);
   };
   const archiveContact = (cid, archive) => run(call(`/api/contacts/${cid}/${archive ? "archive" : "restore"}`, "POST"), archive ? "Contact archived." : "Contact restored.");
+  const setStage = (stage) => {
+    let close_reason = "";
+    if (stage === "closed") {
+      close_reason = window.prompt(`Why close ${company.name}?`) || "";
+      if (!close_reason.trim()) return;
+    }
+    run(call("/api/leads/stage", "POST", { company_ids: [company.id], stage, close_reason }), `Stage set to ${stage}.`);
+  };
   const blockCompany = () => {
     const reason = window.prompt(`Why block ${company.name}? Blocks its domain and all its contacts.`);
     if (reason?.trim()) run(call("/api/suppressions", "POST", { kind: "company", company_id: company.id, reason }), "Company blocked.");
@@ -65,12 +73,20 @@ export default function Company() {
 
   return (
     <main>
-      <p><Link href="/companies">← Companies</Link></p>
+      <p><Link href="/companies">← Leads</Link></p>
       <h1>{company.name} {company.archived_at && <small>(archived)</small>}</h1>
       <p style={{ color: "gray" }}>
         Source: {company.source}
         {company.source_detail?.file && ` (${company.source_detail.file}, row ${company.source_detail.row})`}
         {" · "}created {new Date(company.created_at).toLocaleString()}
+      </p>
+      <p>
+        <label>Stage{" "}
+          <select value={company.stage} onChange={(e) => setStage(e.target.value)}>
+            {STAGES.map((s) => <option key={s}>{s}</option>)}
+          </select>
+        </label>
+        {company.close_reason && <small style={{ color: "gray" }}> closed: {company.close_reason}</small>}
       </p>
       {company.block ? (
         <p style={{ color: "crimson" }}>

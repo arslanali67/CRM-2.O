@@ -47,7 +47,7 @@ def db(test_url):
     """
     with psycopg.connect(test_url) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
-        for table in ("suppressions", "outbound_emails", "contacts", "companies"):
+        for table in ("suppressions", "outbound_emails", "compose_list", "contacts", "companies"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("SET LOCAL session_replication_role = DEFAULT")
         yield conn
@@ -71,6 +71,7 @@ def client(test_url, monkeypatch):
         conn.execute("DELETE FROM profile")
         conn.execute("INSERT INTO profile DEFAULT VALUES")
         conn.execute("DELETE FROM cv_versions")
+        conn.execute("DELETE FROM compose_list")
         conn.execute("DELETE FROM contacts")
         conn.execute("DELETE FROM companies")
     c = TestClient(app)

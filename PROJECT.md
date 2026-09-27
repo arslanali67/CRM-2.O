@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.7
+- **Spec version:** 1.8
 - **Last updated:** 2026-09-27
 
 ---
@@ -113,6 +113,11 @@ Goal: clean companies in, nothing sent out yet.
   - The real scraped CSV is never committed (public repo); tests use a synthetic sample; the 91/0 criterion is verified locally on the test database.
   - Depends on: M5, M25. Done when: the Berlin CSV imports as 91 companies and re-import creates 0 duplicates.
 - **M6 Lead management.** Stages NEW → … → CLOSED, filters, bulk select to hand off to the composer.
+  - **A lead is a company.** Stages: `new` → `qualified` → `contacted` → `replied` → `closed`, plus `on_hold` (reachable from any stage). Closing requires a reason. Manual changes now; M12 will set `contacted` and M15 `replied`.
+  - **Stage changes are DB-logged** (trigger → `audit_log` `company.stage_changed` with from/to and close reason).
+  - **Leads page** (replaces the Companies list): filters for stage, country, city, industry (contains), source, has usable email, has careers email, show blocked (hidden by default); up to 500 rows; row checkboxes and select-all-shown.
+  - **Bulk actions:** set stage; add to compose list.
+  - **Compose list (hand-off to M10):** saved list of companies with a best recipient each: active, unblocked contact; careers > personal > generic; never unsuitable. Blocked companies and companies without an eligible recipient are refused with a reason. Removable. Compose page shows the list until M10 adds writing and approval.
   - Depends on: M4, M5. Done when: leads can be filtered, selected and handed to the composer.
 - **M24 Activity timeline.** Every state change logged. Built here, extended by each later milestone.
   - **Email events, DB-enforced:** triggers on `outbound_emails` write an `audit_log` row on creation (`outbound_email.created`) and on every status change (`outbound_email.<new status>`), with from/to status and recipient. No code path can change an email's status unlogged.
@@ -251,7 +256,7 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 - The exact list of the 12 email safety checks (M26).
 - The 12 AI reply labels (M16).
 - Safety test cases S1–S12 (M31).
-- Intermediate lead and opportunity stages (M6, M19).
+- Intermediate opportunity stages (M19). (Lead stages were decided in v1.8, see M6.)
 
 ## 8. Open questions (all answered 2026-09-27)
 
@@ -276,3 +281,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.5 | M25 detailed: email/domain/company blocks with reason, lift-with-reason as the audited override, DB trigger refusing approve/queue/send to blocked recipients, auto-cancel of pending emails on new block. | Owner |
 | 2026-09-27 | 1.6 | M24 detailed: DB triggers log every email status change with actor; M25 auto-cancel routed through them; Activity page and company timeline. | Owner |
 | 2026-09-27 | 1.7 | M4 detailed: preview-then-import flow, `ai_companies` column mapping, email cleaning with same-brand rule, dedupe, blocked rows skipped, error CSV; real CSV kept out of the public repo. | Owner |
+| 2026-09-27 | 1.8 | M6 detailed: lead stages new / qualified / contacted / replied / closed + on_hold (closes §7 lead-stage gap), DB-logged stage changes, Leads page with filters and bulk actions, compose list with best-recipient pick. | Owner |

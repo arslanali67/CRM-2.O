@@ -2,73 +2,161 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { COMPANY_FIELDS, errorText } from "./shared";
+import { COMPANY_FIELDS, STAGES, errorText } from "./shared";
 
-const EMPTY = Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, ""]));
+const EMPTY_COMPANY = Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, ""]));
+const NO_FILTERS = { stage: "", country: "", city: "", industry: "", source: "", has_email: "", has_careers: "",
+                     include_blocked: false, archived: false };
 
-export default function Companies() {
+export default function Leads() {
   const router = useRouter();
-  const [list, setList] = useState(null);
-  const [archived, setArchived] = useState(false);
-  const [form, setForm] = useState(EMPTY);
+  const [filters, setFilters] = useState(NO_FILTERS);
+  const [data, setData] = useState(null);
+  const [selected, setSelected] = useState(new Set());
+  const [bulkStage, setBulkStage] = useState("qualified");
+  const [form, setForm] = useState(EMPTY_COMPANY);
   const [msg, setMsg] = useState("");
 
-  async function load() {
-    const res = await fetch(`/api/companies?archived=${archived}`);
+  async function load(f = filters) {
+    const q = new URLSearchParams(Object.entries(f).filter(([, v]) => v !== "" && v !== false));
+    const res = await fetch(`/api/leads?${q}`);
     if (res.status === 401) return router.replace("/login");
-    setList(await res.json());
+    setData(await res.json());
+    setSelected(new Set());
   }
-  useEffect(() => { load(); }, [archived]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function add(e) {
-    e.preventDefault();
-    const res = await fetch("/api/companies", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    if (!res.ok) return setMsg(errorText(await res.json()));
-    setMsg("Added.");
-    setForm(EMPTY);
+  const setFilter = (k, v) => setFilters({ ...filters, [k]: v });
+  const applyFilters = (e) => { e.preventDefault(); load(); };
+  const clearFilters = () => { setFilters(NO_FILTERS); load(NO_FILTERS); };
+
+  const leads = data?.leads || [];
+  const allSelected = leads.length > 0 && leads.every((l) => selected.has(l.id));
+  const toggle = (id) => {
+    const s = new Set(selected);
+    s.has(id) ? s.delete(id) : s.add(id);
+    setSelected(s);
+  };
+  const toggleAll = () => setSelected(allSelected ? new Set() : new Set(leads.map((l) => l.id)));
+
+  async function post(url, body) {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return { ok: res.ok, data: await res.json() };
+  }
+
+  async function applyStage() {
+    let close_reason = "";
+    if (bulkStage === "closed") {
+      close_reason = window.prompt(`Why close ${selected.size} lead(s)?`) || "";
+      if (!close_reason.trim()) return;
+    }
+    const r = await post("/api/leads/stage", { company_ids: [...selected], stage: bulkStage, close_reason });
+    setMsg(r.ok ? `${r.data.changed} lead(s) moved to ${bulkStage}.` : errorText(r.data));
+    if (r.ok) load();
+  }
+
+  async function handOff() {
+    const r = await post("/api/compose-list", { company_ids: [...selected] });
+    if (!r.ok) return setMsg(errorText(r.data));
+    const refused = r.data.refused.map((x) => `${x.name} (${x.reason})`).join(", ");
+    setMsg(`${r.data.added.length} added to the compose list` +
+      (r.data.already.length ? `, ${r.data.already.length} already there` : "") +
+      (refused ? `. Not added: ${refused}.` : "."));
     load();
   }
 
-  if (!list) return <p>Loading…</p>;
+  async function addCompany(e) {
+    e.preventDefault();
+    const r = await post("/api/companies", form);
+    setMsg(r.ok ? "Company added." : errorText(r.data));
+    if (r.ok) { setForm(EMPTY_COMPANY); load(); }
+  }
+
+  if (!data) return <p>Loading…</p>;
+
+  const input = (k, placeholder) => (
+    <input placeholder={placeholder} aria-label={placeholder} value={filters[k]} onChange={(e) => setFilter(k, e.target.value)} />
+  );
+  const yesNo = (k, label) => (
+    <select aria-label={label} value={filters[k]} onChange={(e) => setFilter(k, e.target.value)}>
+      <option value="">{label}: any</option><option value="true">{label}: yes</option><option value="false">{label}: no</option>
+    </select>
+  );
 
   return (
-    <main>
-      <p><Link href="/">← Home</Link></p>
-      <h1>Companies</h1>
-      <label>
-        <input type="checkbox" checked={archived} onChange={(e) => setArchived(e.target.checked)} /> Show archived
-      </label>
-      <table style={{ width: "100%", marginTop: 12 }}>
-        <thead><tr><th align="left">Name</th><th align="left">Domain</th><th align="left">City</th><th align="right">Contacts</th></tr></thead>
+    <main style={{ maxWidth: 1000 }}>
+      <p><Link href="/">← Home</Link> · <Link href="/compose">Compose list</Link></p>
+      <h1>Leads</h1>
+
+      <form onSubmit={applyFilters} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+        <select aria-label="Stage" value={filters.stage} onChange={(e) => setFilter("stage", e.target.value)}>
+          <option value="">Stage: any</option>
+          {STAGES.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        {input("country", "Country")}
+        {input("city", "City")}
+        {input("industry", "Industry contains")}
+        <select aria-label="Source" value={filters.source} onChange={(e) => setFilter("source", e.target.value)}>
+          <option value="">Source: any</option><option value="manual">manual</option><option value="csv_import">csv_import</option>
+        </select>
+        {yesNo("has_email", "Usable email")}
+        {yesNo("has_careers", "Careers email")}
+        <label><input type="checkbox" checked={filters.include_blocked} onChange={(e) => setFilter("include_blocked", e.target.checked)} /> blocked</label>
+        <label><input type="checkbox" checked={filters.archived} onChange={(e) => setFilter("archived", e.target.checked)} /> archived</label>
+        <button type="submit">Filter</button>
+        <button type="button" onClick={clearFilters}>Clear</button>
+      </form>
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "12px 0", flexWrap: "wrap" }}>
+        <strong>{selected.size} selected</strong>
+        <select aria-label="New stage" value={bulkStage} onChange={(e) => setBulkStage(e.target.value)}>
+          {STAGES.map((s) => <option key={s}>{s}</option>)}
+        </select>
+        <button disabled={!selected.size} onClick={applyStage}>Set stage</button>
+        <button disabled={!selected.size} onClick={handOff}>Add to compose list</button>
+      </div>
+      {msg && <p role="status">{msg}</p>}
+
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th><input type="checkbox" aria-label="Select all shown" checked={allSelected} onChange={toggleAll} /></th>
+            <th align="left">Name</th><th align="left">Stage</th><th align="left">City</th><th align="left">Industry</th>
+            <th align="right">Emails</th><th />
+          </tr>
+        </thead>
         <tbody>
-          {list.map((c) => (
-            <tr key={c.id}>
-              <td><Link href={`/companies/${c.id}`}>{c.name}</Link></td>
-              <td>{c.domain}</td>
-              <td>{c.city}</td>
-              <td align="right">{c.contact_count}</td>
+          {leads.map((l) => (
+            <tr key={l.id} style={{ borderTop: "1px solid #eee" }}>
+              <td><input type="checkbox" aria-label={`Select ${l.name}`} checked={selected.has(l.id)} onChange={() => toggle(l.id)} /></td>
+              <td><Link href={`/companies/${l.id}`}>{l.name}</Link> <small style={{ color: "gray" }}>{l.domain}</small></td>
+              <td>{l.stage}{l.close_reason && <small style={{ color: "gray" }}> ({l.close_reason})</small>}</td>
+              <td>{l.city}</td>
+              <td><small>{l.industry}</small></td>
+              <td align="right">{l.usable_emails}{l.careers_emails > 0 && <mark title="has a careers email"> careers</mark>}</td>
+              <td>
+                {l.blocked && <mark style={{ background: "crimson", color: "white" }}>blocked</mark>}
+                {l.in_compose_list && <mark> in list</mark>}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      {list.length === 0 && <p>No {archived ? "archived " : ""}companies.</p>}
+      <p>{leads.length} shown{data.truncated && " (first 500; narrow the filters to see the rest)"}</p>
 
-      <h2 style={{ marginTop: 32 }}>Add company</h2>
-      <form onSubmit={add} style={{ display: "grid", gap: 8 }}>
-        {COMPANY_FIELDS.map(([k, label, type]) => (
-          <label key={k}>{label}
-            {type === "textarea"
-              ? <textarea rows={3} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} style={{ display: "block", width: "100%" }} />
-              : <input type={type || "text"} required={k === "name"} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} style={{ display: "block", width: "100%" }} />}
-          </label>
-        ))}
-        <button type="submit">Add company</button>
-        {msg && <p role="status">{msg}</p>}
-      </form>
+      <details style={{ marginTop: 24 }}>
+        <summary>Add company manually</summary>
+        <form onSubmit={addCompany} style={{ display: "grid", gap: 8, maxWidth: 480 }}>
+          {COMPANY_FIELDS.map(([k, label, type]) => (
+            <label key={k}>{label}
+              {type === "textarea"
+                ? <textarea rows={3} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} style={{ display: "block", width: "100%" }} />
+                : <input type={type || "text"} required={k === "name"} value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} style={{ display: "block", width: "100%" }} />}
+            </label>
+          ))}
+          <button type="submit">Add company</button>
+        </form>
+      </details>
     </main>
   );
 }

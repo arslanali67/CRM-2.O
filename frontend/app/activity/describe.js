@@ -21,6 +21,9 @@ export function describe(e) {
     "contact.restored": "Contact restored",
     "suppression.added": `Blocked ${d.email || d.domain || "company"}: ${d.reason}`,
     "suppression.lifted": `Block lifted: ${d.reason}`,
+    "company.stage_changed": `Stage ${d.from} → ${d.to}${d.close_reason ? ` (${d.close_reason})` : ""}`,
+    "compose_list.added": `${d.company_ids?.length} lead(s) added to the compose list`,
+    "compose_list.removed": "Lead removed from the compose list",
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

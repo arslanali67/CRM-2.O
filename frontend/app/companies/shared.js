@@ -19,6 +19,8 @@ export const CONTACT_FIELDS = [
 
 export const EMAIL_CLASSES = ["careers", "personal", "generic", "unsuitable"];
 
+export const STAGES = ["new", "qualified", "contacted", "replied", "closed", "on_hold"];
+
 export function errorText(body) {
   if (Array.isArray(body?.detail)) {
     return body.detail.map((d) => `${d.loc.slice(1).join(".") || "input"}: ${d.msg}`).join("; ");
