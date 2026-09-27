@@ -1,0 +1,52 @@
+# All published ports bind to 127.0.0.1 only: laptop-only app (PROJECT.md §8 Q3).
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD}@postgres:5432/crm
+    REDIS_URL: redis://redis:6379/0
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_DB: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crm -d crm"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    <<: *backend
+    # No published port: only reachable by web via the compose network.
+
+  worker:
+    <<: *backend
+    command: celery -A app.worker worker --loglevel=INFO --concurrency=1
+
+  web:
+    build: ./frontend
+    depends_on: [api]
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1,0 +1,94 @@
+import hmac
+import logging
+import time
+
+import psycopg
+import redis
+from fastapi import Depends, FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from starlette.middleware.sessions import SessionMiddleware
+
+from app import settings
+from app.auth import verify_password
+from app.worker import celery_app
+
+logging.basicConfig(
+    level=settings.LOG_LEVEL,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+log = logging.getLogger("api")
+
+app = FastAPI(title="Job Outreach CRM")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.SESSION_SECRET,
+    session_cookie="crm_session",
+    max_age=settings.SESSION_MAX_AGE,
+    same_site="strict",
+    https_only=False,  # localhost over plain HTTP (PROJECT.md §8 Q3)
+)
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    ms = (time.perf_counter() - start) * 1000
+    log.info("%s %s %s %.0fms", request.method, request.url.path, response.status_code, ms)
+    return response
+
+
+def require_owner(request: Request) -> str:
+    if not request.session.get("owner"):
+        raise HTTPException(401, "Not signed in")
+    return settings.OWNER_EMAIL
+
+
+class LoginIn(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/auth/login")
+def login(body: LoginIn, request: Request):
+    email_ok = hmac.compare_digest(body.email.strip().lower(), settings.OWNER_EMAIL)
+    pw_ok = verify_password(body.password, settings.OWNER_PASSWORD_HASH)
+    if not (email_ok and pw_ok):
+        log.warning("failed login attempt")
+        raise HTTPException(401, "Invalid email or password")
+    request.session.clear()
+    request.session["owner"] = True
+    log.info("owner signed in")
+    return {"email": settings.OWNER_EMAIL}
+
+
+@app.post("/auth/logout")
+def logout(request: Request):
+    request.session.clear()
+    return {"ok": True}
+
+
+@app.get("/auth/me")
+def me(email: str = Depends(require_owner)):
+    return {"email": email}
+
+
+@app.get("/health")
+def health():
+    status = {}
+    try:
+        with psycopg.connect(settings.DATABASE_URL, connect_timeout=2) as conn:
+            conn.execute("SELECT 1")
+        status["database"] = "ok"
+    except Exception as e:
+        status["database"] = f"error: {type(e).__name__}"
+    try:
+        redis.Redis.from_url(settings.REDIS_URL, socket_timeout=2).ping()
+        status["redis"] = "ok"
+    except Exception as e:
+        status["redis"] = f"error: {type(e).__name__}"
+    try:
+        status["worker"] = "ok" if celery_app.control.ping(timeout=1) else "error: no reply"
+    except Exception as e:
+        status["worker"] = f"error: {type(e).__name__}"
+    return status
