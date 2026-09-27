@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.8
+- **Spec version:** 1.9
 - **Last updated:** 2026-09-27
 
 ---
@@ -134,6 +134,11 @@ Goal: clean companies in, nothing sent out yet.
 Goal: approve every email, send exactly once.
 
 - **M8 Email templates.** Variables, strict rendering (an unresolved variable is an error, never blank), immutable versions.
+  - **Templates:** name + versions; each version has a plain-text subject and body. Saving an edit creates a new version; versions are immutable and never deleted (DB-enforced). The latest version is current. Archive/restore. All changes audited.
+  - **Variables (26):** the 16 `my_*` (M3); `company_name`, `company_domain`, `company_website`, `company_city`, `company_country`, `company_industry`; `contact_name`, `contact_first_name`, `contact_role`, `contact_email`.
+  - **Save-time checks:** unknown variable names and malformed braces are rejected with the exact problem.
+  - **Render-time checks:** any variable without a value fails rendering and lists every unresolved variable; never rendered blank. Optional fallback syntax `{{var | fallback}}` renders the fallback when the value is empty.
+  - **UI:** Templates page (list, create, edit → new version, version history, archive), variable reference with click-to-insert, preview against a chosen lead using its best recipient (M6).
   - Depends on: M3, M6. Done when: templates are versioned and unresolved variables are always caught.
 - **M21 Notes & tasks.** Notes on every entity; follow-ups are tasks for the owner, never emails.
   - Depends on: M5. Done when: notes/tasks appear on every entity page and the due list is correct.
@@ -282,3 +287,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.6 | M24 detailed: DB triggers log every email status change with actor; M25 auto-cancel routed through them; Activity page and company timeline. | Owner |
 | 2026-09-27 | 1.7 | M4 detailed: preview-then-import flow, `ai_companies` column mapping, email cleaning with same-brand rule, dedupe, blocked rows skipped, error CSV; real CSV kept out of the public repo. | Owner |
 | 2026-09-27 | 1.8 | M6 detailed: lead stages new / qualified / contacted / replied / closed + on_hold (closes §7 lead-stage gap), DB-logged stage changes, Leads page with filters and bulk actions, compose list with best-recipient pick. | Owner |
+| 2026-09-27 | 1.9 | M8 detailed: immutable template versions, 26 variables, save-time and render-time strict checks, `{{var \| fallback}}` syntax, preview against a real lead. | Owner |

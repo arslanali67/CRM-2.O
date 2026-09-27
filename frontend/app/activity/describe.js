@@ -24,6 +24,11 @@ export function describe(e) {
     "company.stage_changed": `Stage ${d.from} → ${d.to}${d.close_reason ? ` (${d.close_reason})` : ""}`,
     "compose_list.added": `${d.company_ids?.length} lead(s) added to the compose list`,
     "compose_list.removed": "Lead removed from the compose list",
+    "template.created": `Template created: ${d.name}`,
+    "template.version_created": `Template saved as version ${d.version}`,
+    "template.renamed": `Template renamed to ${d.name}`,
+    "template.archived": "Template archived",
+    "template.restored": "Template restored",
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

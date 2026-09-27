@@ -72,6 +72,8 @@ def client(test_url, monkeypatch):
         conn.execute("INSERT INTO profile DEFAULT VALUES")
         conn.execute("DELETE FROM cv_versions")
         conn.execute("DELETE FROM compose_list")
+        conn.execute("DELETE FROM template_versions")
+        conn.execute("DELETE FROM templates")
         conn.execute("DELETE FROM contacts")
         conn.execute("DELETE FROM companies")
     c = TestClient(app)
