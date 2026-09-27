@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 7 / 35**
+**Progress: 8 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -13,7 +13,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M3 Personal profile & CV
 - [x] M5 Companies & contacts
 - [x] M25 Do-not-contact list
-- [ ] M4 CSV import
+- [x] M4 CSV import
 - [ ] M6 Lead management
 - [x] M24 Activity timeline
 
