@@ -40,8 +40,16 @@ def test_url():
 
 @pytest.fixture
 def db(test_url):
-    """Connection whose changes are rolled back after the test."""
+    """Connection whose changes are rolled back after the test.
+
+    Starts with no blocks, emails, companies or contacts (cleared inside the same
+    transaction, so the rollback restores whatever API tests committed).
+    """
     with psycopg.connect(test_url) as conn:
+        conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
+        for table in ("suppressions", "outbound_emails", "contacts", "companies"):
+            conn.execute(f"DELETE FROM {table}")
+        conn.execute("SET LOCAL session_replication_role = DEFAULT")
         yield conn
         conn.rollback()
 

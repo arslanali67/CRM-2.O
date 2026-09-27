@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.5
+- **Spec version:** 1.6
 - **Last updated:** 2026-09-27
 
 ---
@@ -107,6 +107,11 @@ Goal: clean companies in, nothing sent out yet.
 - **M6 Lead management.** Stages NEW → … → CLOSED, filters, bulk select to hand off to the composer.
   - Depends on: M4, M5. Done when: leads can be filtered, selected and handed to the composer.
 - **M24 Activity timeline.** Every state change logged. Built here, extended by each later milestone.
+  - **Email events, DB-enforced:** triggers on `outbound_emails` write an `audit_log` row on creation (`outbound_email.created`) and on every status change (`outbound_email.<new status>`), with from/to status and recipient. No code path can change an email's status unlogged.
+  - **Actor:** `owner` for requests made through the app (set per DB connection), `system` otherwise (e.g. M25 auto-cancel, which now logs through the same trigger with the suppression that caused it: one row per cancellation).
+  - Other entities keep their app-level audit entries (M3, M5, M25); later milestones add theirs.
+  - **UI:** Activity page (global feed, newest first, load more) and a Timeline section on each company page (company, its contacts, its blocks, and emails to its contacts or domain), shown in plain language.
+  - Index on `audit_log (entity_type, entity_id, id)`.
   - Depends on: M2. Done when: approved / queued / sent events are logged per email.
 
 **Phase exit:** the real Berlin CSV imports to 91 companies, re-import creates zero duplicates, and leads are filterable.
@@ -261,3 +266,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.3 | M3 detailed: profile fields, PDF CV versions in Postgres with one enforced default, 16 `my_*` variables, Profile page. | Owner |
 | 2026-09-27 | 1.4 | M5 detailed: company/contact fields, archive instead of delete, provenance, unique active domain/email, email-class rules with manual override, list + company pages. | Owner |
 | 2026-09-27 | 1.5 | M25 detailed: email/domain/company blocks with reason, lift-with-reason as the audited override, DB trigger refusing approve/queue/send to blocked recipients, auto-cancel of pending emails on new block. | Owner |
+| 2026-09-27 | 1.6 | M24 detailed: DB triggers log every email status change with actor; M25 auto-cancel routed through them; Activity page and company timeline. | Owner |

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { EventList } from "../../activity/describe";
 import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, errorText } from "../shared";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
@@ -24,12 +25,14 @@ export default function Company() {
   const [newContact, setNewContact] = useState(EMPTY_CONTACT);
   const [editing, setEditing] = useState(null); // {id, ...fields}
   const [msg, setMsg] = useState("");
+  const [timeline, setTimeline] = useState([]);
 
   async function load() {
     const r = await call(`/api/companies/${id}`, "GET");
     if (r.status === 401) return router.replace("/login");
     if (!r.ok) return setMsg(errorText(r.data));
     setCompany(r.data);
+    call(`/api/companies/${id}/activity`, "GET").then((t) => t.ok && setTimeline(t.data));
     setForm(Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, r.data[k]])));
   }
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -144,6 +147,9 @@ export default function Company() {
         ))}
         <button type="submit">Add contact</button>
       </form>
+
+      <h2 style={{ marginTop: 32 }}>Timeline</h2>
+      <EventList events={timeline} />
     </main>
   );
 }

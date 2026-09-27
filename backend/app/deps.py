@@ -16,6 +16,7 @@ def require_owner(request: Request) -> str:
 def get_db():
     # One connection per request; commits on success, rolls back on error.
     with psycopg.connect(settings.DATABASE_URL, row_factory=dict_row) as conn:
+        conn.execute("SELECT set_config('app.actor', 'owner', false)")  # read by DB audit triggers
         yield conn
 
 

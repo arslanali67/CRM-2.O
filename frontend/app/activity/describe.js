@@ -1,0 +1,40 @@
+// Plain-language text for audit_log events. Unknown actions fall back to the raw name.
+export function describe(e) {
+  const d = e.data || {};
+  const [type, verb] = e.action.split(".");
+  if (type === "outbound_email") {
+    if (verb === "created") return `Email draft to ${d.to_email} created`;
+    const why = d.reason === "do_not_contact" ? " (recipient blocked)" : "";
+    return `Email to ${d.to_email} ${verb}${why}`;
+  }
+  const text = {
+    "profile.updated": "Profile updated",
+    "cv.uploaded": `CV uploaded: ${d.label}${d.is_default ? " (default)" : ""}`,
+    "cv.default_set": "Default CV changed",
+    "company.created": `Company added: ${d.name}`,
+    "company.updated": "Company edited",
+    "company.archived": "Company archived",
+    "company.restored": "Company restored",
+    "contact.created": `Contact added${d.email_class ? ` (${d.email_class})` : ""}`,
+    "contact.updated": `Contact edited${d.email_class ? ` (${d.email_class}${d.manual ? ", manual" : ""})` : ""}`,
+    "contact.archived": "Contact archived",
+    "contact.restored": "Contact restored",
+    "suppression.added": `Blocked ${d.email || d.domain || "company"}: ${d.reason}`,
+    "suppression.lifted": `Block lifted: ${d.reason}`,
+  }[e.action];
+  return text || e.action;
+}
+
+export function EventList({ events }) {
+  if (!events.length) return <p>No activity yet.</p>;
+  return (
+    <ul style={{ listStyle: "none", padding: 0 }}>
+      {events.map((e) => (
+        <li key={e.id} style={{ padding: "6px 0", borderBottom: "1px solid #eee" }}>
+          <small style={{ color: "gray" }}>{new Date(e.at).toLocaleString()} · {e.actor}</small>
+          <div>{describe(e)}</div>
+        </li>
+      ))}
+    </ul>
+  );
+}
