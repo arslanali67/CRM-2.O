@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.15
+- **Spec version:** 1.16
 - **Last updated:** 2026-09-27
 
 ---
@@ -203,6 +203,15 @@ Goal: approve every email, send exactly once.
 Goal: never miss a reply, never answer automatically.
 
 - **M14 Inbox synchronization [CORE].** Incremental cursor-based polling, idempotent storage, resync handling.
+  - **Read-only:** mailboxes opened read-only, bodies fetched with `BODY.PEEK` (nothing marked read); nothing moved, deleted or sent.
+  - **Mailboxes:** Gmail All Mail and Spam (found by special-use flags); messages from the owner's own address are skipped.
+  - **Cursor:** per mailbox UIDVALIDITY + last UID; incremental fetch in batches; first sync looks back 14 days. UIDVALIDITY change → rescan by date. Daily safety re-scan of the last 2 days. Errors recorded, retried next run.
+  - **Idempotent:** keyed by Gmail message ID (X-GM-MSGID), so re-fetching never duplicates.
+  - **Only relevant messages stored** (owner's choice): headers are checked first; a message is stored in full only if it is in a Gmail thread the owner started, references one of the owner's Message-IDs (In-Reply-To / References), comes from a known contact or company domain, or is a bounce (Mailer-Daemon / postmaster) arriving within 3 days after a CRM send (personal bounces are not stored). Others are only counted.
+  - **Stored per message:** Gmail message/thread IDs, headers (From, To, Subject, Date, Message-ID, In-Reply-To, References), plain-text body up to 100 KB, attachment names only (never contents).
+  - **Schedule:** every 2 minutes via beat, own lock, independent of the sending kill switch.
+  - **UI:** Inbox page (stored messages, sync status, Sync now); inbound messages appear in thread views and company Emails. Classification is M15.
+  - **Soak:** simulated 24 h in tests, plus a real read-only 24 h run with a stored-vs-Gmail reconciliation.
   - Depends on: M11, M13. Done when: a 24 h soak test shows no missed and no duplicate messages.
 - **M15 Reply detection.** Rule-based, no AI, in this order: bounce → auto-reply/OOO → thread match → sender match → unrelated.
   - Depends on: M14. Done when: 100% correct on bounce/OOO/reply fixtures.
@@ -336,3 +345,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.13 | M11 detailed: Fernet credential encryption pulled forward from M30 (new dependency `cryptography`, key in `.env`), single Gmail account with connect / test (no send) / disconnect, password never exposed. | Owner |
 | 2026-09-27 | 1.14 | M12 detailed: beat + single-lane worker with advisory lock, Message-ID stored before send and recovered from Gmail Sent (no auto-resend), kill switch on Outbox, stage → contacted; no real sends during build. | Owner |
 | 2026-09-27 | 1.15 | M13 detailed: Gmail message/thread IDs fetched read-only after sending, History page with filters, per-email status timeline, thread view, company Emails section. | Owner |
+| 2026-09-27 | 1.16 | M14 detailed: read-only IMAP sync of All Mail + Spam with UID cursors, 14-day first look-back, resync + daily re-scan, only outreach-relevant messages stored, Inbox page, simulated and real 24 h soak. Refined during build: bounces count only within 3 days after a CRM send (privacy; narrows the approved rule). | Owner |

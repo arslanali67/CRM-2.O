@@ -18,22 +18,34 @@ export default function Thread() {
   }, [key, router]);
 
   if (!t) return <p>{msg || "Loading…"}</p>;
-  const first = t.emails[0];
+  // One chronological conversation: our emails and inbound messages (M14).
+  const items = [
+    ...t.emails.map((e) => ({ ...e, kind: "out", when: e.sent_at || e.created_at })),
+    ...t.inbound.map((m) => ({ ...m, kind: "in", when: m.received_at })),
+  ].sort((a, b) => new Date(a.when) - new Date(b.when));
+  const first = items[0];
+  const companyId = first.company_id;
 
   return (
     <main style={{ maxWidth: 800 }}>
-      <p><Link href="/history">← History</Link>{first.company_id && <> · <Link href={`/companies/${first.company_id}`}>{first.company_name}</Link></>}</p>
+      <p><Link href="/history">← History</Link> · <Link href="/inbox">Inbox</Link>
+        {companyId && <> · <Link href={`/companies/${companyId}`}>{first.company_name || "company"}</Link></>}</p>
       <h1>{first.subject}</h1>
       <p style={{ color: "gray" }}><small>
-        {t.gmail_thread ? `Gmail thread ${t.thread_key}` : "Not yet linked to a Gmail thread"} · {t.emails.length} message(s).
-        Replies will appear here once inbox sync arrives (M14).
+        {t.gmail_thread ? `Gmail thread ${t.thread_key}` : "Not yet linked to a Gmail thread"} · {t.emails.length} sent,{" "}
+        {t.inbound.length} received. The system never replies on its own.
       </small></p>
-      {t.emails.map((e) => (
-        <article key={e.id} style={{ border: "1px solid #ddd", padding: 12, marginBottom: 12 }}>
-          <div><b>To:</b> {e.to_email} · <Link href={`/outbox/${e.id}`}>{e.status}</Link>
-            {e.sent_at && <> · sent {new Date(e.sent_at).toLocaleString()}</>}</div>
-          <div><b>Subject:</b> {e.subject}</div>
-          <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{e.body}</pre>
+      {items.map((x) => (
+        <article key={`${x.kind}-${x.id}`} style={{ border: "1px solid #ddd", borderLeft: `4px solid ${x.kind === "in" ? "seagreen" : "steelblue"}`, padding: 12, marginBottom: 12 }}>
+          {x.kind === "out" ? (
+            <div><b>You → {x.to_email}</b> · <Link href={`/outbox/${x.id}`}>{x.status}</Link>
+              {x.sent_at && <> · {new Date(x.sent_at).toLocaleString()}</>}</div>
+          ) : (
+            <div><b>{x.from_name || x.from_email} → you</b> · {x.when && new Date(x.when).toLocaleString()}
+              {x.attachment_names?.length > 0 && <small> · attachments: {x.attachment_names.join(", ")}</small>}</div>
+          )}
+          <div><b>Subject:</b> {x.subject}</div>
+          <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{x.kind === "out" ? x.body : x.body_text}</pre>
         </article>
       ))}
     </main>

@@ -3,7 +3,7 @@
 A thread is Gmail's thread ID; an email without one yet is its own thread ("email-<id>").
 Replies join these threads in M14/M15.
 """
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -57,24 +57,39 @@ def timeline(email_id: int, conn=Depends(get_db)):
         "ORDER BY id", (email_id,)).fetchall()
 
 
+INBOUND_THREAD_KEY = "coalesce(m.gmail_thrid, 'in-' || m.id)"
+INBOUND_COLUMNS = (f"m.id, m.from_email, m.from_name, m.subject, m.received_at, m.relevance, m.company_id, "
+                   f"m.gmail_thrid, {INBOUND_THREAD_KEY} AS thread_key, m.received_at AS last_activity_at")
+
+
 @router.get("/threads/{thread_key}")
 def thread(thread_key: str, conn=Depends(get_db)):
+    """A conversation: our emails plus inbound messages (M14) in the same Gmail thread."""
     emails = conn.execute(
         f"SELECT {EMAIL_COLUMNS}, e.body {FROM} WHERE {THREAD_KEY} = %s "
         "ORDER BY coalesce(e.sent_at, e.created_at), e.id", (thread_key,)).fetchall()
-    if not emails:
+    inbound = conn.execute(
+        f"SELECT {INBOUND_COLUMNS}, m.body_text, m.attachment_names FROM inbound_messages m "
+        f"WHERE {INBOUND_THREAD_KEY} = %s ORDER BY m.received_at, m.id", (thread_key,)).fetchall()
+    if not emails and not inbound:
         raise HTTPException(404, "Thread not found")
-    return {"thread_key": thread_key, "gmail_thread": not thread_key.startswith("email-"), "emails": emails}
+    return {"thread_key": thread_key, "gmail_thread": not thread_key.startswith(("email-", "in-")),
+            "emails": emails, "inbound": inbound}
 
 
 @router.get("/companies/{company_id}/emails")
 def company_emails(company_id: int, conn=Depends(get_db)):
-    """The company's emails (drafts included), grouped by thread, most recent thread first."""
+    """The company's emails (drafts included) and inbound messages, grouped by thread, newest thread first."""
     fetch(conn, "companies", company_id)
     rows = conn.execute(f"SELECT {EMAIL_COLUMNS} {FROM} WHERE e.company_id = %s "
                         "ORDER BY coalesce(e.sent_at, e.created_at), e.id", (company_id,)).fetchall()
-    threads: dict[str, list] = {}
+    inbound = conn.execute(f"SELECT {INBOUND_COLUMNS} FROM inbound_messages m WHERE m.company_id = %s "
+                           "ORDER BY m.received_at, m.id", (company_id,)).fetchall()
+    threads: dict[str, dict] = {}
     for r in rows:
-        threads.setdefault(r["thread_key"], []).append(r)
-    return sorted(({"thread_key": k, "emails": v} for k, v in threads.items()),
-                  key=lambda t: max(e["last_activity_at"] for e in t["emails"]), reverse=True)
+        threads.setdefault(r["thread_key"], {"emails": [], "inbound": []})["emails"].append(r)
+    for r in inbound:
+        threads.setdefault(r["thread_key"], {"emails": [], "inbound": []})["inbound"].append(r)
+    return sorted(({"thread_key": k, **v} for k, v in threads.items()),
+                  key=lambda t: max(x["last_activity_at"] or datetime.min.replace(tzinfo=timezone.utc)
+                                    for x in t["emails"] + t["inbound"]), reverse=True)

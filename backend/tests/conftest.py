@@ -109,7 +109,7 @@ def _clean_rollback_conn(test_url, **kwargs):
     """
     with psycopg.connect(test_url, **kwargs) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
-        for table in ("suppressions", "outbound_emails", "compose_list", "contacts", "companies"):
+        for table in ("inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts", "companies"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("DELETE FROM app_settings")
         conn.execute("INSERT INTO app_settings DEFAULT VALUES")
@@ -143,6 +143,8 @@ def client(test_url, monkeypatch):
         # Test-DB only: skip triggers so guarded tables (suppressions) can be reset.
         conn.execute("SET session_replication_role = replica")
         conn.execute("DELETE FROM suppressions")
+        conn.execute("DELETE FROM inbound_messages")
+        conn.execute("DELETE FROM mailbox_sync")
         conn.execute("DELETE FROM outbound_emails")
         conn.execute("DELETE FROM app_settings")
         conn.execute("INSERT INTO app_settings DEFAULT VALUES")

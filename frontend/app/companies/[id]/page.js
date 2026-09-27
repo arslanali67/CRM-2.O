@@ -175,11 +175,17 @@ export default function Company() {
       {emailThreads.length === 0 && <p>No emails yet.</p>}
       {emailThreads.map((t) => (
         <div key={t.thread_key} style={{ borderLeft: "3px solid #ddd", paddingLeft: 8, margin: "8px 0" }}>
-          <Link href={`/threads/${t.thread_key}`}><small>thread ({t.emails.length})</small></Link>
+          <Link href={`/threads/${t.thread_key}`}><small>thread ({t.emails.length} sent, {t.inbound.length} received)</small></Link>
           {t.emails.map((e) => (
-            <div key={e.id}>
+            <div key={`o${e.id}`}>
               <Link href={`/outbox/${e.id}`}>{e.subject}</Link> <small>→ {e.to_email} · {e.status}
                 {e.sent_at && ` ${new Date(e.sent_at).toLocaleDateString()}`}</small>
+            </div>
+          ))}
+          {t.inbound.map((m) => (
+            <div key={`i${m.id}`}>
+              <Link href={`/threads/${t.thread_key}`}>{m.subject}</Link> <small>← {m.from_email}
+                {m.received_at && ` ${new Date(m.received_at).toLocaleDateString()}`}</small>
             </div>
           ))}
         </div>

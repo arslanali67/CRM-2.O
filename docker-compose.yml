@@ -1,6 +1,7 @@
 # All published ports bind to 127.0.0.1 only: laptop-only app (PROJECT.md §8 Q3).
 x-backend: &backend
   build: ./backend
+  image: crm-backend:local  # one image for api, worker and beat, so they can never run different code
   env_file: .env
   environment:
     DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD}@postgres:5432/crm
