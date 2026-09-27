@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
+import { Analysis } from "./analysis";
 import { LabelBadge } from "./label";
 
 
@@ -48,6 +49,8 @@ export default function Inbox() {
   const [label, setLabel] = useState("");
   const [msgs, setMsgs] = useState(null);
   const [open, setOpen] = useState(null);
+  const [ai, setAi] = useState(null);
+  useEffect(() => { fetch("/api/ai/status").then((r) => r.ok && r.json()).then((d) => d && setAi(d)); }, []);
 
   async function load(query = q, lab = label) {
     const params = new URLSearchParams(Object.entries({ q: query, label: lab }).filter(([, v]) => v));
@@ -57,8 +60,8 @@ export default function Inbox() {
   }
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function show(id) {
-    setOpen(open?.id === id ? null : await fetch(`/api/inbox/${id}`).then((r) => r.json()));
+  async function show(id, keepOpen = false) {
+    setOpen(open?.id === id && !keepOpen ? null : await fetch(`/api/inbox/${id}`).then((r) => r.json()));
   }
 
   if (!msgs) return <p>Loading…</p>;
@@ -69,6 +72,11 @@ export default function Inbox() {
       <h1>Inbox</h1>
       <p style={{ color: "gray" }}>Only outreach-related messages are stored. The system never replies on its own.</p>
       <SyncStatus onSynced={() => load()} />
+      {ai && (
+        <p><small>AI analysis ({ai.model}): {ai.enabled ? `on · ${ai.ok || 0} analysed, ${ai.pending} waiting` +
+          `${ai.error ? `, ${ai.error} errors` : ""}` : "off (add GEMINI_API_KEY to .env)"}.
+          Only replies are analysed; quoted history is removed first.</small></p>
+      )}
       <form onSubmit={(e) => { e.preventDefault(); load(); }} style={{ display: "flex", gap: 6 }}>
         <input placeholder="Search sender or subject" aria-label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
         <select aria-label="Label" value={label} onChange={(e) => { setLabel(e.target.value); load(q, e.target.value); }}>
@@ -88,13 +96,18 @@ export default function Inbox() {
                 <td>{m.subject}{m.mailbox === "spam" && <mark> spam</mark>}{m.attachment_names.length > 0 && " 📎"}
                   <div><small style={{ color: "gray" }}>{m.snippet}</small></div></td>
                 <td>{m.company_id ? <Link href={`/companies/${m.company_id}`}>{m.company_name}</Link> : "—"}</td>
-                <td><LabelBadge m={m} /><div><small style={{ color: "gray" }}>{m.label_rule}</small></div></td>
+                <td><LabelBadge m={m} /><div><small style={{ color: "gray" }}>{m.label_rule}</small></div>
+                  {m.ai_label && <div><small>AI: <b>{m.ai_label.replaceAll("_", " ")}</b></small></div>}</td>
                 <td><small>{m.received_at && new Date(m.received_at).toLocaleString()}</small></td>
               </tr>
               {open?.id === m.id && (
                 <tr><td colSpan={5} style={{ background: "#fafafa", padding: 12 }}>
                   <div><small>To: {open.to_emails} · <Link href={`/threads/${open.thread_key}`}>open thread</Link>
                     {open.attachment_names.length > 0 && ` · attachments: ${open.attachment_names.join(", ")} (not stored)`}</small></div>
+                  {open.label === "reply" && (
+                    <Analysis messageId={open.id} analysis={open.analysis} aiEnabled={ai?.enabled}
+                              onChange={() => { show(open.id, true); load(); }} />
+                  )}
                   <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{open.body_text}{open.body_truncated && "\n[truncated]"}</pre>
                 </td></tr>
               )}

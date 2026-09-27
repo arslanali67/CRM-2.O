@@ -48,6 +48,21 @@ def no_real_mail(monkeypatch):
         monkeypatch.setattr(obj, name, _blocked)
 
 
+class RealAIBlocked(RuntimeError):
+    pass
+
+
+@pytest.fixture(autouse=True)
+def no_real_ai(monkeypatch):
+    """Every test: calls to Gemini raise, and no real key is ever used. Tests install a fake model on top."""
+    from app import ai_analysis, settings
+
+    def blocked(*a, **kw):
+        raise RealAIBlocked("tests must never call the real Gemini API; install a fake")
+    monkeypatch.setattr(ai_analysis, "post_json", blocked)
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+
+
 @pytest.fixture
 def gmail(monkeypatch):
     """The fake Gmail from tests/fakes.py, installed over the no_real_mail guard."""
@@ -109,7 +124,8 @@ def _clean_rollback_conn(test_url, **kwargs):
     """
     with psycopg.connect(test_url, **kwargs) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
-        for table in ("inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts", "companies"):
+        for table in ("ai_analyses", "inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts",
+                      "companies"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("DELETE FROM app_settings")
         conn.execute("INSERT INTO app_settings DEFAULT VALUES")
@@ -143,6 +159,7 @@ def client(test_url, monkeypatch):
         # Test-DB only: skip triggers so guarded tables (suppressions) can be reset.
         conn.execute("SET session_replication_role = replica")
         conn.execute("DELETE FROM suppressions")
+        conn.execute("DELETE FROM ai_analyses")
         conn.execute("DELETE FROM inbound_messages")
         conn.execute("DELETE FROM mailbox_sync")
         conn.execute("DELETE FROM outbound_emails")

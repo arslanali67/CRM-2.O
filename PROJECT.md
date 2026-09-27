@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.18
+- **Spec version:** 1.19
 - **Last updated:** 2026-09-27
 
 ---
@@ -221,6 +221,13 @@ Goal: never miss a reply, never answer automatically.
   - Tests: realistic `.eml` fixture corpus (hard/soft bounces incl. Exchange NDR, Outlook and German OOO, header-only auto-reply, in-thread reply, colleague reply, company newsletter, personal mail).
   - Depends on: M14. Done when: 100% correct on bounce/OOO/reply fixtures.
 - **M16 AI reply analysis [AI].** 12 classification labels; extraction of dates, links and documents, each field with a verbatim evidence quote.
+  - **Labels (12):** `interview_request`, `interested`, `needs_info`, `scheduling`, `application_redirect`, `referral`, `keep_on_file`, `not_hiring`, `rejection`, `offer`, `unsubscribe_request` (suggestion only; the AI never blocks), `other`.
+  - **Extraction:** dates (interview slots, deadlines, start dates, availability), links (portal, booking, assessment, video call), requested documents, contact people (referrals), plus a label evidence quote.
+  - **Evidence enforced in code:** every quote must appear verbatim (whitespace-normalised) in the analysed text; links must appear literally; anything unverified is dropped and logged. No action is ever triggered by AI output.
+  - **Scope & privacy:** only M15 `reply` messages are analysed; quoted history (e.g. `>` lines, "On … wrote:") is stripped before sending; email text is treated as untrusted data. Gemini free tier (Google may use free-tier inputs).
+  - **Runs:** background task every 2 minutes, up to 5 new replies per run, throttled; manual re-run. Results on Inbox and thread pages.
+  - **Config:** `GEMINI_API_KEY` in `.env` (added by the owner), model name configurable.
+  - **Evaluation:** ~40 synthetic reply emails (English/German, all labels); automated tests use a fake Gemini; the ≥90% check is one real run through the owner's key (approved).
   - Depends on: M15. Done when: ≥90% label accuracy and 0 extracted fields without evidence.
 - **M17 Notifications.** Bell icon, priority by classification, deep link to the reply.
   - Depends on: M16. Done when: exactly one notification per event, deep-linked.
@@ -317,7 +324,6 @@ Anything not listed in this file, including:
 ## 7. Known gaps
 
 The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pdf` for full per-milestone detail. That blueprint is **not** in this folder. Items it defines are not in scope here until they are added to this file:
-- The 12 AI reply labels (M16).
 - Safety test cases S1–S12 (M31).
 - Intermediate opportunity stages (M19). (Lead stages were decided in v1.8, see M6.)
 
@@ -355,3 +361,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.16 | M14 detailed: read-only IMAP sync of All Mail + Spam with UID cursors, 14-day first look-back, resync + daily re-scan, only outreach-relevant messages stored, Inbox page, simulated and real 24 h soak. Refined during build: bounces count only within 3 days after a CRM send (privacy; narrows the approved rule). | Owner |
 | 2026-09-27 | 1.17 | Gate waiver recorded: Wk 11–12 real test send deferred by the owner; M13–M15 built under the waiver. | Owner |
 | 2026-09-27 | 1.18 | M15 detailed: five ordered rules with DSN parsing and auto-reply headers; effects: replied stage, bounced marking, hard bounce → do-not-contact, reply → cancel pending emails to that company. | Owner |
+| 2026-09-27 | 1.19 | M16 detailed: the 12 AI labels (closes §7 gap), code-enforced verbatim evidence, replies only with quoted history stripped, background analysis, synthetic evaluation set with one approved real run. | Owner |

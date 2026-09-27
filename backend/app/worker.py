@@ -8,6 +8,8 @@ celery_app.conf.beat_schedule = {
     "send-tick": {"task": "app.worker.send_tick", "schedule": 30.0, "options": {"expires": 25}},
     # Read-only inbox sync (M14).
     "inbox-sync": {"task": "app.worker.inbox_sync", "schedule": 120.0, "options": {"expires": 110}},
+    # AI analysis of new replies (M16); does nothing without GEMINI_API_KEY.
+    "ai-analysis": {"task": "app.worker.ai_analysis", "schedule": 120.0, "options": {"expires": 110}},
 }
 
 
@@ -26,3 +28,9 @@ def send_tick() -> dict:
 def inbox_sync() -> dict:
     from app.inbox_sync import sync_once
     return sync_once()
+
+
+@celery_app.task
+def ai_analysis() -> dict:
+    from app.ai_analysis import analyse_pending
+    return analyse_pending()

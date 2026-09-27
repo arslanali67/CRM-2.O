@@ -1,0 +1,282 @@
+[
+ {
+  "id": 1,
+  "expected": "interview_request",
+  "subject": "Re: Application ML Engineer",
+  "body": "Hi Arslan,\n\nthanks for reaching out. Your background looks great and we'd like to invite you to a 30-minute video interview. Would Thursday 1 October at 14:00 work for you?\n\nBest,\nLena",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 2,
+  "expected": "interview_request",
+  "subject": "Re: Backend Engineer",
+  "body": "Hello,\n\nWe would like to get to know you better. Please pick a time for a first interview here: https://calendly.com/acme-hr/first-interview\n\nKind regards\nTom",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 3,
+  "expected": "interview_request",
+  "subject": "AW: Bewerbung",
+  "body": "Hallo Arslan,\n\nvielen Dank für Ihre Nachricht. Wir würden Sie gerne zu einem ersten Kennenlerngespräch einladen. Hätten Sie am Montag, 5. Oktober um 11 Uhr Zeit?\n\nViele Grüße\nJulia",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 4,
+  "expected": "interview_request",
+  "subject": "Re: Hello",
+  "body": "Hi! Let's set up a quick call with our head of engineering next week. When are you free?\n\nCheers, Max",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 5,
+  "expected": "interview_request",
+  "subject": "Re: Application",
+  "body": "Thanks Arslan! The team reviewed your CV. Next step would be a technical interview with two engineers - are you available sometime next week?\n\nBest, Sara",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 6,
+  "expected": "interested",
+  "subject": "Re: Application",
+  "body": "Hi Arslan,\n\nthanks, this sounds interesting! Could you send us your CV and a short summary of your ML projects? We'll review it with the team.\n\nBest, Anna",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 7,
+  "expected": "interested",
+  "subject": "AW: Initiativbewerbung",
+  "body": "Hallo,\n\ndanke für Ihr Interesse an uns. Klingt spannend! Schicken Sie uns gerne Ihren Lebenslauf und Ihr Portfolio, dann melden wir uns.\n\nBeste Grüße\nMarkus",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 8,
+  "expected": "interested",
+  "subject": "Re: Hello Beta",
+  "body": "Thanks for getting in touch - your profile fits what we are building. Can you share your GitHub or some code samples?\n\nPaul",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 9,
+  "expected": "needs_info",
+  "subject": "Re: ML Engineer",
+  "body": "Hi Arslan,\n\nbefore we continue: do you currently have a work permit for Germany, or would you need visa sponsorship? And what are your salary expectations?\n\nThanks,\nSara",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 10,
+  "expected": "needs_info",
+  "subject": "AW: Bewerbung Backend",
+  "body": "Hallo Herr Ali,\n\nab wann könnten Sie frühestens anfangen und wie ist Ihre Kündigungsfrist?\n\nMit freundlichen Grüßen\nPeter Braun",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 11,
+  "expected": "needs_info",
+  "subject": "Re: Hello",
+  "body": "Quick question: are you open to working on-site in Munich three days a week, or only remote?\n\nBest, Kim",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 12,
+  "expected": "needs_info",
+  "subject": "Re: Hello",
+  "body": "Hi Arslan, thanks for writing. Which of our open roles are you applying for - the data engineer or the ML platform role?\n\nBest, Nina",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 13,
+  "expected": "scheduling",
+  "subject": "Re: Interview Thursday",
+  "body": "Hi Arslan,\n\nconfirming our interview on Thursday at 14:00. Here is the video link: https://meet.google.com/abc-defg-hij\n\nSee you then,\nLena",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 14,
+  "expected": "scheduling",
+  "subject": "Re: Our call",
+  "body": "Hi, something came up - could we move our call from Wednesday to Friday 9 October at 10:30?\n\nSorry for the short notice, Tom",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 15,
+  "expected": "scheduling",
+  "subject": "AW: Termin",
+  "body": "Hallo Arslan,\n\nhiermit bestätige ich unseren Termin am Dienstag um 15 Uhr in unserem Büro in der Friedrichstraße 10.\n\nBis dann\nJulia",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 16,
+  "expected": "application_redirect",
+  "subject": "Re: Application",
+  "body": "Hello,\n\nthank you for your interest. We only accept applications through our careers portal, please apply here: https://jobs.acme.de/ml-engineer\n\nKind regards, HR Team",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 17,
+  "expected": "application_redirect",
+  "subject": "AW: Bewerbung",
+  "body": "Guten Tag,\n\nbitte bewerben Sie sich über unser Bewerberportal unter https://karriere.beta.io/stellen. Bewerbungen per E-Mail können wir leider nicht berücksichtigen.\n\nIhr Recruiting-Team",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 18,
+  "expected": "application_redirect",
+  "subject": "Re: Hello",
+  "body": "Hi Arslan, thanks! Please submit your application via the Personio form on our website so it reaches the right team.\n\nBest, Nina",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 19,
+  "expected": "referral",
+  "subject": "Re: ML role",
+  "body": "Hi Arslan,\n\nI'm not the right person for this, but I've forwarded your email to our CTO, Ben Weber. He will get back to you.\n\nBest,\nAnna",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 20,
+  "expected": "referral",
+  "subject": "Re: Application",
+  "body": "Hello, please reach out to our talent lead Maria Lopez at maria.lopez@gamma.fr - she handles all engineering hiring.\n\nThanks, Luc",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 21,
+  "expected": "referral",
+  "subject": "AW: Anfrage",
+  "body": "Hallo Arslan,\n\nfür technische Stellen ist Herr Klein zuständig (klein@delta.de). Ich habe ihn in Kopie gesetzt.\n\nGrüße\nSabine",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 22,
+  "expected": "keep_on_file",
+  "subject": "Re: Application",
+  "body": "Hi Arslan,\n\nthank you for your application. We don't have an opening that matches right now, but we will keep your CV on file and contact you when something comes up.\n\nBest regards, HR",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 23,
+  "expected": "keep_on_file",
+  "subject": "AW: Initiativbewerbung",
+  "body": "Hallo Herr Ali,\n\nderzeit haben wir keine passende Stelle, wir nehmen Ihre Unterlagen aber gerne in unseren Talentpool auf und melden uns bei passenden Vakanzen.\n\nFreundliche Grüße",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 24,
+  "expected": "keep_on_file",
+  "subject": "Re: Hello",
+  "body": "Nothing open at the moment, but I've saved your profile and will reach out in Q1 when we plan new hires.\n\nCheers, Jonas",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 25,
+  "expected": "not_hiring",
+  "subject": "Re: Application",
+  "body": "Hello Arslan,\n\nthanks for your message. Unfortunately we are not hiring at the moment due to a hiring freeze.\n\nKind regards, Anna",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 26,
+  "expected": "not_hiring",
+  "subject": "AW: Bewerbung",
+  "body": "Hallo,\n\nleider stellen wir aktuell keine neuen Mitarbeiter ein.\n\nViele Grüße\nTeam Epsilon",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 27,
+  "expected": "not_hiring",
+  "subject": "Re: Hello",
+  "body": "Hi, we are a small team and currently have no open positions. Good luck with your search!\n\nMark",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 28,
+  "expected": "rejection",
+  "subject": "Re: ML Engineer application",
+  "body": "Dear Arslan,\n\nthank you for your interest. After careful review we have decided not to move forward with your application, as we are looking for someone with more senior experience.\n\nBest wishes, HR",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 29,
+  "expected": "rejection",
+  "subject": "AW: Ihre Bewerbung",
+  "body": "Sehr geehrter Herr Ali,\n\nnach sorgfältiger Prüfung müssen wir Ihnen leider mitteilen, dass wir uns für andere Kandidaten entschieden haben.\n\nMit freundlichen Grüßen",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 30,
+  "expected": "rejection",
+  "subject": "Re: Hello",
+  "body": "Hi Arslan, thanks for the chat last week. Unfortunately we don't think it's the right fit for this role.\n\nAll the best, Tom",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 31,
+  "expected": "rejection",
+  "subject": "Re: Interview follow-up",
+  "body": "Hi Arslan,\n\nthank you for taking the time to interview with us. We've decided to proceed with another candidate for this position.\n\nKind regards, Kim",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 32,
+  "expected": "offer",
+  "subject": "Offer - ML Engineer",
+  "body": "Hi Arslan,\n\nwe are delighted to offer you the position of ML Engineer at Acme! Attached you'll find the contract. Your start date would be 1 November 2026.\n\nWelcome aboard,\nLena",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 33,
+  "expected": "offer",
+  "subject": "AW: Vertragsangebot",
+  "body": "Hallo Arslan,\n\nwir freuen uns, Ihnen die Stelle als Backend Engineer anzubieten. Den Arbeitsvertrag senden wir Ihnen bis Freitag zu.\n\nHerzliche Grüße\nJulia",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 34,
+  "expected": "offer",
+  "subject": "Re: Next steps",
+  "body": "Great news - the team loved you and we'd like to make you an offer: 72k EUR base plus equity. Can you let us know by 10 October?\n\nBest, Paul",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 35,
+  "expected": "unsubscribe_request",
+  "subject": "Re: Hello",
+  "body": "Please remove me from your mailing list and do not contact me again.\n\nThanks",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 36,
+  "expected": "unsubscribe_request",
+  "subject": "AW: Bewerbung",
+  "body": "Bitte kontaktieren Sie uns nicht mehr. Wir wünschen keine weiteren E-Mails.\n\nMfG",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 37,
+  "expected": "unsubscribe_request",
+  "subject": "Re: Application",
+  "body": "Stop emailing this address. We never agreed to receive these messages.\n\n- Office",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 38,
+  "expected": "other",
+  "subject": "Re: Hello",
+  "body": "Hi Arslan, nice to hear from you - we met at PyData last year, right? Hope you are well!\n\nMax",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 39,
+  "expected": "other",
+  "subject": "Re: Application",
+  "body": "Thanks, I received your email.\n\nBest, Anna",
+  "received": "2026-09-28T09:00:00+00:00"
+ },
+ {
+  "id": 40,
+  "expected": "other",
+  "subject": "AW: Anfrage",
+  "body": "Hallo, danke für die Nachricht. Ich bin nur für den Einkauf zuständig und habe mit Personalthemen nichts zu tun.\n\nGruß",
+  "received": "2026-09-28T09:00:00+00:00"
+ }
+]

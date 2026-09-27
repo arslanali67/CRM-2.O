@@ -304,7 +304,10 @@ def sync_once() -> dict:
 INBOX_COLUMNS = ("m.id, m.gmail_thrid, coalesce(m.gmail_thrid, 'in-' || m.id) AS thread_key, m.mailbox, m.from_email, "
                  "m.from_name, m.subject, m.sent_date, m.received_at, m.relevance, m.outbound_email_id, m.company_id, "
                  "c.name AS company_name, m.contact_id, m.attachment_names, left(m.body_text, 200) AS snippet, "
-                 "m.label, m.label_rule, m.bounce_type")
+                 "m.label, m.label_rule, m.bounce_type, a.label AS ai_label, a.summary AS ai_summary, "
+                 "a.status AS ai_status")
+INBOX_FROM = ("FROM inbound_messages m LEFT JOIN companies c ON c.id = m.company_id "
+              "LEFT JOIN ai_analyses a ON a.inbound_message_id = m.id")
 
 
 @router.get("/inbox")
@@ -312,7 +315,7 @@ def inbox(company_id: int | None = None, q: str | None = None,
           label: Literal["bounce", "auto_reply", "reply", "unrelated"] | None = None, conn=Depends(get_db)):
     q = q.strip() if q and q.strip() else None
     return conn.execute(
-        f"SELECT {INBOX_COLUMNS} FROM inbound_messages m LEFT JOIN companies c ON c.id = m.company_id "
+        f"SELECT {INBOX_COLUMNS} {INBOX_FROM} "
         "WHERE (%(co)s::bigint IS NULL OR m.company_id = %(co)s) AND (%(label)s::text IS NULL OR m.label = %(label)s) "
         "AND (%(q)s::text IS NULL OR "
         "strpos(lower(m.from_email || ' ' || m.from_name || ' ' || m.subject), lower(%(q)s)) > 0) "
@@ -337,6 +340,7 @@ def inbox_message(message_id: int, conn=Depends(get_db)):
                      (message_id,)).fetchone()
     if not m:
         raise HTTPException(404, "Message not found")
+    m["analysis"] = conn.execute("SELECT * FROM ai_analyses WHERE inbound_message_id = %s", (message_id,)).fetchone()
     return m
 
 

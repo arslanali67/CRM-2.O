@@ -59,6 +59,7 @@ export function describe(e) {
     "sending.enabled": "Sending switched ON",
     "sending.disabled": "Sending switched OFF",
     "inbound.labeled": `${{ reply: "Reply", auto_reply: "Auto-reply", bounce: "Bounce", unrelated: "Unrelated message" }[d.label] || "Message"} from ${d.from_email}: ${d.subject}${d.effects?.length ? ` (${d.effects.join(", ")})` : ""}`,
+    "inbound.analysed": `AI analysis: ${d.ai_label ? d.ai_label.replaceAll("_", " ") : "label not proven"}${d.dropped ? ` (${d.dropped} unproven item(s) dropped)` : ""}`,
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;
