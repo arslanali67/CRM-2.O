@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 11 / 35**
+**Progress: 12 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -20,7 +20,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 1B: Outreach (Wk 7–12)
 - [x] M8 Email templates
 - [x] M21 Notes & tasks
-- [ ] M26 Email safety controls (GATE)
+- [x] M26 Email safety controls (GATE)
 - [ ] M10 Email composer
 - [ ] M11 Email provider integration
 - [ ] M12 Email sending (GATE)
