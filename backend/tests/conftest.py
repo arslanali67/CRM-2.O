@@ -48,7 +48,7 @@ def db(test_url):
 
 @pytest.fixture
 def client(test_url, monkeypatch):
-    """Signed-in API client on a freshly reset profile/CV state (changes are committed)."""
+    """Signed-in API client on freshly reset app tables (changes are committed)."""
     from fastapi.testclient import TestClient
 
     from app import settings
@@ -59,6 +59,8 @@ def client(test_url, monkeypatch):
         conn.execute("DELETE FROM profile")
         conn.execute("INSERT INTO profile DEFAULT VALUES")
         conn.execute("DELETE FROM cv_versions")
+        conn.execute("DELETE FROM contacts")
+        conn.execute("DELETE FROM companies")
     c = TestClient(app)
     assert c.post("/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD}).status_code == 200
     return c

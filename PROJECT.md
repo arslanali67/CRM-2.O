@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.3
+- **Spec version:** 1.4
 - **Last updated:** 2026-09-27
 
 ---
@@ -87,6 +87,13 @@ Goal: clean companies in, nothing sent out yet.
   - Profile saves, CV uploads and default changes are written to `audit_log`.
   - Depends on: M2. Done when: all `my_*` variables resolve and a default CV is set.
 - **M5 Companies & contacts [CORE].** CRUD, provenance (where each record came from), email classes: careers / personal / generic / unsuitable.
+  - **Companies:** name (required), domain (normalized: lowercase, no scheme/`www.`/path), website, industry, city, country, description, LinkedIn URL. DB-enforced: no two active companies share a domain.
+  - **Contacts:** company (required), name, email, role, phone, LinkedIn URL; at least a name or an email. DB-enforced: no two active contacts share an email (case-insensitive).
+  - **Delete = archive** (`archived_at`), with restore. Nothing is hard-deleted.
+  - **Provenance:** `source` (`manual` / `csv_import`) plus source detail (file name, row number; filled by M4), created/updated timestamps.
+  - **Email classes (rules on the local part):** `careers` (jobs, careers, karriere, bewerbung, hr, recruiting, talent, personal, …), `generic` (info, contact, kontakt, hello, office, team, mail, support, sales, …), `unsuitable` (noreply, datenschutz, privacy, abuse, postmaster, billing, rechnung, presse, legal, newsletter, …, and malformed addresses), otherwise `personal`. Manual override per contact; a manual class is never overwritten by the rules.
+  - **UI:** Companies list (active, optionally archived) with add form; company page to edit it and add/edit/archive its contacts with class override.
+  - Create, update, archive and restore are written to `audit_log`.
   - Depends on: M2. Done when: CRUD and email classification are tested.
 - **M25 Do-not-contact list [SAFETY].** Block by email, domain or company, with an audited override.
   - Depends on: M5. Done when: no code path can send to a suppressed recipient.
@@ -247,3 +254,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.1 | Answered Q1–Q4: Gmail SMTP+IMAP, Gemini free tier (testing), laptop only, 20/day with 90 s gap. M11 narrowed to SMTP+IMAP (no OAuth). | Owner |
 | 2026-09-27 | 1.2 | M2 detailed: plain SQL migrations, `outbound_emails` with DB-enforced approval-hash constraint and partial unique indexes, append-only `audit_log`. M1: API has no published port (only reachable via web). | Owner |
 | 2026-09-27 | 1.3 | M3 detailed: profile fields, PDF CV versions in Postgres with one enforced default, 16 `my_*` variables, Profile page. | Owner |
+| 2026-09-27 | 1.4 | M5 detailed: company/contact fields, archive instead of delete, provenance, unique active domain/email, email-class rules with manual override, list + company pages. | Owner |
