@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.10
+- **Spec version:** 1.11
 - **Last updated:** 2026-09-27
 
 ---
@@ -147,6 +147,23 @@ Goal: approve every email, send exactly once.
   - **UI:** Tasks page grouped Overdue / Today / Upcoming / No date / Done; Home shows overdue and due-today counts. Company page: company notes and tasks plus per-contact notes. Template page: notes and tasks. Quick follow-up buttons (+3 days, +1 week).
   - Depends on: M5. Done when: notes/tasks appear on every entity page and the due list is correct.
 - **M26 Email safety controls [SAFETY].** 12 checks, run at approval **and** again at send (suppression, duplicates, unresolved variables, limits, …).
+  - **The 12 checks:**
+    1. Do-not-contact: recipient address/domain/company not blocked.
+    2. Valid address: well-formed, not a placeholder, sane top-level domain.
+    3. Known, suitable contact: recipient is an active stored contact whose class is not `unsuitable`.
+    4. Active lead: company not archived; stage not `closed` or `on_hold`.
+    5. No duplicate in flight: no other approved/queued/sending email to the same address.
+    6. Recipient cooldown: no email sent to this address in the last 30 days.
+    7. Company cooldown: no email sent to anyone at this company in the last 14 days.
+    8. Variables resolved: no `{{…}}` or stray braces left in subject or body.
+    9. Content complete: subject 1–200 characters, body 1–20,000 characters.
+    10. Approval valid (send only): approval present, content unchanged since approval, approval at most 7 days old.
+    11. Rate limits: at send, fewer than 20 sent in the last 24 hours and at least 90 s since the last send; at approval, fewer than 20 already approved/queued/sending.
+    12. Kill switch (send only): sending is enabled.
+  - **Approval** runs all approval-stage checks; any failure refuses approval and names every failed check.
+  - **Send** re-runs all 12 under a row lock. Failures of 11–12 are temporary (the email waits in the queue); any other failure cancels the email with the reasons.
+  - Failed check runs are written to `audit_log`.
+  - **Schema:** `outbound_emails` gains `contact_id`, `company_id`, `template_version_id`; a single-row `app_settings` holds `sending_enabled` (default **off**), daily cap 20, gap 90 s, cooldowns 30 / 14 days, approval max age 7 days. UI for settings is M29; kill-switch toggle is M12.
   - Depends on: M25, M8. Done when: all 12 gates are tested and re-checked at send time.
 - **M10 Email composer [SAFETY].** Exact preview, per-email approval bound to a content hash (editing after approval voids approval), no "approve all".
   - Depends on: M8, M26. Done when: nothing is queued without per-email approval.
@@ -262,7 +279,6 @@ Anything not listed in this file, including:
 ## 7. Known gaps
 
 The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pdf` for full per-milestone detail. That blueprint is **not** in this folder. Items it defines are not in scope here until they are added to this file:
-- The exact list of the 12 email safety checks (M26).
 - The 12 AI reply labels (M16).
 - Safety test cases S1–S12 (M31).
 - Intermediate opportunity stages (M19). (Lead stages were decided in v1.8, see M6.)
@@ -293,3 +309,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.8 | M6 detailed: lead stages new / qualified / contacted / replied / closed + on_hold (closes §7 lead-stage gap), DB-logged stage changes, Leads page with filters and bulk actions, compose list with best-recipient pick. | Owner |
 | 2026-09-27 | 1.9 | M8 detailed: immutable template versions, 26 variables, save-time and render-time strict checks, `{{var \| fallback}}` syntax, preview against a real lead. | Owner |
 | 2026-09-27 | 1.10 | M21 detailed: notes on companies/contacts/templates, owner tasks with date-only due dates judged by the browser's date, Tasks page and per-page panels. | Owner |
+| 2026-09-27 | 1.11 | M26 detailed: the 12 safety checks (closes §7 gap), approval/send semantics, `outbound_emails` links, `app_settings` with sending off by default. | Owner |

@@ -38,20 +38,33 @@ def test_url():
     return url
 
 
-@pytest.fixture
-def db(test_url):
+def _clean_rollback_conn(test_url, **kwargs):
     """Connection whose changes are rolled back after the test.
 
-    Starts with no blocks, emails, companies or contacts (cleared inside the same
-    transaction, so the rollback restores whatever API tests committed).
+    Starts with no blocks, emails, companies or contacts and default settings (reset inside
+    the same transaction, so the rollback restores whatever API tests committed).
     """
-    with psycopg.connect(test_url) as conn:
+    with psycopg.connect(test_url, **kwargs) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
         for table in ("suppressions", "outbound_emails", "compose_list", "contacts", "companies"):
             conn.execute(f"DELETE FROM {table}")
+        conn.execute("DELETE FROM app_settings")
+        conn.execute("INSERT INTO app_settings DEFAULT VALUES")
         conn.execute("SET LOCAL session_replication_role = DEFAULT")
         yield conn
         conn.rollback()
+
+
+@pytest.fixture
+def db(test_url):
+    yield from _clean_rollback_conn(test_url)
+
+
+@pytest.fixture
+def ddb(test_url):
+    """Like db, but rows come back as dicts (what app code expects)."""
+    from psycopg.rows import dict_row
+    yield from _clean_rollback_conn(test_url, row_factory=dict_row)
 
 
 @pytest.fixture
