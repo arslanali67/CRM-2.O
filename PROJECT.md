@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.4
+- **Spec version:** 1.5
 - **Last updated:** 2026-09-27
 
 ---
@@ -96,6 +96,11 @@ Goal: clean companies in, nothing sent out yet.
   - Create, update, archive and restore are written to `audit_log`.
   - Depends on: M2. Done when: CRUD and email classification are tested.
 - **M25 Do-not-contact list [SAFETY].** Block by email, domain or company, with an audited override.
+  - **Block types:** email (exact address); domain (the domain and all its subdomains); company (the company's domain and subdomains, plus every contact stored under that company). Each block needs a reason. At most one active block per email / domain / company.
+  - **Audited override = lift:** lifting a block requires a written reason. Blocks are never deleted or edited (DB-enforced); a lifted block stays listed with when and why. Adding and lifting are written to `audit_log`.
+  - **DB enforcement:** a trigger refuses any `outbound_emails` insert/update into `approved` / `queued` / `sending` whose recipient is actively blocked. Adding a block automatically cancels matching `approved` / `queued` emails, each cancellation written to `audit_log`. An email already `sending` cannot be recalled; M12's pre-send check covers it.
+  - **UI:** Do-not-contact page (add block, list active and lifted blocks, lift with reason). Company page: "Block company" button and a "blocked" badge on suppressed contacts.
+  - Blocked rows during CSV import are handled in M4.
   - Depends on: M5. Done when: no code path can send to a suppressed recipient.
 - **M4 CSV import [CORE].** Upload, `ai_companies` preset, batch city/country, validation, preview, error CSV download, dedupe on import.
   - Depends on: M5, M25. Done when: the Berlin CSV imports as 91 companies and re-import creates 0 duplicates.
@@ -255,3 +260,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.2 | M2 detailed: plain SQL migrations, `outbound_emails` with DB-enforced approval-hash constraint and partial unique indexes, append-only `audit_log`. M1: API has no published port (only reachable via web). | Owner |
 | 2026-09-27 | 1.3 | M3 detailed: profile fields, PDF CV versions in Postgres with one enforced default, 16 `my_*` variables, Profile page. | Owner |
 | 2026-09-27 | 1.4 | M5 detailed: company/contact fields, archive instead of delete, provenance, unique active domain/email, email-class rules with manual override, list + company pages. | Owner |
+| 2026-09-27 | 1.5 | M25 detailed: email/domain/company blocks with reason, lift-with-reason as the audited override, DB trigger refusing approve/queue/send to blocked recipients, auto-cancel of pending emails on new block. | Owner |

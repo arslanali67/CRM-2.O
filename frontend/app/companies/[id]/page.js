@@ -53,6 +53,10 @@ export default function Company() {
     if (await run(call(`/api/contacts/${cid}`, "PUT", body), "Contact saved.")) setEditing(null);
   };
   const archiveContact = (cid, archive) => run(call(`/api/contacts/${cid}/${archive ? "archive" : "restore"}`, "POST"), archive ? "Contact archived." : "Contact restored.");
+  const blockCompany = () => {
+    const reason = window.prompt(`Why block ${company.name}? Blocks its domain and all its contacts.`);
+    if (reason?.trim()) run(call("/api/suppressions", "POST", { kind: "company", company_id: company.id, reason }), "Company blocked.");
+  };
 
   if (!company) return <p>{msg || "Loading…"}</p>;
 
@@ -65,6 +69,13 @@ export default function Company() {
         {company.source_detail?.file && ` (${company.source_detail.file}, row ${company.source_detail.row})`}
         {" · "}created {new Date(company.created_at).toLocaleString()}
       </p>
+      {company.block ? (
+        <p style={{ color: "crimson" }}>
+          Blocked: {company.block.reason} (<Link href="/do-not-contact">manage on Do-not-contact</Link>)
+        </p>
+      ) : (
+        <p><button onClick={blockCompany}>Block company</button></p>
+      )}
       {msg && <p role="status">{msg}</p>}
 
       <form onSubmit={saveCompany} style={{ display: "grid", gap: 8 }}>
@@ -108,6 +119,7 @@ export default function Company() {
               <>
                 <strong>{c.name || c.email}</strong>{c.role && ` · ${c.role}`}
                 {c.email && <> · {c.email} <mark>{c.email_class}{c.email_class_manual ? " (manual)" : ""}</mark></>}
+                {c.suppressed && <> <mark style={{ background: "crimson", color: "white" }}>blocked</mark></>}
                 {c.archived_at && " · archived"}{" "}
                 {!c.archived_at && (
                   <button onClick={() => setEditing({

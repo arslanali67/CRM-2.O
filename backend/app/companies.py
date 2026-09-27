@@ -148,9 +148,15 @@ def create_company(body: CompanyIn, conn=Depends(get_db)):
 @router.get("/companies/{company_id}")
 def get_company(company_id: int, conn=Depends(get_db)):
     company = fetch(conn, "companies", company_id)
-    company["contacts"] = conn.execute(
-        "SELECT * FROM contacts WHERE company_id = %s ORDER BY archived_at IS NOT NULL, lower(name), id",
+    block = conn.execute(
+        "SELECT id, reason FROM suppressions WHERE kind = 'company' AND company_id = %s AND lifted_at IS NULL",
         (company_id,),
+    ).fetchone()
+    company["block"] = block
+    company["contacts"] = conn.execute(
+        "SELECT *, (%s OR (email <> '' AND is_suppressed(email))) AS suppressed FROM contacts "
+        "WHERE company_id = %s ORDER BY archived_at IS NOT NULL, lower(name), id",
+        (block is not None, company_id),
     ).fetchall()
     return company
 
