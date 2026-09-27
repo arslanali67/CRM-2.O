@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.9
+- **Spec version:** 1.10
 - **Last updated:** 2026-09-27
 
 ---
@@ -141,6 +141,10 @@ Goal: approve every email, send exactly once.
   - **UI:** Templates page (list, create, edit → new version, version history, archive), variable reference with click-to-insert, preview against a chosen lead using its best recipient (M6).
   - Depends on: M3, M6. Done when: templates are versioned and unresolved variables are always caught.
 - **M21 Notes & tasks.** Notes on every entity; follow-ups are tasks for the owner, never emails.
+  - **Notes** on companies, contacts and templates (M19/M20 add opportunities and interviews): plain text, created/edited times, edit, soft delete (hidden but kept). All changes audited.
+  - **Tasks** for the owner: title, optional date-only due date, optional details, optionally linked to a company / contact / template; done/reopen, edit, soft delete. Tasks have no link to sending and can never trigger an email.
+  - **"Today"** is the owner's browser date (sent with the request), so due status follows the laptop's timezone.
+  - **UI:** Tasks page grouped Overdue / Today / Upcoming / No date / Done; Home shows overdue and due-today counts. Company page: company notes and tasks plus per-contact notes. Template page: notes and tasks. Quick follow-up buttons (+3 days, +1 week).
   - Depends on: M5. Done when: notes/tasks appear on every entity page and the due list is correct.
 - **M26 Email safety controls [SAFETY].** 12 checks, run at approval **and** again at send (suppression, duplicates, unresolved variables, limits, …).
   - Depends on: M25, M8. Done when: all 12 gates are tested and re-checked at send time.
@@ -288,3 +292,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.7 | M4 detailed: preview-then-import flow, `ai_companies` column mapping, email cleaning with same-brand rule, dedupe, blocked rows skipped, error CSV; real CSV kept out of the public repo. | Owner |
 | 2026-09-27 | 1.8 | M6 detailed: lead stages new / qualified / contacted / replied / closed + on_hold (closes §7 lead-stage gap), DB-logged stage changes, Leads page with filters and bulk actions, compose list with best-recipient pick. | Owner |
 | 2026-09-27 | 1.9 | M8 detailed: immutable template versions, 26 variables, save-time and render-time strict checks, `{{var \| fallback}}` syntax, preview against a real lead. | Owner |
+| 2026-09-27 | 1.10 | M21 detailed: notes on companies/contacts/templates, owner tasks with date-only due dates judged by the browser's date, Tasks page and per-page panels. | Owner |

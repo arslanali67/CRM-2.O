@@ -8,7 +8,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import activity, companies, csv_import, leads, profile, settings, suppressions, templates
+from app import activity, companies, csv_import, leads, notes_tasks, profile, settings, suppressions, templates
 from app.auth import verify_password
 from app.deps import require_owner
 from app.worker import celery_app
@@ -46,6 +46,7 @@ app.include_router(activity.router)
 app.include_router(csv_import.router)
 app.include_router(leads.router)
 app.include_router(templates.router)
+app.include_router(notes_tasks.router)
 
 
 class LoginIn(BaseModel):

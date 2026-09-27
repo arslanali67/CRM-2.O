@@ -29,6 +29,14 @@ export function describe(e) {
     "template.renamed": `Template renamed to ${d.name}`,
     "template.archived": "Template archived",
     "template.restored": "Template restored",
+    "note.created": "Note added",
+    "note.edited": "Note edited",
+    "note.deleted": "Note deleted",
+    "task.created": `Task added: ${d.title}${d.due_date ? ` (due ${d.due_date})` : ""}`,
+    "task.edited": `Task edited: ${d.title}`,
+    "task.completed": `Task done: ${d.title}`,
+    "task.reopened": `Task reopened: ${d.title}`,
+    "task.deleted": `Task deleted: ${d.title}`,
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

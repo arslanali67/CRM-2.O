@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../../companies/shared";
+import { NotesPanel, TasksPanel } from "../../tasks/panels";
 import { TemplateFields } from "../editor";
 
 async function call(url, method = "GET", body) {
@@ -109,6 +110,9 @@ export default function Template() {
           )}
         </div>
       )}
+
+      <TasksPanel entityType="template" entityId={t.id} />
+      <NotesPanel entityType="template" entityId={t.id} />
 
       <h2 style={{ marginTop: 32 }}>Version history</h2>
       {t.versions.map((v) => (

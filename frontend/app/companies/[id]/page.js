@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EventList } from "../../activity/describe";
+import { NotesPanel, TasksPanel } from "../../tasks/panels";
 import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, STAGES, errorText } from "../shared";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
@@ -148,6 +149,10 @@ export default function Company() {
                   })}>Edit</button>
                 )}{" "}
                 <button onClick={() => archiveContact(c.id, !c.archived_at)}>{c.archived_at ? "Restore" : "Archive"}</button>
+                <details style={{ marginLeft: 16 }}>
+                  <summary><small>Notes on this contact</small></summary>
+                  <NotesPanel entityType="contact" entityId={c.id} compact />
+                </details>
               </>
             )}
           </li>
@@ -163,6 +168,9 @@ export default function Company() {
         ))}
         <button type="submit">Add contact</button>
       </form>
+
+      <TasksPanel entityType="company" entityId={company.id} />
+      <NotesPanel entityType="company" entityId={company.id} />
 
       <h2 style={{ marginTop: 32 }}>Timeline</h2>
       <EventList events={timeline} />
