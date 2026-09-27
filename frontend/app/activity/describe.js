@@ -10,6 +10,13 @@ export function describe(e) {
       return `Safety checks failed at ${d.stage}: ${(d.failed || []).map((f) => `${f.name} (${f.detail})`).join("; ")}`;
     }
     if (d.reason === "safety_checks") return `Email to ${d.to_email} cancelled by safety checks`;
+    if (verb === "sending") return `Sending email to ${d.to_email}…`;
+    if (verb === "sent") return `Email to ${d.to_email} sent${d.via === "recovery" ? " (confirmed in Gmail Sent after an interruption)" : ""}`;
+    if (verb === "failed") return `Email to ${d.to_email} failed: ${d.reason}`;
+    if (verb === "queued" && d.reason) return `Email to ${d.to_email} back in the queue: ${d.reason}`;
+    if (verb === "send_retry") return `Send attempt did not reach Gmail (${d.reason}); will retry`;
+    if (verb === "send_interrupted") return `Send interrupted (${d.reason}); checking Gmail Sent before doing anything else`;
+    if (verb === "recovered") return "Interrupted send confirmed in Gmail Sent";
     const why = d.reason === "do_not_contact" ? " (recipient blocked)" : "";
     return `Email to ${d.to_email} ${verb}${why}`;
   }
@@ -47,6 +54,8 @@ export function describe(e) {
     "email_account.saved": `Email account saved: ${d.email_address}`,
     "email_account.tested": `Email account test: ${d.ok ? "connected" : `failed (SMTP ${d.smtp_ok ? "ok" : "failed"}, IMAP ${d.imap_ok ? "ok" : "failed"})`}`,
     "email_account.disconnected": "Email account disconnected (app password deleted)",
+    "sending.enabled": "Sending switched ON",
+    "sending.disabled": "Sending switched OFF",
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

@@ -41,6 +41,10 @@ services:
     <<: *backend
     command: celery -A app.worker worker --loglevel=INFO --concurrency=1
 
+  beat:  # schedules the M12 send tick; the worker does the sending (single lane)
+    <<: *backend
+    command: celery -A app.worker beat --loglevel=INFO --schedule /tmp/celerybeat-schedule
+
   web:
     build: ./frontend
     depends_on: [api]

@@ -29,6 +29,25 @@ from app.migrate import MIGRATIONS_DIR, migrate  # noqa: E402
 TEST_DB = "crm_test"
 
 
+class RealMailServerBlocked(RuntimeError):
+    pass
+
+
+def _blocked(*args, **kwargs):
+    raise RealMailServerBlocked("tests must never contact a real mail server; install a fake")
+
+
+@pytest.fixture(autouse=True)
+def no_real_mail(monkeypatch):
+    """Every test: real SMTP/IMAP connections raise. Tests that need a server install a fake on top."""
+    import imaplib
+    import smtplib
+    # SSL classes are replaced outright; the base classes keep existing (their .error etc. are used)
+    # but cannot open a connection.
+    for obj, name in [(smtplib, "SMTP_SSL"), (imaplib, "IMAP4_SSL"), (smtplib.SMTP, "connect"), (imaplib.IMAP4, "open")]:
+        monkeypatch.setattr(obj, name, _blocked)
+
+
 @pytest.fixture(scope="session")
 def test_url():
     base = os.environ.get("TEST_DATABASE_URL") or os.environ["DATABASE_URL"]

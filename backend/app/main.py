@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import (activity, companies, composer, csv_import, leads, mail_account, notes_tasks, profile, safety,
-                 settings, suppressions, templates)
+                 sender, settings, suppressions, templates)
 from app.auth import verify_password
 from app.deps import require_owner
 from app.worker import celery_app
@@ -61,6 +61,7 @@ app.include_router(notes_tasks.router)
 app.include_router(safety.router)
 app.include_router(composer.router)
 app.include_router(mail_account.router)
+app.include_router(sender.router)
 
 
 class LoginIn(BaseModel):

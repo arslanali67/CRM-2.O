@@ -67,6 +67,8 @@ export default function Email() {
       <p><Link href="/outbox">← Outbox</Link> · <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link></p>
       <h1>Email #{e.id} <small>({e.status})</small></h1>
       {e.cancel_reason && <p style={{ color: "crimson" }}>Cancelled: {e.cancel_reason}</p>}
+      {e.failure_reason && <p style={{ color: "crimson" }}>Failed: {e.failure_reason}</p>}
+      {e.sent_at && <p style={{ color: "green" }}>Sent {new Date(e.sent_at).toLocaleString()} · Message-ID <code>{e.provider_message_id}</code></p>}
 
       <h2>Exact preview</h2>
       <div style={box}>

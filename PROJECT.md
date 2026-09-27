@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.13
+- **Spec version:** 1.14
 - **Last updated:** 2026-09-27
 
 ---
@@ -181,6 +181,12 @@ Goal: approve every email, send exactly once.
   - The owner enters the real app password themselves (Claude never handles it).
   - Depends on: M1, M30. Done when: the Gmail account is connected and credentials are encrypted.
 - **M12 Email sending [SAFETY].** Single-lane queue, daily cap and minimum gap, idempotency, Message-ID recovery, kill switch.
+  - **Queue:** a Celery `beat` service ticks every 30 s; the worker takes a Postgres advisory lock (only one sender ever runs) and sends at most one email per tick, the oldest queued. M26 `claim_for_send()` re-checks all 12 gates (11–12 → wait; others → cancel).
+  - **Exactly once:** a unique Message-ID is stored before the SMTP attempt. An email left in `sending` (crash / dropped connection) is recovered next tick by searching the Gmail Sent folder (IMAP, read-only) for that Message-ID: found → `sent`; not found after 10 minutes → `failed` ("needs review"). Never resent automatically. Definite SMTP rejections → `failed` with the reason.
+  - **Kill switch:** Enable / Stop sending on the Outbox page; enabling requires a connected, tested account and confirmation; audited both ways; off by default.
+  - **Message:** exactly the approved content, plain text, from the connected Gmail with display name, CV PDF attached if chosen.
+  - **After send:** `sent_at` and Message-ID recorded; lead stage `new`/`qualified` → `contacted`.
+  - Tests use fake SMTP/IMAP; a guard fails any attempt to reach real Gmail from tests. No real email is sent while building M12; the Phase 1B real test send waits for the owner's explicit go-ahead.
   - Depends on: M10, M11, M26. Done when: sending is exactly-once and the safety tests are green.
 - **M13 Email history.** Statuses, timestamps, provider IDs, threads.
   - Depends on: M12. Done when: every sent email is in history with its thread.
@@ -323,3 +329,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.11 | M26 detailed: the 12 safety checks (closes §7 gap), approval/send semantics, `outbound_emails` links, `app_settings` with sending off by default. | Owner |
 | 2026-09-27 | 1.12 | M10 detailed: drafts from compose list + template, optional CV attachment chosen in the UI and bound into the content hash, outbox and draft page, one-click per-email "Approve & queue" bound to the displayed hash, no bulk approve. | Owner |
 | 2026-09-27 | 1.13 | M11 detailed: Fernet credential encryption pulled forward from M30 (new dependency `cryptography`, key in `.env`), single Gmail account with connect / test (no send) / disconnect, password never exposed. | Owner |
+| 2026-09-27 | 1.14 | M12 detailed: beat + single-lane worker with advisory lock, Message-ID stored before send and recovered from Gmail Sent (no auto-resend), kill switch on Outbox, stage → contacted; no real sends during build. | Owner |
