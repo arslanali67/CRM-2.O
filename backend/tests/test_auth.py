@@ -1,16 +1,7 @@
-import os
+from fastapi.testclient import TestClient
 
 from app.auth import hash_password, verify_password
-
-os.environ.update(
-    OWNER_EMAIL="Owner@Example.com",
-    OWNER_PASSWORD_HASH=hash_password("correct horse battery"),
-    SESSION_SECRET="test-secret",
-)
-
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.main import app  # noqa: E402
+from app.main import app
 
 
 def test_hash_roundtrip():

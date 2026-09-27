@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.2
+- **Spec version:** 1.3
 - **Last updated:** 2026-09-27
 
 ---
@@ -80,6 +80,11 @@ Goal: clean companies in, nothing sent out yet.
   - Company/contact tables and the duplicate-domain index are M5; automatic activity logging is M24.
   - Depends on: M1. Done when: constraint tests pass on real Postgres.
 - **M3 Personal profile & CV.** Skills, experience, links, preferences; CV versions; `{{my_*}}` template variables.
+  - **Profile (single record):** full name, email, phone, location, headline, summary; skills (list); experience entries (title, company, start, end — empty end = current job — description); links (LinkedIn, GitHub, portfolio); preferences (target roles, target locations, work mode: remote / hybrid / onsite / any, availability).
+  - **CV versions:** PDF only (magic-byte check), max 5 MB, stored in Postgres so backups include them. Each version has a label; versions are immutable (re-upload = new version). Exactly one default, enforced by the database. Download any version.
+  - **Variables (16):** `my_full_name`, `my_first_name`, `my_email`, `my_phone`, `my_location`, `my_headline`, `my_summary`, `my_skills`, `my_top_skills` (first 3 skills), `my_current_title`, `my_current_company` (from the experience entry with no end date), `my_linkedin`, `my_github`, `my_portfolio`, `my_target_role` (first target role), `my_availability`. Empty variables are reported as unresolved, never rendered blank.
+  - **UI:** Profile page with the form, CV version list (upload, set default, download) and a live preview of every variable, with unresolved ones flagged.
+  - Profile saves, CV uploads and default changes are written to `audit_log`.
   - Depends on: M2. Done when: all `my_*` variables resolve and a default CV is set.
 - **M5 Companies & contacts [CORE].** CRUD, provenance (where each record came from), email classes: careers / personal / generic / unsuitable.
   - Depends on: M2. Done when: CRUD and email classification are tested.
@@ -241,3 +246,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.0 | Initial spec from CRM_MILESTONES.pdf v1.0 | Owner |
 | 2026-09-27 | 1.1 | Answered Q1–Q4: Gmail SMTP+IMAP, Gemini free tier (testing), laptop only, 20/day with 90 s gap. M11 narrowed to SMTP+IMAP (no OAuth). | Owner |
 | 2026-09-27 | 1.2 | M2 detailed: plain SQL migrations, `outbound_emails` with DB-enforced approval-hash constraint and partial unique indexes, append-only `audit_log`. M1: API has no published port (only reachable via web). | Owner |
+| 2026-09-27 | 1.3 | M3 detailed: profile fields, PDF CV versions in Postgres with one enforced default, 16 `my_*` variables, Profile page. | Owner |

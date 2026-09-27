@@ -8,8 +8,9 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import settings
+from app import profile, settings
 from app.auth import verify_password
+from app.deps import require_owner
 from app.worker import celery_app
 
 logging.basicConfig(
@@ -38,10 +39,7 @@ async def log_requests(request: Request, call_next):
     return response
 
 
-def require_owner(request: Request) -> str:
-    if not request.session.get("owner"):
-        raise HTTPException(401, "Not signed in")
-    return settings.OWNER_EMAIL
+app.include_router(profile.router)
 
 
 class LoginIn(BaseModel):

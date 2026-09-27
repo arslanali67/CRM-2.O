@@ -1,37 +1,8 @@
-"""M2 constraint tests against a real Postgres.
-
-Uses a throwaway `crm_test` database on the server from TEST_DATABASE_URL, or
-DATABASE_URL with the database name swapped, so the real `crm` data is never touched.
-"""
-import os
-
-import psycopg
+"""M2 constraint tests against a real Postgres (fixtures in conftest.py)."""
 import pytest
 from psycopg import errors
-from psycopg.conninfo import conninfo_to_dict, make_conninfo
 
 from app.migrate import migrate
-
-TEST_DB = "crm_test"
-
-
-@pytest.fixture(scope="session")
-def test_url():
-    base = os.environ.get("TEST_DATABASE_URL") or os.environ["DATABASE_URL"]
-    assert conninfo_to_dict(make_conninfo(base, dbname=TEST_DB))["dbname"] == TEST_DB
-    with psycopg.connect(make_conninfo(base, dbname="postgres"), autocommit=True) as admin:
-        admin.execute(f"DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)")
-        admin.execute(f"CREATE DATABASE {TEST_DB}")
-    url = make_conninfo(base, dbname=TEST_DB)
-    assert migrate(url) == ["0001_outbound_emails_and_audit_log.sql"]
-    return url
-
-
-@pytest.fixture
-def db(test_url):
-    with psycopg.connect(test_url) as conn:
-        yield conn
-        conn.rollback()
 
 
 def draft(db, to="hr@acme.test", body="Hello"):

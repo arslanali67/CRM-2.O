@@ -1,0 +1,64 @@
+"""Shared test setup.
+
+Env is set before any app import. DB tests use a throwaway `crm_test` database on the
+server from TEST_DATABASE_URL, or DATABASE_URL with the name swapped, so the real
+`crm` data is never touched.
+"""
+import os
+from pathlib import Path
+
+from app.auth import hash_password
+
+TEST_EMAIL = "owner@example.com"
+TEST_PASSWORD = "correct horse battery"
+os.environ.update(
+    OWNER_EMAIL="Owner@Example.com",
+    OWNER_PASSWORD_HASH=hash_password(TEST_PASSWORD),
+    SESSION_SECRET="test-secret",
+)
+
+import psycopg  # noqa: E402
+import pytest  # noqa: E402
+from psycopg.conninfo import conninfo_to_dict, make_conninfo  # noqa: E402
+
+from app.migrate import MIGRATIONS_DIR, migrate  # noqa: E402
+
+TEST_DB = "crm_test"
+
+
+@pytest.fixture(scope="session")
+def test_url():
+    base = os.environ.get("TEST_DATABASE_URL") or os.environ["DATABASE_URL"]
+    url = make_conninfo(base, dbname=TEST_DB)
+    assert conninfo_to_dict(url)["dbname"] == TEST_DB
+    with psycopg.connect(make_conninfo(base, dbname="postgres"), autocommit=True) as admin:
+        admin.execute(f"DROP DATABASE IF EXISTS {TEST_DB} WITH (FORCE)")
+        admin.execute(f"CREATE DATABASE {TEST_DB}")
+    assert migrate(url) == sorted(p.name for p in MIGRATIONS_DIR.glob("*.sql"))
+    return url
+
+
+@pytest.fixture
+def db(test_url):
+    """Connection whose changes are rolled back after the test."""
+    with psycopg.connect(test_url) as conn:
+        yield conn
+        conn.rollback()
+
+
+@pytest.fixture
+def client(test_url, monkeypatch):
+    """Signed-in API client on a freshly reset profile/CV state (changes are committed)."""
+    from fastapi.testclient import TestClient
+
+    from app import settings
+    from app.main import app
+
+    monkeypatch.setattr(settings, "DATABASE_URL", test_url)
+    with psycopg.connect(test_url) as conn:
+        conn.execute("DELETE FROM profile")
+        conn.execute("INSERT INTO profile DEFAULT VALUES")
+        conn.execute("DELETE FROM cv_versions")
+    c = TestClient(app)
+    assert c.post("/auth/login", json={"email": TEST_EMAIL, "password": TEST_PASSWORD}).status_code == 200
+    return c
