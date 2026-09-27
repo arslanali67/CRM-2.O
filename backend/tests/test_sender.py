@@ -1,9 +1,8 @@
 """M12: sending. Done when: sending is exactly-once and the safety tests are green.
 
-A fake Gmail records every delivered message and files it in a fake Sent folder (that is what
-recovery searches). No real mail server is ever contacted (see conftest.no_real_mail).
+Uses the shared fake Gmail (tests/fakes.py) that records every delivered message and files it in
+a fake Sent folder (what recovery searches). No real mail server is ever contacted (conftest.no_real_mail).
 """
-import email as email_lib
 import imaplib
 import smtplib
 
@@ -11,135 +10,10 @@ import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
-from app import sender, settings
+from app import sender
 from app.main import app
 from conftest import RealMailServerBlocked
-
-PDF = b"%PDF-1.7\n%%EOF\n"
-APP_PW = "abcdefghijklmnop"
-
-
-class FakeGmail:
-    """mode: ok | login_fail | refuse | drop_before | accept_then_drop | data_5xx | data_4xx"""
-
-    def __init__(self):
-        self.mode = "ok"
-        self.delivered = []   # messages Gmail actually accepted
-        self.imap_down = False
-
-    def smtp(self, gm):
-        class SMTP:
-            def __init__(self, host, port, timeout=None, context=None):
-                if gm.mode == "connect_fail":
-                    raise OSError("unreachable")
-
-            def login(self, user, password):
-                if gm.mode == "login_fail" or password != APP_PW:
-                    raise smtplib.SMTPAuthenticationError(535, b"bad")
-
-            def send_message(self, msg):
-                if gm.mode == "refuse":
-                    raise smtplib.SMTPRecipientsRefused({msg["To"]: (550, b"no such user")})
-                if gm.mode == "data_5xx":
-                    raise smtplib.SMTPDataError(552, b"message rejected")
-                if gm.mode == "data_4xx":
-                    raise smtplib.SMTPDataError(451, b"try later")
-                if gm.mode == "drop_before":
-                    raise smtplib.SMTPServerDisconnected("gone")
-                gm.delivered.append(email_lib.message_from_bytes(msg.as_bytes()))
-                if gm.mode == "accept_then_drop":
-                    raise smtplib.SMTPServerDisconnected("gone after accepting")
-                return {}
-
-            def quit(self):
-                pass
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *a):
-                return False
-        return SMTP
-
-    def imap(self, gm):
-        class IMAP:
-            def __init__(self, host, port, ssl_context=None, timeout=None):
-                if gm.imap_down:
-                    raise OSError("unreachable")
-
-            def login(self, user, password):
-                if password != APP_PW:
-                    raise imaplib.IMAP4.error("auth")
-
-            def list(self):
-                return "OK", [b'(\\HasNoChildren) "/" "INBOX"', b'(\\HasNoChildren \\Sent) "/" "[Gmail]/Sent Mail"']
-
-            def select(self, box, readonly=False):
-                assert readonly
-                return "OK", [str(len(gm.delivered)).encode()]
-
-            def search(self, charset, *criteria):
-                assert criteria[:2] == ("HEADER", "Message-ID")
-                hits = [str(i + 1).encode() for i, m in enumerate(gm.delivered) if m["Message-ID"] == criteria[2]]
-                return "OK", [b" ".join(hits)]
-
-            def logout(self):
-                pass
-        return IMAP
-
-
-@pytest.fixture
-def gmail(monkeypatch):
-    gm = FakeGmail()
-    monkeypatch.setattr(smtplib, "SMTP_SSL", gm.smtp(gm))
-    monkeypatch.setattr(imaplib, "IMAP4_SSL", gm.imap(gm))
-    return gm
-
-
-@pytest.fixture
-def world(client, gmail, test_url, monkeypatch):
-    """Connected account, two approved+queued emails (one with a CV), sending still OFF."""
-    monkeypatch.setattr(settings, "DATABASE_URL", test_url)
-    client.put("/profile", json={"full_name": "Arslan Ali", "email": "me@example.com"})
-    client.post("/cv", params={"label": "Main", "filename": "Arslan_CV.pdf"}, content=PDF,
-                headers={"Content-Type": "application/pdf"})
-    client.put("/email-account", json={"email_address": "me@gmail.com", "display_name": "Arslan Ali",
-                                       "app_password": APP_PW})
-    assert client.post("/email-account/test").json()["connected"]
-    tid = client.post("/templates", json={"name": "Intro", "subject": "Hello {{company_name}}",
-                                          "body": "Hi {{contact_first_name | there}},\nI'm {{my_full_name}}."}).json()["id"]
-    ids = {}
-    for name, domain, contact in [("Acme", "acme.de", "Anna Schmidt"), ("Beta", "beta.io", "")]:
-        cid = client.post("/companies", json={"name": name, "domain": domain}).json()["id"]
-        client.post(f"/companies/{cid}/contacts", json={"name": contact, "email": f"jobs@{domain}"})
-        client.post("/compose-list", json={"company_ids": [cid]})
-        drafted = client.post("/compose-list/drafts", json={"template_id": tid, "attach_cv": name == "Acme"}).json()
-        eid = drafted["created"][0]["email_id"]
-        h = client.get(f"/outbound-emails/{eid}").json()["content_hash_hex"]
-        assert client.post(f"/outbound-emails/{eid}/approve", json={"content_hash": h}).json()["status"] == "queued"
-        ids[name] = (eid, cid)
-    return ids
-
-
-def db(test_url, sql, params=()):
-    with psycopg.connect(test_url) as conn:
-        cur = conn.execute(sql, params)
-        return cur.fetchall() if cur.description else None
-
-
-def status(test_url, eid):
-    return db(test_url, "SELECT status FROM outbound_emails WHERE id = %s", (eid,))[0][0]
-
-
-def enable(client):
-    r = client.post("/sending/enable", json={"confirm": True})
-    assert r.status_code == 200, r.text
-
-
-def age_last_send(test_url, minutes=2):
-    db(test_url, "UPDATE outbound_emails SET sent_at = sent_at - make_interval(mins => %s) WHERE status = 'sent'",
-       (minutes,))
-
+from fakes import PDF, age_last_send, db, enable, status
 
 # ---------- guard ----------
 

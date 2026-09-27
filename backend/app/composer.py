@@ -43,6 +43,7 @@ def require_cv(conn, cv_version_id: int) -> None:
 def load_email(conn, email_id: int) -> dict:
     e = conn.execute(
         "SELECT e.*, encode(e.content_hash, 'hex') AS content_hash_hex, c.name AS company_name, "
+        "coalesce(e.gmail_thrid, 'email-' || e.id) AS thread_key, "
         "ct.name AS contact_name, ct.email_class, cv.label AS cv_label, cv.filename AS cv_filename, "
         "t.name AS template_name, tv.version AS template_version "
         "FROM outbound_emails e LEFT JOIN companies c ON c.id = e.company_id "

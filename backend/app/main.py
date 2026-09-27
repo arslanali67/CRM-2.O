@@ -11,8 +11,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import (activity, companies, composer, csv_import, leads, mail_account, notes_tasks, profile, safety,
-                 sender, settings, suppressions, templates)
+from app import (activity, companies, composer, csv_import, history, leads, mail_account, notes_tasks, profile,
+                 safety, sender, settings, suppressions, templates)
 from app.auth import verify_password
 from app.deps import require_owner
 from app.worker import celery_app
@@ -62,6 +62,7 @@ app.include_router(safety.router)
 app.include_router(composer.router)
 app.include_router(mail_account.router)
 app.include_router(sender.router)
+app.include_router(history.router)
 
 
 class LoginIn(BaseModel):

@@ -48,6 +48,47 @@ def no_real_mail(monkeypatch):
         monkeypatch.setattr(obj, name, _blocked)
 
 
+@pytest.fixture
+def gmail(monkeypatch):
+    """The fake Gmail from tests/fakes.py, installed over the no_real_mail guard."""
+    import imaplib
+    import smtplib
+
+    from fakes import FakeGmail
+    gm = FakeGmail()
+    monkeypatch.setattr(smtplib, "SMTP_SSL", gm.smtp_class())
+    monkeypatch.setattr(imaplib, "IMAP4_SSL", gm.imap_class())
+    return gm
+
+
+@pytest.fixture
+def world(client, gmail, test_url, monkeypatch):
+    """Connected account, two approved+queued emails (Acme with a CV, Beta without), sending still OFF.
+    Returns {"Acme": (email_id, company_id), "Beta": (...)}."""
+    from app import settings
+    from fakes import APP_PW, PDF
+    monkeypatch.setattr(settings, "DATABASE_URL", test_url)
+    client.put("/profile", json={"full_name": "Arslan Ali", "email": "me@example.com"})
+    client.post("/cv", params={"label": "Main", "filename": "Arslan_CV.pdf"}, content=PDF,
+                headers={"Content-Type": "application/pdf"})
+    client.put("/email-account", json={"email_address": "me@gmail.com", "display_name": "Arslan Ali",
+                                       "app_password": APP_PW})
+    assert client.post("/email-account/test").json()["connected"]
+    tid = client.post("/templates", json={"name": "Intro", "subject": "Hello {{company_name}}",
+                                          "body": "Hi {{contact_first_name | there}},\nI'm {{my_full_name}}."}).json()["id"]
+    ids = {}
+    for name, domain, contact in [("Acme", "acme.de", "Anna Schmidt"), ("Beta", "beta.io", "")]:
+        cid = client.post("/companies", json={"name": name, "domain": domain}).json()["id"]
+        client.post(f"/companies/{cid}/contacts", json={"name": contact, "email": f"jobs@{domain}"})
+        client.post("/compose-list", json={"company_ids": [cid]})
+        drafted = client.post("/compose-list/drafts", json={"template_id": tid, "attach_cv": name == "Acme"}).json()
+        eid = drafted["created"][0]["email_id"]
+        h = client.get(f"/outbound-emails/{eid}").json()["content_hash_hex"]
+        assert client.post(f"/outbound-emails/{eid}/approve", json={"content_hash": h}).json()["status"] == "queued"
+        ids[name] = (eid, cid)
+    return ids
+
+
 @pytest.fixture(scope="session")
 def test_url():
     base = os.environ.get("TEST_DATABASE_URL") or os.environ["DATABASE_URL"]

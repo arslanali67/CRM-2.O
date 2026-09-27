@@ -109,8 +109,13 @@ def smtp_send(account: dict, msg: EmailMessage) -> None:
             pass
 
 
-def find_in_sent(account: dict, message_id: str) -> bool | None:
-    """True/False if Gmail's Sent folder does/doesn't contain the Message-ID; None if unknown."""
+GM_IDS_RE = re.compile(rb"X-GM-(MSGID|THRID) (\d+)")
+
+
+def lookup_sent(account: dict, message_id: str) -> dict | None:
+    """Read-only search of Gmail Sent for a Message-ID.
+    None = unknown (connection/IMAP problem); {"found": False}; or
+    {"found": True, "gmail_msgid": str|None, "gmail_thrid": str|None}."""
     try:
         imap = imaplib.IMAP4_SSL(account["imap_host"], account["imap_port"], ssl_context=ssl.create_default_context(),
                                  timeout=TIMEOUT)
@@ -126,7 +131,19 @@ def find_in_sent(account: dict, message_id: str) -> bool | None:
         if imap.select(f'"{sent.decode("ascii")}"', readonly=True)[0] != "OK":
             return None
         typ, data = imap.search(None, "HEADER", "Message-ID", message_id)
-        return None if typ != "OK" else bool(data and data[0].split())
+        if typ != "OK":
+            return None
+        hits = data[0].split() if data and data[0] else []
+        if not hits:
+            return {"found": False}
+        ids = {"gmail_msgid": None, "gmail_thrid": None}
+        typ, fetched = imap.fetch(hits[-1], "(X-GM-MSGID X-GM-THRID)")  # Gmail extension; FETCH is read-only
+        if typ == "OK":
+            for part in fetched or []:
+                raw = part[0] if isinstance(part, tuple) else part
+                for key, value in GM_IDS_RE.findall(raw or b""):
+                    ids[f"gmail_{key.decode().lower()}"] = value.decode()
+        return {"found": True, **ids}
     except (OSError, imaplib.IMAP4.error):
         return None
     finally:
@@ -134,6 +151,29 @@ def find_in_sent(account: dict, message_id: str) -> bool | None:
             imap.logout()
         except (OSError, imaplib.IMAP4.error):
             pass
+
+
+def store_ids(conn, email_id: int, found: dict | None) -> None:
+    conn.execute("UPDATE outbound_emails SET ids_checked_at = now(), "
+                 "gmail_msgid = coalesce(%s, gmail_msgid), gmail_thrid = coalesce(%s, gmail_thrid) WHERE id = %s",
+                 ((found or {}).get("gmail_msgid"), (found or {}).get("gmail_thrid"), email_id))
+
+
+IDS_RETRY_MINUTES, IDS_GIVE_UP_HOURS = 5, 24
+
+
+def backfill_ids(conn, account: dict) -> dict | None:
+    """Best effort: fetch Gmail IDs for one recently sent email that still lacks them."""
+    e = conn.execute(
+        "SELECT id, provider_message_id FROM outbound_emails WHERE status = 'sent' AND gmail_thrid IS NULL "
+        "AND provider_message_id IS NOT NULL AND sent_at > now() - make_interval(hours => %s) "
+        "AND (ids_checked_at IS NULL OR ids_checked_at < now() - make_interval(mins => %s)) "
+        "ORDER BY sent_at LIMIT 1", (IDS_GIVE_UP_HOURS, IDS_RETRY_MINUTES)).fetchone()
+    if not e:
+        return None
+    found = lookup_sent(account, e["provider_message_id"])
+    store_ids(conn, e["id"], found if found and found["found"] else None)
+    return {"action": "ids_backfilled" if found and found.get("gmail_thrid") else "ids_pending", "email_id": e["id"]}
 
 
 # ---------- state changes ----------
@@ -172,12 +212,13 @@ def recover(conn, account: dict) -> dict | None:
                      (RECOVERY_MINUTES,)).fetchone()
     if not e:
         return None
-    found = find_in_sent(account, e["provider_message_id"]) if e["provider_message_id"] else False
-    if found:
+    found = lookup_sent(account, e["provider_message_id"]) if e["provider_message_id"] else {"found": False}
+    if found and found["found"]:
         mark_sent(conn, e, via="recovery")
+        store_ids(conn, e["id"], found)
         audit(conn, "outbound_email.recovered", "outbound_email", e["id"], {"found_in_sent": True})
         return {"action": "recovered_sent", "email_id": e["id"]}
-    if found is False and e["overdue"]:
+    if found is not None and e["overdue"]:
         mark_failed(conn, e, f"interrupted and not found in Gmail Sent after {RECOVERY_MINUTES} min; "
                              "needs review (not resent)")
         return {"action": "recovered_failed", "email_id": e["id"]}
@@ -212,6 +253,9 @@ def send_next(conn, account: dict) -> dict:
         audit(conn, "outbound_email.send_interrupted", "outbound_email", e["id"], {"reason": str(err)})
         return {"action": "interrupted", "email_id": e["id"], "reason": str(err)}
     mark_sent(conn, e, via="smtp")
+    conn.commit()  # the send is recorded before the best-effort ID lookup
+    found = lookup_sent(account, e["provider_message_id"])
+    store_ids(conn, e["id"], found if found and found["found"] else None)
     return {"action": "sent", "email_id": e["id"]}
 
 
@@ -227,6 +271,10 @@ def process_once() -> dict:
             if not account:
                 return {"action": "no_account"}
             result = recover(conn, account) or send_next(conn, account)
+            if result["action"] in ("idle", "wait"):  # spare tick: fetch Gmail IDs for a recent send
+                ids = backfill_ids(conn, account)
+                if ids:
+                    result = {**result, "ids": ids}
             conn.commit()
             return result
         except Exception:

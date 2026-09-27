@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { describe } from "../../activity/describe";
 import { errorText } from "../../companies/shared";
 
 async function call(url, method = "GET", body) {
@@ -21,12 +22,14 @@ export default function Email() {
   const [cvs, setCvs] = useState([]);
   const [msg, setMsg] = useState("");
   const [failedChecks, setFailedChecks] = useState(null);
+  const [timeline, setTimeline] = useState([]);
 
   async function load() {
     const r = await call(`/api/outbound-emails/${id}`);
     if (r.status === 401) return router.replace("/login");
     if (!r.ok) return setMsg(errorText(r.data));
     setE(r.data);
+    call(`/api/outbound-emails/${id}/timeline`).then((t) => t.ok && setTimeline(t.data));
     setDraft({ subject: r.data.subject, body: r.data.body, cv_version_id: r.data.cv_version_id ? String(r.data.cv_version_id) : "" });
   }
   useEffect(() => { load(); call("/api/cv").then((r) => r.ok && setCvs(r.data)); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -112,6 +115,18 @@ export default function Email() {
       {failedChecks && (
         <ul style={{ color: "crimson" }}>{failedChecks.map((c) => <li key={c.id}>{c.id}. {c.name}: {c.detail}</li>)}</ul>
       )}
+
+      <h2 style={{ marginTop: 32 }}>Status timeline</h2>
+      <ol>
+        {timeline.map((t) => (
+          <li key={t.id}><small style={{ color: "gray" }}>{new Date(t.at).toLocaleString()} · {t.actor}</small> {describe(t)}</li>
+        ))}
+      </ol>
+      <p style={{ color: "gray" }}><small>
+        Message-ID <code>{e.provider_message_id || "not assigned yet"}</code>
+        {" · "}Gmail message <code>{e.gmail_msgid || "unknown yet"}</code>
+        {" · "}<Link href={`/threads/${e.thread_key}`}>Gmail thread {e.gmail_thrid || "(not linked yet)"}</Link>
+      </small></p>
 
       {isDraft && (
         <>

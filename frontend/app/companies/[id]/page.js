@@ -27,6 +27,7 @@ export default function Company() {
   const [editing, setEditing] = useState(null); // {id, ...fields}
   const [msg, setMsg] = useState("");
   const [timeline, setTimeline] = useState([]);
+  const [emailThreads, setEmailThreads] = useState([]);
 
   async function load() {
     const r = await call(`/api/companies/${id}`, "GET");
@@ -34,6 +35,7 @@ export default function Company() {
     if (!r.ok) return setMsg(errorText(r.data));
     setCompany(r.data);
     call(`/api/companies/${id}/activity`, "GET").then((t) => t.ok && setTimeline(t.data));
+    call(`/api/companies/${id}/emails`, "GET").then((t) => t.ok && setEmailThreads(t.data));
     setForm(Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, r.data[k]])));
   }
   useEffect(() => { load(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -168,6 +170,20 @@ export default function Company() {
         ))}
         <button type="submit">Add contact</button>
       </form>
+
+      <h2 style={{ marginTop: 32 }}>Emails</h2>
+      {emailThreads.length === 0 && <p>No emails yet.</p>}
+      {emailThreads.map((t) => (
+        <div key={t.thread_key} style={{ borderLeft: "3px solid #ddd", paddingLeft: 8, margin: "8px 0" }}>
+          <Link href={`/threads/${t.thread_key}`}><small>thread ({t.emails.length})</small></Link>
+          {t.emails.map((e) => (
+            <div key={e.id}>
+              <Link href={`/outbox/${e.id}`}>{e.subject}</Link> <small>→ {e.to_email} · {e.status}
+                {e.sent_at && ` ${new Date(e.sent_at).toLocaleDateString()}`}</small>
+            </div>
+          ))}
+        </div>
+      ))}
 
       <TasksPanel entityType="company" entityId={company.id} />
       <NotesPanel entityType="company" entityId={company.id} />

@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.14
+- **Spec version:** 1.15
 - **Last updated:** 2026-09-27
 
 ---
@@ -189,6 +189,11 @@ Goal: approve every email, send exactly once.
   - Tests use fake SMTP/IMAP; a guard fails any attempt to reach real Gmail from tests. No real email is sent while building M12; the Phase 1B real test send waits for the owner's explicit go-ahead.
   - Depends on: M10, M11, M26. Done when: sending is exactly-once and the safety tests are green.
 - **M13 Email history.** Statuses, timestamps, provider IDs, threads.
+  - **Provider IDs:** besides the Message-ID, the worker looks each sent email up in Gmail Sent (IMAP, read-only) and stores Gmail's message ID and thread ID. Best-effort: retried on later ticks for up to 24 h; never blocks sending.
+  - **History page:** every email past draft (queued / sending / sent / failed / cancelled); filters by status, company, date range; search by recipient or subject; key timestamps and reasons per row.
+  - **Email detail:** status timeline from `audit_log` (every change with time, actor, reason), provider IDs, thread.
+  - **Threads:** emails grouped by Gmail thread ID (an email without one yet is its own thread); thread view lists the conversation in order. Replies join threads in M14/M15.
+  - **Company page:** Emails section grouped by thread.
   - Depends on: M12. Done when: every sent email is in history with its thread.
 
 **Phase exit:** a real test email reaches the owner's second inbox, and duplicate, do-not-contact and kill-switch tests all block sends.
@@ -330,3 +335,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.12 | M10 detailed: drafts from compose list + template, optional CV attachment chosen in the UI and bound into the content hash, outbox and draft page, one-click per-email "Approve & queue" bound to the displayed hash, no bulk approve. | Owner |
 | 2026-09-27 | 1.13 | M11 detailed: Fernet credential encryption pulled forward from M30 (new dependency `cryptography`, key in `.env`), single Gmail account with connect / test (no send) / disconnect, password never exposed. | Owner |
 | 2026-09-27 | 1.14 | M12 detailed: beat + single-lane worker with advisory lock, Message-ID stored before send and recovered from Gmail Sent (no auto-resend), kill switch on Outbox, stage → contacted; no real sends during build. | Owner |
+| 2026-09-27 | 1.15 | M13 detailed: Gmail message/thread IDs fetched read-only after sending, History page with filters, per-email status timeline, thread view, company Emails section. | Owner |
