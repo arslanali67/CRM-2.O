@@ -33,7 +33,7 @@ export default function Home() {
       <p>
         <Link href="/companies">Leads</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> ·{" "}
         <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> ·{" "}
-        <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> ·<Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
+        <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
         <Link href="/tasks">Tasks</Link> · <Link href="/activity">Activity</Link>
       </p>
       {due && (
