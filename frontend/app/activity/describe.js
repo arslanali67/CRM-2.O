@@ -4,6 +4,12 @@ export function describe(e) {
   const [type, verb] = e.action.split(".");
   if (type === "outbound_email") {
     if (verb === "created") return `Email draft to ${d.to_email} created`;
+    if (verb === "edited") return `Email draft to ${d.to_email} edited`;
+    if (verb === "draft") return `Email to ${d.to_email} pulled back to draft`;
+    if (verb === "checks_failed") {
+      return `Safety checks failed at ${d.stage}: ${(d.failed || []).map((f) => `${f.name} (${f.detail})`).join("; ")}`;
+    }
+    if (d.reason === "safety_checks") return `Email to ${d.to_email} cancelled by safety checks`;
     const why = d.reason === "do_not_contact" ? " (recipient blocked)" : "";
     return `Email to ${d.to_email} ${verb}${why}`;
   }
@@ -37,6 +43,7 @@ export function describe(e) {
     "task.completed": `Task done: ${d.title}`,
     "task.reopened": `Task reopened: ${d.title}`,
     "task.deleted": `Task deleted: ${d.title}`,
+    "compose.drafts_created": `${d.created} draft(s) created from template v${d.version}${d.skipped ? `, ${d.skipped} skipped` : ""}`,
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;

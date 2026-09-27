@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.11
+- **Spec version:** 1.12
 - **Last updated:** 2026-09-27
 
 ---
@@ -166,6 +166,10 @@ Goal: approve every email, send exactly once.
   - **Schema:** `outbound_emails` gains `contact_id`, `company_id`, `template_version_id`; a single-row `app_settings` holds `sending_enabled` (default **off**), daily cap 20, gap 90 s, cooldowns 30 / 14 days, approval max age 7 days. UI for settings is M29; kill-switch toggle is M12.
   - Depends on: M25, M8. Done when: all 12 gates are tested and re-checked at send time.
 - **M10 Email composer [SAFETY].** Exact preview, per-email approval bound to a content hash (editing after approval voids approval), no "approve all".
+  - **Create drafts** from the compose list with a chosen template: each company gets a draft rendered strictly for its best recipient, linked to company, contact and template version; companies with unresolved variables or no eligible recipient are skipped with reasons; drafted companies leave the compose list.
+  - **CV attachment (owner's choice in the UI):** "Attach CV" option when creating drafts (CV picker, default CV preselected, unticked by default) and per draft (change or remove). The attached CV version is part of the content hash, so changing it after approval requires re-approval.
+  - **Outbox:** Drafts / Queued / Sent / Cancelled (with reasons). **Draft page:** exact preview (From, To, Subject, Body, attachment), edit subject/body/attachment, discard, M26 check results.
+  - **Approval:** per email only, one click "Approve & queue": the UI sends the content hash it displayed; a mismatch is refused; then M26 `approve()` runs all checks; on success the email is queued. No bulk-approve endpoint or button exists (tested). Queued emails can be pulled back to draft (clears the approval).
   - Depends on: M8, M26. Done when: nothing is queued without per-email approval.
 - **M11 Email provider integration [CORE].** SMTP+IMAP adapter for personal Gmail using an app password (no OAuth), credentials encrypted at rest. Other providers are Phase 3.
   - Depends on: M1, M30. Done when: the Gmail account is connected and credentials are encrypted.
@@ -310,3 +314,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.9 | M8 detailed: immutable template versions, 26 variables, save-time and render-time strict checks, `{{var \| fallback}}` syntax, preview against a real lead. | Owner |
 | 2026-09-27 | 1.10 | M21 detailed: notes on companies/contacts/templates, owner tasks with date-only due dates judged by the browser's date, Tasks page and per-page panels. | Owner |
 | 2026-09-27 | 1.11 | M26 detailed: the 12 safety checks (closes §7 gap), approval/send semantics, `outbound_emails` links, `app_settings` with sending off by default. | Owner |
+| 2026-09-27 | 1.12 | M10 detailed: drafts from compose list + template, optional CV attachment chosen in the UI and bound into the content hash, outbox and draft page, one-click per-email "Approve & queue" bound to the displayed hash, no bulk approve. | Owner |

@@ -81,6 +81,8 @@ def client(test_url, monkeypatch):
         conn.execute("SET session_replication_role = replica")
         conn.execute("DELETE FROM suppressions")
         conn.execute("DELETE FROM outbound_emails")
+        conn.execute("DELETE FROM app_settings")
+        conn.execute("INSERT INTO app_settings DEFAULT VALUES")
         conn.execute("DELETE FROM profile")
         conn.execute("INSERT INTO profile DEFAULT VALUES")
         conn.execute("DELETE FROM cv_versions")
