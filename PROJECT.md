@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.6
+- **Spec version:** 1.7
 - **Last updated:** 2026-09-27
 
 ---
@@ -103,6 +103,14 @@ Goal: clean companies in, nothing sent out yet.
   - Blocked rows during CSV import are handled in M4.
   - Depends on: M5. Done when: no code path can send to a suppressed recipient.
 - **M4 CSV import [CORE].** Upload, `ai_companies` preset, batch city/country, validation, preview, error CSV download, dedupe on import.
+  - **Flow:** upload CSV (max 5 MB, 5,000 rows; UTF-8, fallback Windows-1252) with batch city/country → preview (per row: new / duplicate / blocked / error, plus contacts to add and skipped emails) → Import commits the same file. Nothing is written on preview.
+  - **`ai_companies` preset:** `company` → name; `website` → website + domain; `field` → industry; `linkedin` → company LinkedIn; `all_emails` → one contact per usable email (auto-classified); `contact_name` → one name-only contact per person (comma-separated); `twitter`, `github`, `facebook`, `instagram`, `remote_jobs`, `is_ai`, `mentions_city`, `source` → kept in the company's `source_detail` with file name and row number.
+  - **Email cleaning:** strip scraping artifacts (leading `u003e`/`u003c`/`%20`); drop placeholders (`muster.de`, `firma.de`, `company.com`, `example.com`, …) and addresses with a top-level domain over 10 letters; off-domain addresses kept only if same brand (company domain label contained in the email's domain label or vice versa). Every skipped email is reported with its reason.
+  - **Dedupe:** row whose domain matches an active company → skipped; email already on an active contact → skipped; repeated email within the file → imported once.
+  - **Blocked (M25):** row whose domain or company is blocked → skipped; blocked email → skipped.
+  - **Error CSV:** rejected rows with a reason column, downloadable.
+  - **Provenance & audit:** companies/contacts get `source = csv_import` with file and row; each import writes one `import.completed` audit entry with counts.
+  - The real scraped CSV is never committed (public repo); tests use a synthetic sample; the 91/0 criterion is verified locally on the test database.
   - Depends on: M5, M25. Done when: the Berlin CSV imports as 91 companies and re-import creates 0 duplicates.
 - **M6 Lead management.** Stages NEW → … → CLOSED, filters, bulk select to hand off to the composer.
   - Depends on: M4, M5. Done when: leads can be filtered, selected and handed to the composer.
@@ -267,3 +275,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.4 | M5 detailed: company/contact fields, archive instead of delete, provenance, unique active domain/email, email-class rules with manual override, list + company pages. | Owner |
 | 2026-09-27 | 1.5 | M25 detailed: email/domain/company blocks with reason, lift-with-reason as the audited override, DB trigger refusing approve/queue/send to blocked recipients, auto-cancel of pending emails on new block. | Owner |
 | 2026-09-27 | 1.6 | M24 detailed: DB triggers log every email status change with actor; M25 auto-cancel routed through them; Activity page and company timeline. | Owner |
+| 2026-09-27 | 1.7 | M4 detailed: preview-then-import flow, `ai_companies` column mapping, email cleaning with same-brand rule, dedupe, blocked rows skipped, error CSV; real CSV kept out of the public repo. | Owner |

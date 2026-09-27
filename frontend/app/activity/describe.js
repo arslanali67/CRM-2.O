@@ -21,6 +21,7 @@ export function describe(e) {
     "contact.restored": "Contact restored",
     "suppression.added": `Blocked ${d.email || d.domain || "company"}: ${d.reason}`,
     "suppression.lifted": `Block lifted: ${d.reason}`,
+    "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,
   }[e.action];
   return text || e.action;
 }
