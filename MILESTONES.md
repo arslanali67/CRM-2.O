@@ -2,14 +2,14 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 2 / 35**
+**Progress: 3 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
 
 ## Phase 1A: Foundation & Data (Wk 1–6)
 - [x] M1 Project foundation
-- [ ] M2 Database foundation
+- [x] M2 Database foundation
 - [ ] M3 Personal profile & CV
 - [ ] M5 Companies & contacts
 - [ ] M25 Do-not-contact list
