@@ -1,6 +1,6 @@
 """M14 real soak reconciliation. Read-only; prints counts only (no senders, subjects or bodies).
 
-Run:  docker compose run --rm -e PYTHONPATH=/app api python scripts/reconcile_soak.py <soak_start_iso>
+Run:  docker compose run --rm api python -m scripts.reconcile_soak <soak_start_iso>
 For every message that arrived in All Mail / Spam since the soak started, it recomputes relevance
 with the same rules and checks: every relevant message stored exactly once, nothing irrelevant
 stored, and each cursor has reached the mailbox's highest UID.
