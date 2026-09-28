@@ -17,6 +17,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends
 
 from app.deps import get_db, require_owner
+from app.opportunities import OPEN as OPEN_STAGES
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -28,6 +29,13 @@ SERIES_DAYS_ALL = 90
 def since_for(period: str) -> datetime | None:
     days = PERIODS[period]
     return datetime.now(timezone.utc) - timedelta(days=days) if days else None
+
+
+def opportunity_counts(conn) -> dict:
+    """M19: open opportunities now (not period-bound), plus the count per stage."""
+    by_stage = {r["stage"]: r["n"] for r in conn.execute(
+        "SELECT stage, count(*) AS n FROM opportunities GROUP BY stage").fetchall()}
+    return {"available": True, "open": sum(n for s, n in by_stage.items() if s in OPEN_STAGES), "by_stage": by_stage}
 
 
 def kpis(conn, since: datetime | None) -> dict:
@@ -59,7 +67,7 @@ def kpis(conn, since: datetime | None) -> dict:
         "reply_rate": round(replied_after_email / emailed, 4) if emailed else None,
         "interested": replies["interested"], "offers": replies["offers"],
         "bounces": replies["bounces"], "auto_replies": replies["auto_replies"],
-        "opportunities": {"available": False, "after": "M19"},
+        "opportunities": opportunity_counts(conn),
         "interviews": {"available": False, "after": "M20"},
     }
 

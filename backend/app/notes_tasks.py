@@ -12,17 +12,18 @@ from app.deps import audit, get_db, require_owner
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
-EntityType = Literal["company", "contact", "template"]
-TABLES = {"company": "companies", "contact": "contacts", "template": "templates"}
+EntityType = Literal["company", "contact", "template", "opportunity"]
+TABLES = {"company": "companies", "contact": "contacts", "template": "templates", "opportunity": "opportunities"}
 DONE_LIMIT = 50
 
 # Label and page link for a task's linked entity (a contact links to its company page).
 ENTITY_SQL = """
     CASE t.entity_type WHEN 'company' THEN co.name WHEN 'contact' THEN coalesce(nullif(ct.name, ''), ct.email)
-                       WHEN 'template' THEN tp.name END AS entity_name,
+                       WHEN 'template' THEN tp.name WHEN 'opportunity' THEN op.title END AS entity_name,
     CASE t.entity_type WHEN 'company' THEN '/companies/' || t.entity_id
                        WHEN 'contact' THEN '/companies/' || ct.company_id
-                       WHEN 'template' THEN '/templates/' || t.entity_id END AS entity_link
+                       WHEN 'template' THEN '/templates/' || t.entity_id
+                       WHEN 'opportunity' THEN '/opportunities/' || t.entity_id END AS entity_link
 """
 TASK_SELECT = f"""
     SELECT t.*, {ENTITY_SQL}
@@ -30,6 +31,7 @@ TASK_SELECT = f"""
     LEFT JOIN companies co ON t.entity_type = 'company' AND co.id = t.entity_id
     LEFT JOIN contacts ct ON t.entity_type = 'contact' AND ct.id = t.entity_id
     LEFT JOIN templates tp ON t.entity_type = 'template' AND tp.id = t.entity_id
+    LEFT JOIN opportunities op ON t.entity_type = 'opportunity' AND op.id = t.entity_id
 """
 
 

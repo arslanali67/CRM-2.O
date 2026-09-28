@@ -65,7 +65,7 @@ export default function Home() {
   return (
     <main>
       <p>
-        <Link href="/companies">Leads</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
+        <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
         <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> ·{" "}
         <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
         <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link>
@@ -90,7 +90,8 @@ export default function Home() {
             <Tile label="Reply rate" value={pct(k.reply_rate)} sub="companies that replied after being emailed" />
             <Tile label="Interested" value={k.interested} sub="AI: interested, interview, scheduling, questions, offer" />
             <Tile label="Offers" value={k.offers} />
-            <Tile label="Opportunities" value="—" sub={`available after ${k.opportunities.after}`} />
+            <Tile label="Open opportunities" value={k.opportunities.open} href="/opportunities"
+                  sub={Object.entries(k.opportunities.by_stage).map(([s, n]) => `${n} ${s}`).join(" · ") || "none yet"} />
             <Tile label="Interviews" value="—" sub={`available after ${k.interviews.after}`} />
             <Tile label="Bounces" value={k.bounces} sub={`${k.auto_replies} auto-replies`} />
           </div>

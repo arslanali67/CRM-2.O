@@ -58,7 +58,7 @@ def test_notes_for_several_contacts_at_once(client, ents):
 
 @pytest.mark.parametrize("body,status", [
     ({"entity_type": "company", "entity_id": 999999, "body": "x"}, 404),
-    ({"entity_type": "opportunity", "entity_id": 1, "body": "x"}, 422),
+    ({"entity_type": "invoice", "entity_id": 1, "body": "x"}, 422),
     ({"entity_type": "company", "entity_id": 1, "body": "   "}, 422),
 ])
 def test_note_validation(client, body, status):

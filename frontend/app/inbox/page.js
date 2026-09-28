@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useState } from "react";
 import { Analysis } from "./analysis";
 import { LabelBadge } from "./label";
+import { CreateOpportunity } from "../opportunities/shared";
 
 
 function SyncStatus({ onSynced }) {
@@ -104,6 +105,9 @@ export default function Inbox() {
                 <tr><td colSpan={5} style={{ background: "#fafafa", padding: 12 }}>
                   <div><small>To: {open.to_emails} · <Link href={`/threads/${open.thread_key}`}>open thread</Link>
                     {open.attachment_names.length > 0 && ` · attachments: ${open.attachment_names.join(", ")} (not stored)`}</small></div>
+                  {open.label === "reply" && open.company_id && (
+                    <p><CreateOpportunity messageId={open.id} suggestedTitle={open.subject.replace(/^(re|aw|fw|wg):\s*/i, "")} /></p>
+                  )}
                   {open.label === "reply" && (
                     <Analysis messageId={open.id} analysis={open.analysis} aiEnabled={ai?.enabled}
                               onChange={() => { show(open.id, true); load(); }} />

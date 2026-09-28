@@ -31,8 +31,11 @@ def company_overview(company_id: int, conn=Depends(get_db)):
         {"id": company_id, "domain": c["domain"]}).fetchone()
     last_reply = conn.execute(INBOUND + "WHERE m.company_id = %s AND m.label = 'reply' "
                                         "ORDER BY m.received_at DESC NULLS LAST, m.id DESC LIMIT 1", (company_id,)).fetchone()
+    opportunities = conn.execute(
+        "SELECT id, title, stage, stage_changed_at, '/opportunities/' || id AS link FROM opportunities "
+        "WHERE company_id = %s ORDER BY stage_changed_at DESC, id DESC", (company_id,)).fetchall()
     return {"company": {k: c[k] for k in ("id", "name", "domain", "stage", "close_reason", "archived_at")},
-            **stats, "last_reply": last_reply, "opportunity": {"available": False, "after": "M19"}}
+            **stats, "last_reply": last_reply, "opportunities": opportunities}
 
 
 @router.get("/contacts/{contact_id}")

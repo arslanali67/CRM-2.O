@@ -83,7 +83,7 @@ def test_overview_header(sent, client, gmail, test_url):
     assert (o["contacts"], o["sent"], o["emails"], o["replies"], o["open_tasks"]) == (2, 1, 1, 2, 2)
     assert o["last_emailed_at"] and o["blocked"] is False
     assert o["last_reply"]["link"].startswith("/threads/")
-    assert o["opportunity"] == {"available": False, "after": "M19"}
+    assert o["opportunities"] == []  # M19
     client.post("/suppressions", json={"kind": "company", "company_id": w["company"], "reason": "x"})
     assert client.get(f"/companies/{w['company']}/overview").json()["blocked"] is True
     assert client.get("/companies/999999/overview").status_code == 404

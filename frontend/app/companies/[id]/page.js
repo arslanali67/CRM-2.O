@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { EventList } from "../../activity/describe";
 import { LabelBadge } from "../../inbox/label";
 import { NotesPanel, TasksPanel } from "../../tasks/panels";
+import { CreateOpportunity, StageBadge } from "../../opportunities/shared";
 import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, STAGES, errorText } from "../shared";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
@@ -235,7 +236,14 @@ export default function Company() {
       {tab === "Tasks" && <TasksPanel entityType="company" entityId={company.id} />}
       {tab === "Timeline" && <EventList events={timeline} />}
       {tab === "Opportunity" && (
-        <p style={{ color: "gray" }}>The job opportunity pipeline arrives with {o?.opportunity.after || "M19"}.</p>
+        <>
+          {o?.opportunities?.length === 0 && <p>No opportunities yet. Create one from a reply, or manually:</p>}
+          {o?.opportunities?.map((op) => (
+            <div key={op.id}><Link href={op.link}><b>{op.title}</b></Link> <StageBadge stage={op.stage} />
+              <small style={{ color: "gray" }}> · since {new Date(op.stage_changed_at).toLocaleDateString()}</small></div>
+          ))}
+          <p><CreateOpportunity companyId={company.id} label="New opportunity (manual)" /></p>
+        </>
       )}
     </main>
   );

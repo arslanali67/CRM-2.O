@@ -36,7 +36,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 1D: Workspace & Hardening (Wk 17–22)
 - [x] M23 Company / contact detail
 - [x] M22 Search & filtering
-- [ ] M19 Job opportunity pipeline
+- [ ] M19 Job opportunity pipeline (built; own tests pass; awaiting batch verification)
 - [ ] M29 Settings
 - [ ] M7 Duplicate management
 - [ ] M32 Backup & recovery

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LabelBadge } from "../../inbox/label";
+import { CreateOpportunity } from "../../opportunities/shared";
 
 export default function Thread() {
   const { key } = useParams();
@@ -55,7 +56,8 @@ export default function Thread() {
               {x.sent_at && <> · {new Date(x.sent_at).toLocaleString()}</>}</div>
           ) : (
             <div><b>{x.from_name || x.from_email} → you</b> <LabelBadge m={x} /> · {x.when && new Date(x.when).toLocaleString()}
-              {x.attachment_names?.length > 0 && <small> · attachments: {x.attachment_names.join(", ")}</small>}</div>
+              {x.attachment_names?.length > 0 && <small> · attachments: {x.attachment_names.join(", ")}</small>}
+              {x.label === "reply" && x.company_id && <> <CreateOpportunity messageId={x.id} suggestedTitle={first.subject.replace(/^(re|aw|fw|wg):\s*/i, "")} /></>}</div>
           )}
           <div><b>Subject:</b> {x.subject}</div>
           <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{x.kind === "out" ? x.body : x.body_text}</pre>

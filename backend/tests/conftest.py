@@ -124,7 +124,7 @@ def _clean_rollback_conn(test_url, **kwargs):
     """
     with psycopg.connect(test_url, **kwargs) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
-        for table in ("notifications", "ai_analyses", "inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts",
+        for table in ("notifications", "opportunity_stage_history", "opportunities", "ai_analyses", "inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts",
                       "companies"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("DELETE FROM app_settings")
@@ -160,6 +160,8 @@ def client(test_url, monkeypatch):
         conn.execute("SET session_replication_role = replica")
         conn.execute("DELETE FROM suppressions")
         conn.execute("DELETE FROM notifications")
+        conn.execute("DELETE FROM opportunity_stage_history")
+        conn.execute("DELETE FROM opportunities")
         conn.execute("DELETE FROM ai_analyses")
         conn.execute("DELETE FROM inbound_messages")
         conn.execute("DELETE FROM mailbox_sync")

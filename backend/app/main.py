@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import (activity, ai_analysis, companies, composer, csv_import, dashboard, detail, history, inbox_sync,
-                 leads, mail_account, notes_tasks, notifications, profile, safety, search, sender, settings,
+                 leads, mail_account, notes_tasks, notifications, opportunities, profile, safety, search, sender, settings,
                  suppressions, templates)
 from app.auth import verify_password
 from app.deps import require_owner
@@ -70,6 +70,7 @@ app.include_router(notifications.router)
 app.include_router(dashboard.router)
 app.include_router(detail.router)
 app.include_router(search.router)
+app.include_router(opportunities.router)
 
 
 class LoginIn(BaseModel):

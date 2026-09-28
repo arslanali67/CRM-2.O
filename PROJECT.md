@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.23
+- **Spec version:** 1.24
 - **Last updated:** 2026-09-27
 
 ---
@@ -262,6 +262,11 @@ Goal: ready for daily use.
   - **Speed:** Postgres `pg_trgm` trigram indexes (built into Postgres, no new package). Global search and filtered Leads each < 300 ms at 10k companies, 20k contacts, 10k emails, 5k replies.
   - Depends on: M5, M13. Done when: <300 ms at 10k companies.
 - **M19 Job opportunity pipeline.** Stages NEW → … → OFFER → HIRED; only factual events change a stage automatically.
+  - **Stages (owner's choice, closes §7 gap):** `new` → `applied` → `screening` → `interviewing` → `offer` → `hired`, plus `rejected` and `withdrawn`.
+  - **Opportunity:** role title, company, contact, source reply (inbound message), stage; stage history logged by a DB trigger (from, to, when, actor, reason).
+  - **Creation:** one click "Create opportunity" on a reply (Inbox, thread, company page), prefilled from the reply and its AI label; never automatic.
+  - **Only facts move stages automatically:** creation from a reply (`new`); recording an interview in M20 (→ `interviewing`). AI labels never move a stage; they only show a one-click suggestion. Manual stage changes are always allowed, with an optional note.
+  - **UI:** Opportunities page grouped by stage (Kanban is Phase 3); opportunity page (stage, history, linked reply/thread, contact, AI suggestion, notes, tasks); the company Opportunity tab and dashboard Opportunities KPI become real. Notes and tasks accept `opportunity`.
   - Depends on: M16. Done when: reply → opportunity → all stages, with history.
 - **M29 Settings.** Email account, AI provider, limits, notifications, cooldowns.
   - Depends on: M11, M16. Done when: settings are validated, audited and applied without restart.
@@ -342,7 +347,6 @@ Anything not listed in this file, including:
 
 The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pdf` for full per-milestone detail. That blueprint is **not** in this folder. Items it defines are not in scope here until they are added to this file:
 - Safety test cases S1–S12 (M31).
-- Intermediate opportunity stages (M19). (Lead stages were decided in v1.8, see M6.)
 
 ## 8. Open questions (all answered 2026-09-27)
 
@@ -383,3 +387,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.21 | M18 detailed: KPI definitions with period filter, placeholder tiles for opportunities/interviews until M19/M20, feeds, <500 ms at 10k companies. Process: full test suite now runs every 2–3 milestones (owner's request); milestones stay unticked until that batch run. | Owner |
 | 2026-09-28 | 1.22 | M23 detailed: tabbed company page with summary header, new contact page, opportunity placeholder until M19, reachability test. | Owner |
 | 2026-09-28 | 1.23 | M22 detailed: global search over 6 record types, reply/template/date/text Leads filters, pg_trgm indexes, <300 ms at 10k companies. | Owner |
+| 2026-09-28 | 1.24 | M19 detailed: 8 opportunity stages (closes the last §7 stage gap), one-click creation from a reply, DB-logged stage history, AI suggestions only, Opportunities pages, real dashboard/company opportunity data. | Owner |
