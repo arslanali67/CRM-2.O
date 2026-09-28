@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 17 / 35**
+**Progress: 18 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -30,7 +30,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [ ] M14 Inbox synchronization
 - [x] M15 Reply detection
 - [ ] M16 AI reply analysis (built; accuracy eval pending: Gemini free tier allows 20 requests/day/model, owner deferred)
-- [ ] M17 Notifications
+- [x] M17 Notifications
 - [ ] M18 Dashboard
 
 ## Phase 1D: Workspace & Hardening (Wk 17–22)
