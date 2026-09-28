@@ -29,7 +29,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 1C: Replies (Wk 13–16)
 - [ ] M14 Inbox synchronization
 - [x] M15 Reply detection
-- [ ] M16 AI reply analysis
+- [ ] M16 AI reply analysis (built; accuracy eval pending: Gemini free tier allows 20 requests/day/model, owner deferred)
 - [ ] M17 Notifications
 - [ ] M18 Dashboard
 

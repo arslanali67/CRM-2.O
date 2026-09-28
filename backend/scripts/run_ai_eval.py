@@ -27,16 +27,16 @@ def main() -> int:
     for n, it in enumerate(items):
         if n:
             time.sleep(THROTTLE_SECONDS)
-        for attempt in range(3):
+        for attempt in range(5):  # the free tier is sometimes busy (503) or rate limited (429): back off
             try:
                 r = analyse_text(it["subject"], it["body"], it["received"])
                 break
             except AIError as e:
-                if attempt == 2:
+                if attempt == 4:
                     r = {"status": "error", "label": None, "extracted": {}, "dropped": [], "error": str(e)}
                 else:
-                    time.sleep(20)
-        got = r["label"] if r["status"] == "ok" else f"<{r['status']}>"
+                    time.sleep(15 * (attempt + 1))
+        got = r["label"] if r["status"] == "ok" else f"<{r['status']}: {r.get('error', '')}>"
         errors += r["status"] == "error"
         correct += got == it["expected"]
         confusion[(it["expected"], got)] += 1

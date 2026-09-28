@@ -118,8 +118,14 @@ def post_json(url: str, headers: dict, payload: dict) -> dict:
         raise AIError(f"could not reach Gemini ({type(e).__name__})") from None
     if r.status_code == 429:
         raise AIError("rate limited by Gemini (free tier); will retry")
+    if r.status_code == 503:
+        raise AIError("Gemini is busy (HTTP 503); will retry")
     if r.status_code >= 400:
-        raise AIError(f"Gemini returned HTTP {r.status_code}")
+        try:
+            detail = str(r.json().get("error", {}).get("message", ""))[:200]
+        except ValueError:
+            detail = ""
+        raise AIError(f"Gemini returned HTTP {r.status_code}{': ' + detail if detail else ''}")
     return r.json()
 
 
