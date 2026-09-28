@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.21
+- **Spec version:** 1.22
 - **Last updated:** 2026-09-27
 
 ---
@@ -251,6 +251,10 @@ Goal: never miss a reply, never answer automatically.
 Goal: ready for daily use.
 
 - **M23 Company / contact detail.** 360° page: contacts, emails, replies, opportunity, notes, tasks, timeline.
+  - **Company page:** summary header (stage, domain, blocked, last emailed, last reply + AI label, counts of contacts / emails / replies / open tasks) and tabs: Overview (editable details, stage, block, latest reply + AI summary), Contacts (each links to its page), Emails & replies (by thread), Notes, Tasks, Timeline, Opportunity (placeholder until M19).
+  - **Contact page** `/contacts/{id}`: details, email class, blocked status, emails sent to them, their replies, their notes, tasks and timeline (own events plus emails to/from their address).
+  - **API:** `GET /companies/{id}/overview`, `GET /contacts/{id}`, contact timeline.
+  - Test: a company with every kind of related record; each must appear on the company or contact page with a working link.
   - Depends on: M13, M15, M21. Done when: every related record is reachable from the page.
 - **M22 Search & filtering.** Global search plus filters by country, industry, stage, reply, template, date.
   - Depends on: M5, M13. Done when: <300 ms at 10k companies.
@@ -374,3 +378,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.19 | M16 detailed: the 12 AI labels (closes §7 gap), code-enforced verbatim evidence, replies only with quoted history stripped, background analysis, synthetic evaluation set with one approved real run. | Owner |
 | 2026-09-28 | 1.20 | M17 detailed: notification events (replies/auto-replies/bounces, sending problems, system problems), DB-trigger exactly-once with AI priority updates, deep links to the message, bell on every page. Also: default Gemini model gemini-3.8-flash (2.5 closed to new users); M16 eval deferred by owner (free tier 20 requests/day/model). | Owner |
 | 2026-09-28 | 1.21 | M18 detailed: KPI definitions with period filter, placeholder tiles for opportunities/interviews until M19/M20, feeds, <500 ms at 10k companies. Process: full test suite now runs every 2–3 milestones (owner's request); milestones stay unticked until that batch run. | Owner |
+| 2026-09-28 | 1.22 | M23 detailed: tabbed company page with summary header, new contact page, opportunity placeholder until M19, reachability test. | Owner |

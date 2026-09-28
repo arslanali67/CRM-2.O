@@ -34,7 +34,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [ ] M18 Dashboard (built; own tests pass; awaiting batch verification)
 
 ## Phase 1D: Workspace & Hardening (Wk 17–22)
-- [ ] M23 Company / contact detail
+- [ ] M23 Company / contact detail (built; own tests pass; awaiting batch verification)
 - [ ] M22 Search & filtering
 - [ ] M19 Job opportunity pipeline
 - [ ] M29 Settings
