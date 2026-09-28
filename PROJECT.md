@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.22
+- **Spec version:** 1.23
 - **Last updated:** 2026-09-27
 
 ---
@@ -257,6 +257,9 @@ Goal: ready for daily use.
   - Test: a company with every kind of related record; each must appear on the company or contact page with a working link.
   - Depends on: M13, M15, M21. Done when: every related record is reachable from the page.
 - **M22 Search & filtering.** Global search plus filters by country, industry, stage, reply, template, date.
+  - **Global search** in the top bar (≥ 2 characters): companies (name, domain), contacts (name, email), sent emails (subject, recipient), replies (subject, sender), templates (name), notes (text); top 5 per kind, grouped, each linked.
+  - **New Leads filters:** name/domain contains; reply (replied / not replied / reply with a given AI label); emailed with template X; last emailed between, last reply between, added between. Combine with the existing M6 filters.
+  - **Speed:** Postgres `pg_trgm` trigram indexes (built into Postgres, no new package). Global search and filtered Leads each < 300 ms at 10k companies, 20k contacts, 10k emails, 5k replies.
   - Depends on: M5, M13. Done when: <300 ms at 10k companies.
 - **M19 Job opportunity pipeline.** Stages NEW → … → OFFER → HIRED; only factual events change a stage automatically.
   - Depends on: M16. Done when: reply → opportunity → all stages, with history.
@@ -379,3 +382,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.20 | M17 detailed: notification events (replies/auto-replies/bounces, sending problems, system problems), DB-trigger exactly-once with AI priority updates, deep links to the message, bell on every page. Also: default Gemini model gemini-3.8-flash (2.5 closed to new users); M16 eval deferred by owner (free tier 20 requests/day/model). | Owner |
 | 2026-09-28 | 1.21 | M18 detailed: KPI definitions with period filter, placeholder tiles for opportunities/interviews until M19/M20, feeds, <500 ms at 10k companies. Process: full test suite now runs every 2–3 milestones (owner's request); milestones stay unticked until that batch run. | Owner |
 | 2026-09-28 | 1.22 | M23 detailed: tabbed company page with summary header, new contact page, opportunity placeholder until M19, reachability test. | Owner |
+| 2026-09-28 | 1.23 | M22 detailed: global search over 6 record types, reply/template/date/text Leads filters, pg_trgm indexes, <300 ms at 10k companies. | Owner |

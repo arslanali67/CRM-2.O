@@ -5,8 +5,11 @@ import { useEffect, useState } from "react";
 import { COMPANY_FIELDS, STAGES, errorText } from "./shared";
 
 const EMPTY_COMPANY = Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, ""]));
-const NO_FILTERS = { stage: "", country: "", city: "", industry: "", source: "", has_email: "", has_careers: "",
-                     include_blocked: false, archived: false };
+const NO_FILTERS = { q: "", stage: "", country: "", city: "", industry: "", source: "", has_email: "", has_careers: "",
+                     replied: "", ai_label: "", template_id: "", emailed_from: "", emailed_to: "", replied_from: "",
+                     replied_to: "", added_from: "", added_to: "", include_blocked: false, archived: false };
+const AI_LABELS = ["interview_request", "interested", "needs_info", "scheduling", "application_redirect", "referral",
+                   "keep_on_file", "not_hiring", "rejection", "offer", "unsubscribe_request", "other"];
 
 export default function Leads() {
   const router = useRouter();
@@ -24,7 +27,11 @@ export default function Leads() {
     setData(await res.json());
     setSelected(new Set());
   }
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [templates, setTemplates] = useState([]);
+  useEffect(() => {
+    load();
+    fetch("/api/templates").then((r) => r.ok && r.json()).then((t) => t && setTemplates(t));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setFilter = (k, v) => setFilters({ ...filters, [k]: v });
   const applyFilters = (e) => { e.preventDefault(); load(); };
@@ -103,6 +110,27 @@ export default function Leads() {
         {yesNo("has_careers", "Careers email")}
         <label><input type="checkbox" checked={filters.include_blocked} onChange={(e) => setFilter("include_blocked", e.target.checked)} /> blocked</label>
         <label><input type="checkbox" checked={filters.archived} onChange={(e) => setFilter("archived", e.target.checked)} /> archived</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, width: "100%" }}>
+          {input("q", "Name or domain contains")}
+          <select aria-label="Reply" value={filters.replied} onChange={(e) => setFilter("replied", e.target.value)}>
+            <option value="">Reply: any</option><option value="true">replied</option><option value="false">not replied</option>
+          </select>
+          <select aria-label="AI label" value={filters.ai_label} onChange={(e) => setFilter("ai_label", e.target.value)}>
+            <option value="">AI label: any</option>
+            {AI_LABELS.map((l) => <option key={l} value={l}>{l.replaceAll("_", " ")}</option>)}
+          </select>
+          <select aria-label="Template" value={filters.template_id} onChange={(e) => setFilter("template_id", e.target.value)}>
+            <option value="">Template: any</option>
+            {templates.map((t) => <option key={t.id} value={t.id}>emailed with {t.name}</option>)}
+          </select>
+          {[["emailed", "Last emailed"], ["replied", "Last reply"], ["added", "Added"]].map(([k, label]) => (
+            <span key={k}><small>{label}</small>{" "}
+              <input type="date" aria-label={`${label} from`} value={filters[`${k}_from`]} onChange={(e) => setFilter(`${k}_from`, e.target.value)} />
+              <small>–</small>
+              <input type="date" aria-label={`${label} to`} value={filters[`${k}_to`]} onChange={(e) => setFilter(`${k}_to`, e.target.value)} />
+            </span>
+          ))}
+        </div>
         <button type="submit">Filter</button>
         <button type="button" onClick={clearFilters}>Clear</button>
       </form>
@@ -122,7 +150,7 @@ export default function Leads() {
           <tr>
             <th><input type="checkbox" aria-label="Select all shown" checked={allSelected} onChange={toggleAll} /></th>
             <th align="left">Name</th><th align="left">Stage</th><th align="left">City</th><th align="left">Industry</th>
-            <th align="right">Emails</th><th />
+            <th align="right">Emails</th><th align="left">Last emailed</th><th align="left">Last reply</th><th />
           </tr>
         </thead>
         <tbody>
@@ -134,6 +162,8 @@ export default function Leads() {
               <td>{l.city}</td>
               <td><small>{l.industry}</small></td>
               <td align="right">{l.usable_emails}{l.careers_emails > 0 && <mark title="has a careers email"> careers</mark>}</td>
+              <td><small>{l.last_emailed_at ? new Date(l.last_emailed_at).toLocaleDateString() : "—"}</small></td>
+              <td><small>{l.last_reply_at ? new Date(l.last_reply_at).toLocaleDateString() : "—"}</small></td>
               <td>
                 {l.blocked && <mark style={{ background: "crimson", color: "white" }}>blocked</mark>}
                 {l.in_compose_list && <mark> in list</mark>}
