@@ -4,6 +4,8 @@ import os
 OWNER_EMAIL = os.environ["OWNER_EMAIL"].strip().lower()
 OWNER_PASSWORD_HASH = os.environ["OWNER_PASSWORD_HASH"]
 SESSION_SECRET = os.environ["SESSION_SECRET"]
+if len(SESSION_SECRET) < 32:  # M30: a short secret makes session cookies forgeable
+    raise SystemExit("SESSION_SECRET must be at least 32 characters (python -c \"import secrets; print(secrets.token_urlsafe(32))\")")
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://crm:crm@postgres:5432/crm")
 REDIS_URL = os.environ.get("REDIS_URL", "redis://redis:6379/0")

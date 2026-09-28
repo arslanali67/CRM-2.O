@@ -26,6 +26,8 @@ jobs:
           echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
+      - name: Dependency audit (M30)
+        run: pip install pip-audit && pip-audit -r requirements.txt
 
   frontend:
     runs-on: ubuntu-latest
@@ -35,7 +37,17 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: "24" }
       - run: npm ci
+      - name: Dependency audit (M30)
+        run: npm audit --audit-level=high
       - run: npm run build
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python .github/scripts/security_checks.py
 
   compose:
     runs-on: ubuntu-latest

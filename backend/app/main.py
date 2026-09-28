@@ -12,7 +12,8 @@ from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import (activity, ai_analysis, app_settings, backup, companies, composer, csv_import, dashboard, detail, duplicates, export, history, inbox_sync,
-                 leads, mail_account, notes_tasks, notifications, opportunities, profile, safety, search, sender, settings,
+                 leads, mail_account, notes_tasks, notifications, opportunities, profile, safety, search, security, sender,
+                 settings,
                  suppressions, templates)
 from app.auth import verify_password
 from app.deps import require_owner
@@ -23,6 +24,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 log = logging.getLogger("api")
+security.install_log_redaction()  # M30: uvicorn configured its loggers before importing us
 
 app = FastAPI(title="Job Outreach CRM")
 app.add_middleware(
@@ -48,7 +50,12 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     ms = (time.perf_counter() - start) * 1000
     log.info("%s %s %s %.0fms", request.method, request.url.path, response.status_code, ms)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
     return response
+
+
+app.middleware("http")(security.csrf_guard)  # M30; added last, so it runs first
 
 
 app.include_router(profile.router)
@@ -84,11 +91,16 @@ class LoginIn(BaseModel):
 
 @app.post("/auth/login")
 def login(body: LoginIn, request: Request):
+    if wait := security.lockout.remaining():
+        raise HTTPException(429, f"Too many failed logins; try again in {wait // 60 + 1} min",
+                            headers={"Retry-After": str(wait)})
     email_ok = hmac.compare_digest(body.email.strip().lower(), settings.OWNER_EMAIL)
     pw_ok = verify_password(body.password, settings.OWNER_PASSWORD_HASH)
     if not (email_ok and pw_ok):
         log.warning("failed login attempt")
+        security.lockout.failed()
         raise HTTPException(401, "Invalid email or password")
+    security.lockout.succeeded()
     request.session.clear()
     request.session["owner"] = True
     log.info("owner signed in")

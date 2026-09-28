@@ -16,7 +16,7 @@ TEST_PASSWORD = "correct horse battery"
 os.environ.update(
     OWNER_EMAIL="Owner@Example.com",
     OWNER_PASSWORD_HASH=hash_password(TEST_PASSWORD),
-    SESSION_SECRET="test-secret",
+    SESSION_SECRET="test-secret-at-least-32-characters-long",
     CREDENTIALS_KEY=Fernet.generate_key().decode(),
 )
 
@@ -62,6 +62,13 @@ def no_real_ai(monkeypatch):
     monkeypatch.setattr(ai_analysis, "post_json", blocked)
     monkeypatch.setattr(ai_analysis, "list_models", blocked)
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+
+
+@pytest.fixture(autouse=True)
+def fresh_login_lockout():
+    """Failed logins in one test must not lock out the next (M30 lockout is process memory)."""
+    from app import security
+    security.lockout = security.Lockout()
 
 
 @pytest.fixture

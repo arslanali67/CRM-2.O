@@ -64,4 +64,5 @@ def render_strict(subject: str, body: str, values: dict[str, str]) -> dict[str, 
     body_out, u2 = render(body, values)
     if u1 or u2:
         raise RenderError(sorted(set(u1 + u2)))
-    return {"subject": subject_out, "body": body_out}
+    # A variable (e.g. an imported company name) must never put a line break into the Subject header (M30).
+    return {"subject": re.sub(r"\s*[\r\n]+\s*", " ", subject_out), "body": body_out}

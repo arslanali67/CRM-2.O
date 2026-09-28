@@ -26,7 +26,7 @@ class DraftsIn(BaseModel):
 
 class DraftEdit(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
-    subject: str = Field(min_length=1, max_length=safety.SUBJECT_MAX)
+    subject: str = Field(min_length=1, max_length=safety.SUBJECT_MAX, pattern=r"^[^\r\n]*$")
     body: str = Field(min_length=1, max_length=safety.BODY_MAX)
     cv_version_id: int | None = None  # None = no attachment
 

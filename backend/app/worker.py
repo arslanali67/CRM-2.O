@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.signals import after_setup_logger, after_setup_task_logger
 
 from app import settings
 
@@ -13,6 +14,15 @@ celery_app.conf.beat_schedule = {
     # Daily catch-up backup (M32): runs when the last good backup is older than 24 h.
     "backup": {"task": "app.worker.backup", "schedule": 600.0, "options": {"expires": 590}},
 }
+
+
+
+@after_setup_logger.connect
+@after_setup_task_logger.connect
+def redact_logs(**_):
+    """M30: task results can contain email addresses; mask them (and any secrets) in worker/beat logs."""
+    from app.security import install_log_redaction
+    install_log_redaction()
 
 
 @celery_app.task

@@ -14,7 +14,7 @@ router = APIRouter(dependencies=[Depends(require_owner)])
 
 class VersionIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
-    subject: str = Field(min_length=1, max_length=300)
+    subject: str = Field(min_length=1, max_length=300, pattern=r"^[^\r\n]*$")
     body: str = Field(min_length=1, max_length=20000)
 
     @model_validator(mode="after")

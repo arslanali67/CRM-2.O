@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.27
+- **Spec version:** 1.28
 - **Last updated:** 2026-09-28
 
 ---
@@ -288,6 +288,21 @@ Goal: ready for daily use.
   - `.env` is not in backups; the owner keeps a copy (without it, reconnect Gmail after a restore).
 - **M30 Security [SAFETY].** Encryption, CSRF protection, redacted logs, localhost binding, prompt-injection hardening.
   - Continuous. Done when: the security checklist is fully green.
+  - **Security checklist** (each item has an automated check):
+    1. Gmail app password encrypted (Fernet), never returned by the API, never exported.
+    2. Localhost binding: only web is published, on 127.0.0.1; Postgres, Redis and API have no published ports (test on the compose file).
+    3. Validation errors never echo rejected input.
+    4. Prompt injection: email is untrusted data, fixed output schema, every claim must quote the email, links http(s) and present in the email; AI output can never send, approve or change a stage (tested with a hostile email and a compliant fake model).
+    5. Upload limits (CV PDF 5 MB with magic bytes, CSV 5 MB / 5000 rows); no raw-HTML rendering in the frontend.
+    6. CSRF: SameSite=Strict session cookie plus rejection (403) of cross-site state-changing requests (`Origin` / `Sec-Fetch-Site`).
+    7. Login brute force: 5 failures within 15 min lock logins for 15 min.
+    8. Redacted logs: email addresses and `.env` secret values are masked in API and worker logs.
+    9. Security headers on every page: frame blocking, content-security policy, nosniff, no-referrer.
+    10. Header injection: the database rejects line breaks in email subjects and recipients.
+    11. Weak secrets: the app refuses to start with a `SESSION_SECRET` shorter than 32 characters.
+    12. CI secret scan (small script, no new tool): tracked files must not contain API keys, Fernet keys or `.env` files.
+    13. CI dependency audit: `pip-audit` (CI-only tool) and `npm audit` fail on known high-severity vulnerabilities.
+  - **Owner to-dos (listed, not gating):** rotate the Gemini key that was pasted into chat; enable disk encryption (BitLocker); keep a private copy of `.env`.
 - **M31 Testing [SAFETY].** Unit, integration, API, E2E, plus safety suite S1–S12 (e.g. reply → no send, no reply → no follow-up).
   - Continuous. Done when: safety suite S1–S12 and CI are green.
 - **M33 Documentation.** README, setup, email integration, AI, troubleshooting, user guide.
@@ -403,3 +418,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.25 | M29 detailed: Settings page for limits, cooldowns, AI on/off + validated model, notification kinds; kill switch stays on Outbox; key stays in .env; audited; live without restart. | Owner |
 | 2026-09-28 | 1.26 | M7 detailed: duplicate suggestions (domain / email / LinkedIn / name), manual merge with survivor choice, snapshot + undo, do-not-contact carry-over, no merge with pending emails. | Owner |
 | 2026-09-28 | 1.27 | M32 detailed: daily catch-up pg_dump (14 kept, manifest), /backup page, CLI-only restore that forces sending off and returns approved/queued emails to draft, restore drill, CSV + full JSON/CV export; PostgreSQL 18 client tools in the backend image. | Owner |
+| 2026-09-28 | 1.28 | M30 detailed: 13-item security checklist as the definition of done (CSRF origin check, login lockout, log redaction, security headers, header-injection guard, secret-strength check, CI secret scan, CI dependency audit with new CI-only tool pip-audit, plus checks for existing protections); owner to-dos listed. | Owner |
