@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 24 / 35**
+**Progress: 25 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -39,7 +39,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M19 Job opportunity pipeline
 - [x] M29 Settings
 - [x] M7 Duplicate management
-- [ ] M32 Backup & recovery (built; own tests pass; awaiting batch verification)
+- [x] M32 Backup & recovery
 - [ ] M30 Security
 - [ ] M31 Testing (GATE)
 - [ ] M33 Documentation
