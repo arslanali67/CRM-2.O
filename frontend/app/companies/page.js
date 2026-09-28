@@ -92,7 +92,7 @@ export default function Leads() {
 
   return (
     <main style={{ maxWidth: 1000 }}>
-      <p><Link href="/">← Home</Link> · <Link href="/compose">Compose list</Link></p>
+      <p><Link href="/">← Home</Link> · <Link href="/compose">Compose list</Link> · <Link href="/duplicates">Duplicates</Link></p>
       <h1>Leads</h1>
 
       <form onSubmit={applyFilters} style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>

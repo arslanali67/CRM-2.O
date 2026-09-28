@@ -66,7 +66,7 @@ export default function Home() {
     <main>
       <p>
         <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
-        <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> ·{" "}
+        <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> · <Link href="/duplicates">Duplicates</Link> ·{" "}
         <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
         <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link> · <Link href="/settings">Settings</Link>
       </p>
