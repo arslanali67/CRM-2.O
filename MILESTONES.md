@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 28 / 35**
+**Progress: 29 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -42,7 +42,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M32 Backup & recovery
 - [x] M30 Security (checklist 13/13 green; owner to-dos: rotate the Gemini key pasted in chat, enable BitLocker, keep a copy of .env)
 - [x] M31 Testing (GATE) (S1–S12 green; 541 backend tests + 9 browser E2E flows; CI green)
-- [ ] M33 Documentation
+- [x] M33 Documentation (clean-clone drill passed 2026-09-29: fresh GitHub clone set up from the docs alone; login, dashboard and restore drill OK)
 - [ ] M34 Final QA
 
 ## Phase 2: Assist (Mo 6–7)
