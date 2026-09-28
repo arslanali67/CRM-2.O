@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.29
+- **Spec version:** 1.30
 - **Last updated:** 2026-09-28
 
 ---
@@ -321,6 +321,9 @@ Goal: ready for daily use.
   - **E2E:** Playwright (`@playwright/test`, dev-only) against the real Docker stack with sending OFF and no Gmail account: login, lockout, CSV import, leads, compose → approve (stays queued, never sent), settings, backup page, security headers. Runs in CI.
 - **M33 Documentation.** README, setup, email integration, AI, troubleshooting, user guide.
   - Done when: a clean machine can be set up from the docs alone.
+  - **Docs:** `README.md` (what it is, safety rule, quick start) and `docs/`: `setup.md` (Windows: Docker Desktop, Git, optional make; plain `docker compose` equivalents), `email.md` (Gmail 2-step verification, app password, connect, sending switch), `ai.md` (Gemini key, free-tier limits and privacy, Settings), `troubleshooting.md`, `user-guide.md` (daily workflow), `backup.md` (backups, restore, drill, exports).
+  - **Setup helper:** `make setup` (or one `docker run` command) asks for the login email and password, generates every secret, writes `.env`; never prints secrets, refuses to overwrite an existing `.env`. Needs only Docker.
+  - **Verification:** clean-clone drill: fresh clone from GitHub into an empty folder, docs followed word for word as a separate stack on its own port; passes when login, the dashboard and the restore drill work. Every gap found is fixed in the docs.
 - **M34 Final QA.** Full checklist plus one week of real use at 5 emails/day.
   - Done when: checklist 100% and owner sign-off.
 
@@ -434,3 +437,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.27 | M32 detailed: daily catch-up pg_dump (14 kept, manifest), /backup page, CLI-only restore that forces sending off and returns approved/queued emails to draft, restore drill, CSV + full JSON/CV export; PostgreSQL 18 client tools in the backend image. | Owner |
 | 2026-09-28 | 1.28 | M30 detailed: 13-item security checklist as the definition of done (CSRF origin check, login lockout, log redaction, security headers, header-injection guard, secret-strength check, CI secret scan, CI dependency audit with new CI-only tool pip-audit, plus checks for existing protections); owner to-dos listed. | Owner |
 | 2026-09-28 | 1.29 | M31 detailed: safety suite S1–S12 defined (closes the last §7 gap); Playwright browser E2E (new dev-only dependency @playwright/test) against the Docker stack in CI. | Owner |
+| 2026-09-29 | 1.30 | M33 detailed: README + six guides in docs/, `make setup` helper that writes .env with generated secrets (Docker only), clean-clone drill as the done-check. | Owner |

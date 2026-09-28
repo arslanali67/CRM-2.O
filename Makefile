@@ -1,4 +1,7 @@
-.PHONY: up down logs test password backup restore restore-drill e2e
+.PHONY: setup up down logs test password backup restore restore-drill e2e
+
+setup:     ## First run: asks for your login, generates all secrets, writes .env (only Docker needed)
+	docker run --rm -it -v "$(CURDIR):/work" -w /work python:3.12-slim python backend/scripts/setup_env.py
 
 up:        ## Build and start everything (http://localhost:3000)
 	docker compose up -d --build
