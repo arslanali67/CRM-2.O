@@ -266,7 +266,7 @@ def imported_modules(path: Path) -> set[str]:
     return mods
 
 
-def test_S11_the_app_only_talks_to_gmail_and_gemini():
+def test_S11_the_app_only_talks_to_gmail_and_gemini(test_url):
     for path in APP.glob("*.py"):
         for mod in imported_modules(path) & NETWORK_MODULES:
             assert path.name in ALLOWED_NETWORK_USE.get(mod, set()), f"{path.name} imports {mod}"
@@ -277,7 +277,7 @@ def test_S11_the_app_only_talks_to_gmail_and_gemini():
                              re.I), path.name
     from app.mail_account import AccountIn  # mail servers are fixed to Gmail: the owner cannot point them elsewhere
     assert set(AccountIn.model_fields) == {"email_address", "display_name", "app_password"}
-    with psycopg.connect(settings.DATABASE_URL) as conn:
+    with psycopg.connect(test_url) as conn:
         defaults = conn.execute("SELECT column_name, column_default FROM information_schema.columns "
                                 "WHERE table_name = 'email_account' AND column_name LIKE '%%_host'").fetchall()
     assert {c: d.split("'")[1] for c, d in defaults} == {"smtp_host": "smtp.gmail.com", "imap_host": "imap.gmail.com"}
