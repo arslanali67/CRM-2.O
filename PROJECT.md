@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.19
+- **Spec version:** 1.20
 - **Last updated:** 2026-09-27
 
 ---
@@ -230,7 +230,12 @@ Goal: never miss a reply, never answer automatically.
   - **Evaluation:** ~40 synthetic reply emails (English/German, all labels); automated tests use a fake Gemini; the ≥90% check is one real run through the owner's key (approved).
   - Depends on: M15. Done when: ≥90% label accuracy and 0 extracted fields without evidence.
 - **M17 Notifications.** Bell icon, priority by classification, deep link to the reply.
-  - Depends on: M16. Done when: exactly one notification per event, deep-linked.
+  - **Events (owner-approved):** inbound message labelled reply / auto_reply / bounce (never unrelated); email ending `failed`, or `cancelled` by send-time safety checks or because the company replied; inbox sync failing 3 runs in a row; AI analysis failing after all retries.
+  - **Exactly once, DB-enforced:** notifications are created by database triggers with a unique key per (event kind, source); a later AI analysis updates the same notification's priority/summary instead of adding one.
+  - **Priority:** high = AI offer / interview_request / scheduling / needs_info; normal = AI interested / referral / application_redirect / unsubscribe_request, unanalysed reply, hard bounce, sending and system problems; low = AI keep_on_file / not_hiring / rejection / other, auto-reply, soft bounce.
+  - **Deep link:** to the thread, scrolled to and highlighting the message (or to the email / Inbox for non-message events).
+  - **UI:** top bar with bell and unread count on every page (refresh every 30 s), dropdown of latest, Notifications page, mark read / mark all read. In-app only; nothing is emailed.
+  - Depends on: M16 (works with M15 labels; AI priority applies once analyses exist). Done when: exactly one notification per event, deep-linked.
 - **M18 Dashboard.** KPIs: leads, sent, replies, reply rate, interested, opportunities, interviews, offers; activity feeds.
   - Depends on: M17. Done when: KPIs match SQL checks and the page loads in <500 ms.
 
@@ -362,3 +367,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.17 | Gate waiver recorded: Wk 11–12 real test send deferred by the owner; M13–M15 built under the waiver. | Owner |
 | 2026-09-27 | 1.18 | M15 detailed: five ordered rules with DSN parsing and auto-reply headers; effects: replied stage, bounced marking, hard bounce → do-not-contact, reply → cancel pending emails to that company. | Owner |
 | 2026-09-27 | 1.19 | M16 detailed: the 12 AI labels (closes §7 gap), code-enforced verbatim evidence, replies only with quoted history stripped, background analysis, synthetic evaluation set with one approved real run. | Owner |
+| 2026-09-28 | 1.20 | M17 detailed: notification events (replies/auto-replies/bounces, sending problems, system problems), DB-trigger exactly-once with AI priority updates, deep links to the message, bell on every page. Also: default Gemini model gemini-3.8-flash (2.5 closed to new users); M16 eval deferred by owner (free tier 20 requests/day/model). | Owner |

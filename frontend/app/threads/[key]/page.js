@@ -10,6 +10,8 @@ export default function Thread() {
   const [t, setT] = useState(null);
   const [msg, setMsg] = useState("");
 
+  const [target, setTarget] = useState("");
+
   useEffect(() => {
     fetch(`/api/threads/${encodeURIComponent(key)}`).then(async (res) => {
       if (res.status === 401) return router.replace("/login");
@@ -17,6 +19,14 @@ export default function Thread() {
       res.ok ? setT(data) : setMsg(data.detail);
     });
   }, [key, router]);
+
+  // Deep link from a notification: /threads/<key>#in-<message id> scrolls to and highlights that message.
+  useEffect(() => {
+    if (!t) return;
+    const id = window.location.hash.slice(1);
+    setTarget(id);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [t]);
 
   if (!t) return <p>{msg || "Loading…"}</p>;
   // One chronological conversation: our emails and inbound messages (M14).
@@ -37,7 +47,9 @@ export default function Thread() {
         {t.inbound.length} received. The system never replies on its own.
       </small></p>
       {items.map((x) => (
-        <article key={`${x.kind}-${x.id}`} style={{ border: "1px solid #ddd", borderLeft: `4px solid ${x.kind === "in" ? "seagreen" : "steelblue"}`, padding: 12, marginBottom: 12 }}>
+        <article key={`${x.kind}-${x.id}`} id={`${x.kind}-${x.id}`}
+                 style={{ border: "1px solid #ddd", borderLeft: `4px solid ${x.kind === "in" ? "seagreen" : "steelblue"}`, padding: 12, marginBottom: 12,
+                          outline: target === `${x.kind}-${x.id}` ? "3px solid gold" : "none" }}>
           {x.kind === "out" ? (
             <div><b>You → {x.to_email}</b> · <Link href={`/outbox/${x.id}`}>{x.status}</Link>
               {x.sent_at && <> · {new Date(x.sent_at).toLocaleString()}</>}</div>

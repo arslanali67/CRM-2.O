@@ -253,6 +253,7 @@ def sync_mailbox(conn, imap, key: str, name: str, account: dict) -> dict:
         seen = stored = 0
     finished = len(uids) < MAX_PER_RUN
     conn.execute("UPDATE mailbox_sync SET uidvalidity = %s, last_sync_at = now(), last_ok = true, last_error = NULL, "
+                 "consecutive_failures = 0, failing_since = NULL, "
                  "last_rescan_at = CASE WHEN %s THEN now() ELSE last_rescan_at END WHERE mailbox = %s",
                  (uidvalidity, rescan and finished, key))
     conn.commit()
@@ -288,9 +289,12 @@ def sync_once() -> dict:
                 conn.rollback()  # the unfinished batch is discarded; its cursor did not move
                 detail = f"{type(e).__name__}: {str(e)[:200]}"
                 for key in [current] if current else [k for k, _ in MAILBOXES]:
-                    conn.execute("INSERT INTO mailbox_sync (mailbox, last_ok, last_error, last_sync_at) "
-                                 "VALUES (%s, false, %s, now()) ON CONFLICT (mailbox) DO UPDATE SET last_ok = false, "
-                                 "last_error = EXCLUDED.last_error, last_sync_at = now()", (key, detail))
+                    conn.execute("INSERT INTO mailbox_sync (mailbox, last_ok, last_error, last_sync_at, "
+                                 "consecutive_failures, failing_since) VALUES (%s, false, %s, now(), 1, now()) "
+                                 "ON CONFLICT (mailbox) DO UPDATE SET last_ok = false, "
+                                 "last_error = EXCLUDED.last_error, last_sync_at = now(), "
+                                 "consecutive_failures = mailbox_sync.consecutive_failures + 1, "
+                                 "failing_since = coalesce(mailbox_sync.failing_since, now())", (key, detail))
                 conn.commit()
                 return {"action": "error", "error": detail, "results": results}
             return {"action": "synced", "results": results}
