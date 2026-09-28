@@ -6,6 +6,9 @@ x-backend: &backend
   environment:
     DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD}@postgres:5432/crm
     REDIS_URL: redis://redis:6379/0
+    BACKUP_DIR: /backups
+  volumes:
+    - ./backups:/backups  # M32: backups live on the laptop, outside Docker (git-ignored)
   depends_on:
     postgres: { condition: service_healthy }
     redis: { condition: service_healthy }

@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.26
+- **Spec version:** 1.27
 - **Last updated:** 2026-09-28
 
 ---
@@ -280,6 +280,12 @@ Goal: ready for daily use.
   - Depends on: M4, M5. Done when: merge + undo work and no duplicate active domains exist.
 - **M32 Backup & recovery [SAFETY].** Nightly `pg_dump`, restore with sending disabled, CSV and full export.
   - Depends on: M1, M2. Done when: the restore drill passes and sending is off after restore.
+  - **Daily catch-up backup:** whenever the app runs and the last good backup is older than 24 h, `pg_dump` (custom format, includes CVs) writes to the git-ignored `backups/` folder with a manifest of row counts; the last 14 are kept. PostgreSQL 18 client tools (from postgresql.org) are added to the backend image.
+  - **Backup page `/backup`:** last backup time/size, list of backups, "Back up now"; a dashboard warning when the last backup is older than 48 h.
+  - **Restore (CLI only, never in the web UI):** `make restore FILE=…` stops worker and beat, restores, then before anything runs: sending forced OFF; approved/queued emails go back to draft (fresh approval needed); an email caught mid-send is marked failed ("check Gmail Sent before resending"); the restore is audited.
+  - **Restore drill:** `make restore-drill` restores the newest backup into a throwaway database and checks row counts against the manifest, safety triggers present, sending off, CVs readable; then drops it. An automated test does the same on test data.
+  - **Exports** (on `/backup`): CSV of companies, contacts, sent emails and replies; full export ZIP of every table as JSON plus CV PDFs, excluding the encrypted app password.
+  - `.env` is not in backups; the owner keeps a copy (without it, reconnect Gmail after a restore).
 - **M30 Security [SAFETY].** Encryption, CSRF protection, redacted logs, localhost binding, prompt-injection hardening.
   - Continuous. Done when: the security checklist is fully green.
 - **M31 Testing [SAFETY].** Unit, integration, API, E2E, plus safety suite S1–S12 (e.g. reply → no send, no reply → no follow-up).
@@ -396,3 +402,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.24 | M19 detailed: 8 opportunity stages (closes the last §7 stage gap), one-click creation from a reply, DB-logged stage history, AI suggestions only, Opportunities pages, real dashboard/company opportunity data. | Owner |
 | 2026-09-28 | 1.25 | M29 detailed: Settings page for limits, cooldowns, AI on/off + validated model, notification kinds; kill switch stays on Outbox; key stays in .env; audited; live without restart. | Owner |
 | 2026-09-28 | 1.26 | M7 detailed: duplicate suggestions (domain / email / LinkedIn / name), manual merge with survivor choice, snapshot + undo, do-not-contact carry-over, no merge with pending emails. | Owner |
+| 2026-09-28 | 1.27 | M32 detailed: daily catch-up pg_dump (14 kept, manifest), /backup page, CLI-only restore that forces sending off and returns approved/queued emails to draft, restore drill, CSV + full JSON/CV export; PostgreSQL 18 client tools in the backend image. | Owner |

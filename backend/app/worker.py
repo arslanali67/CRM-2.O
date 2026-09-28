@@ -10,6 +10,8 @@ celery_app.conf.beat_schedule = {
     "inbox-sync": {"task": "app.worker.inbox_sync", "schedule": 120.0, "options": {"expires": 110}},
     # AI analysis of new replies (M16); does nothing without GEMINI_API_KEY.
     "ai-analysis": {"task": "app.worker.ai_analysis", "schedule": 120.0, "options": {"expires": 110}},
+    # Daily catch-up backup (M32): runs when the last good backup is older than 24 h.
+    "backup": {"task": "app.worker.backup", "schedule": 600.0, "options": {"expires": 590}},
 }
 
 
@@ -34,3 +36,9 @@ def inbox_sync() -> dict:
 def ai_analysis() -> dict:
     from app.ai_analysis import analyse_pending
     return analyse_pending()
+
+
+@celery_app.task
+def backup() -> dict:
+    from app.backup import create_if_due
+    return create_if_due()

@@ -39,12 +39,14 @@ export default function Home() {
   const [health, setHealth] = useState(null);
   const [period, setPeriod] = useState("30");
   const [d, setD] = useState(null);
+  const [bk, setBk] = useState(null);
 
   useEffect(() => {
     fetch("/api/auth/me").then(async (res) => {
       if (res.status === 401) return router.replace("/login");
       setEmail((await res.json()).email);
       setHealth(await fetch("/api/health").then((r) => r.json()));
+      setBk(await fetch("/api/backups").then((r) => (r.ok ? r.json() : null)));
     });
   }, [router]);
 
@@ -68,9 +70,15 @@ export default function Home() {
         <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
         <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> · <Link href="/duplicates">Duplicates</Link> ·{" "}
         <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
-        <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link> · <Link href="/settings">Settings</Link>
+        <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link> · <Link href="/settings">Settings</Link> · <Link href="/backup">Backup & export</Link>
       </p>
 
+      {bk?.warn && (
+        <p style={{ color: "crimson" }}>
+          {bk.backups.length ? `Last backup was ${Math.round(bk.age_hours)} h ago.` : "No backup yet."}{" "}
+          <Link href="/backup">Back up now</Link>
+        </p>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1 style={{ margin: 0 }}>Dashboard</h1>
         <span>

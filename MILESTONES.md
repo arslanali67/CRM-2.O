@@ -39,7 +39,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M19 Job opportunity pipeline
 - [x] M29 Settings
 - [x] M7 Duplicate management
-- [ ] M32 Backup & recovery
+- [ ] M32 Backup & recovery (built; own tests pass; awaiting batch verification)
 - [ ] M30 Security
 - [ ] M31 Testing (GATE)
 - [ ] M33 Documentation

@@ -18,6 +18,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
+      - name: PostgreSQL 18 client tools (pg_dump/pg_restore for M32)
+        run: |
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-18
       - run: pip install -r requirements.txt
       - run: python -m pytest -q
 
