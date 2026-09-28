@@ -11,7 +11,9 @@ from app.main import app
 from conftest import RealAIBlocked
 from fakes import db
 
-REPLY = """Hi Arslan,
+REAL_POST_JSON = ai_analysis.post_json  # captured at import, before the autouse no_real_ai guard replaces it
+
+REPLY ="""Hi Arslan,
 
 thanks for your email! We'd love to have a first call. Could you do Tuesday 6 October at 10:00?
 Please book a slot here: https://cal.example.com/acme/intro
@@ -67,6 +69,19 @@ def gemini(monkeypatch):
 def test_tests_can_never_call_the_real_model():
     with pytest.raises(RealAIBlocked):
         ai_analysis.post_json("https://example", {}, {})
+
+
+@pytest.mark.parametrize("exc", [__import__("httpx").ConnectError("Name or service not known"),
+                                 __import__("httpx").ReadTimeout("timed out")])
+def test_network_failures_become_retryable_errors(monkeypatch, exc):
+    """Regression: a DNS failure used to crash the analysis run instead of being recorded and retried."""
+    import httpx
+
+    def boom(*a, **kw):
+        raise exc
+    monkeypatch.setattr(httpx, "post", boom)  # the real post_json, but httpx itself fails
+    with pytest.raises(AIError, match="could not reach Gemini"):
+        REAL_POST_JSON("https://example", {}, {})
 
 
 def test_quoted_history_is_stripped():

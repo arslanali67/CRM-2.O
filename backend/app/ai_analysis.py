@@ -112,7 +112,10 @@ def norm(s: str) -> str:
 # ---------- the model call (patched in tests; never reached without a key) ----------
 
 def post_json(url: str, headers: dict, payload: dict) -> dict:
-    r = httpx.post(url, headers=headers, json=payload, timeout=60)
+    try:
+        r = httpx.post(url, headers=headers, json=payload, timeout=60)
+    except httpx.HTTPError as e:  # DNS, connect, timeout...: recorded as an error and retried later
+        raise AIError(f"could not reach Gemini ({type(e).__name__})") from None
     if r.status_code == 429:
         raise AIError("rate limited by Gemini (free tier); will retry")
     if r.status_code >= 400:
