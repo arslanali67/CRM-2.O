@@ -60,6 +60,7 @@ def no_real_ai(monkeypatch):
     def blocked(*a, **kw):
         raise RealAIBlocked("tests must never call the real Gemini API; install a fake")
     monkeypatch.setattr(ai_analysis, "post_json", blocked)
+    monkeypatch.setattr(ai_analysis, "list_models", blocked)
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
 
 

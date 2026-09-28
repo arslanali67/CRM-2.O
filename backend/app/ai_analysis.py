@@ -129,7 +129,7 @@ def post_json(url: str, headers: dict, payload: dict) -> dict:
     return r.json()
 
 
-def ask_model(subject: str, text: str, received: str) -> dict:
+def ask_model(subject: str, text: str, received: str, model: str | None = None) -> dict:
     if not settings.GEMINI_API_KEY:
         raise AIError("GEMINI_API_KEY is not set")
     payload = {
@@ -139,7 +139,7 @@ def ask_model(subject: str, text: str, received: str) -> dict:
         "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "responseSchema": SCHEMA},
     }
     # Key in a header, never in the URL (URLs end up in logs).
-    data = post_json(API.format(model=settings.GEMINI_MODEL),
+    data = post_json(API.format(model=model or settings.GEMINI_MODEL),
                      {"x-goog-api-key": settings.GEMINI_API_KEY, "Content-Type": "application/json"}, payload)
     try:
         return json.loads(data["candidates"][0]["content"]["parts"][0]["text"])
@@ -192,15 +192,37 @@ def verify(raw: dict, text: str) -> dict:
             "summary": str(raw.get("summary") or "")[:300], "extracted": extracted, "dropped": dropped}
 
 
-def analyse_text(subject: str, body: str, received: str) -> dict:
+def analyse_text(subject: str, body: str, received: str, model: str | None = None) -> dict:
     """Pure analysis (also used by the evaluation script): strip, ask, verify."""
     text = strip_quoted(body)
-    return {**verify(ask_model(subject, text, received), text), "analysed_text": text}
+    return {**verify(ask_model(subject, text, received, model), text), "analysed_text": text}
+
+
+def ai_config(conn) -> dict:
+    """Effective AI settings, read live (M29): the key comes only from .env; on/off and model from app_settings."""
+    s = conn.execute("SELECT ai_enabled, ai_model FROM app_settings WHERE id = 1").fetchone()
+    key = bool(settings.GEMINI_API_KEY)
+    return {"key_present": key, "enabled": key and bool(s["ai_enabled"]),
+            "model": s["ai_model"] or settings.GEMINI_MODEL, "switched_on": bool(s["ai_enabled"])}
+
+
+def list_models() -> list[str]:
+    """Model names this key may call (generateContent). Patched in tests."""
+    try:
+        r = httpx.get("https://generativelanguage.googleapis.com/v1beta/models", params={"pageSize": 300},
+                      headers={"x-goog-api-key": settings.GEMINI_API_KEY}, timeout=30)
+    except httpx.HTTPError as e:
+        raise AIError(f"could not reach Gemini ({type(e).__name__})") from None
+    if r.status_code != 200:
+        raise AIError(f"Gemini returned HTTP {r.status_code} when listing models")
+    return [m["name"].split("/")[-1] for m in r.json().get("models", [])
+            if "generateContent" in m.get("supportedGenerationMethods", [])]
 
 
 # ---------- persistence ----------
 
 def analyse_message(conn, message_id: int) -> dict:
+    cfg = ai_config(conn)
     m = conn.execute("SELECT id, subject, body_text, received_at, label, company_id FROM inbound_messages "
                      "WHERE id = %s", (message_id,)).fetchone()
     if not m:
@@ -208,7 +230,7 @@ def analyse_message(conn, message_id: int) -> dict:
     if m["label"] != "reply":
         raise HTTPException(409, "Only messages labelled 'reply' are analysed")
     try:
-        r = analyse_text(m["subject"], m["body_text"], str(m["received_at"]))
+        r = analyse_text(m["subject"], m["body_text"], str(m["received_at"]), cfg["model"])
         row = {"status": r["status"], "label": r["label"], "label_evidence": r["label_evidence"],
                "summary": r["summary"], "extracted": Jsonb(r["extracted"]), "dropped": Jsonb(r["dropped"]), "error": None}
         dropped_count = len(r["dropped"])
@@ -224,7 +246,7 @@ def analyse_message(conn, message_id: int) -> dict:
         "label = EXCLUDED.label, label_evidence = EXCLUDED.label_evidence, summary = EXCLUDED.summary, "
         "extracted = EXCLUDED.extracted, dropped = EXCLUDED.dropped, error = EXCLUDED.error, "
         "attempts = ai_analyses.attempts + 1, analysed_at = now()",
-        {**row, "mid": message_id, "model": settings.GEMINI_MODEL, "pv": PROMPT_VERSION})
+        {**row, "mid": message_id, "model": cfg["model"], "pv": PROMPT_VERSION})
     if row["status"] != "error":
         audit(conn, "inbound.analysed", "company" if m["company_id"] else "inbound", m["company_id"] or message_id,
               {"inbound_message_id": message_id, "ai_label": row["label"], "status": row["status"],
@@ -242,6 +264,8 @@ def analyse_pending() -> dict:
         return {"action": "no_key"}
     with psycopg.connect(settings.DATABASE_URL, row_factory=dict_row) as conn:
         conn.execute("SELECT set_config('app.actor', 'system', false)")
+        if not ai_config(conn)["switched_on"]:
+            return {"action": "disabled"}
         if not conn.execute("SELECT pg_try_advisory_lock(%s) AS ok", (AI_LOCK,)).fetchone()["ok"]:
             return {"action": "locked"}
         try:
@@ -275,8 +299,8 @@ def read_analysis(message_id: int, conn=Depends(get_db)):
 
 @router.post("/inbox/{message_id}/analyse")
 def reanalyse(message_id: int, conn=Depends(get_db)):
-    if not settings.GEMINI_API_KEY:
-        raise HTTPException(409, "AI analysis is off: add GEMINI_API_KEY to .env")
+    if not ai_config(conn)["enabled"]:
+        raise HTTPException(409, "AI analysis is off: add GEMINI_API_KEY to .env or switch it on in Settings")
     return analyse_message(conn, message_id)
 
 
@@ -286,4 +310,6 @@ def ai_status(conn=Depends(get_db)):
         "SELECT status, count(*) FROM ai_analyses GROUP BY status").fetchall()}
     pending = conn.execute("SELECT count(*) FROM inbound_messages m LEFT JOIN ai_analyses a "
                            "ON a.inbound_message_id = m.id WHERE m.label = 'reply' AND a.id IS NULL").fetchone()["count"]
-    return {"enabled": bool(settings.GEMINI_API_KEY), "model": settings.GEMINI_MODEL, "pending": pending, **counts}
+    cfg = ai_config(conn)
+    return {"enabled": cfg["enabled"], "model": cfg["model"], "key_present": cfg["key_present"],
+            "pending": pending, **counts}

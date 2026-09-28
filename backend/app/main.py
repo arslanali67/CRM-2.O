@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import (activity, ai_analysis, companies, composer, csv_import, dashboard, detail, history, inbox_sync,
+from app import (activity, ai_analysis, app_settings, companies, composer, csv_import, dashboard, detail, history, inbox_sync,
                  leads, mail_account, notes_tasks, notifications, opportunities, profile, safety, search, sender, settings,
                  suppressions, templates)
 from app.auth import verify_password
@@ -52,6 +52,7 @@ async def log_requests(request: Request, call_next):
 
 
 app.include_router(profile.router)
+app.include_router(app_settings.router)
 app.include_router(companies.router)
 app.include_router(suppressions.router)
 app.include_router(activity.router)

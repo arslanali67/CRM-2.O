@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.24
+- **Spec version:** 1.25
 - **Last updated:** 2026-09-27
 
 ---
@@ -269,6 +269,8 @@ Goal: ready for daily use.
   - **UI:** Opportunities page grouped by stage (Kanban is Phase 3); opportunity page (stage, history, linked reply/thread, contact, AI suggestion, notes, tasks); the company Opportunity tab and dashboard Opportunities KPI become real. Notes and tasks accept `opportunity`.
   - Depends on: M16. Done when: reply → opportunity → all stages, with history.
 - **M29 Settings.** Email account, AI provider, limits, notifications, cooldowns.
+  - **Settings page `/settings`:** sending limits (daily cap 1–100, gap 30–3600 s, approval validity 1–30 days); cooldowns (recipient / company 0–365 days); AI (on/off, model name validated against Google's model list, key presence only); notification kinds (reply, auto-reply, bounce, sending problems, system problems; all on by default); email account summary linking to its page.
+  - **Rules:** the kill switch stays on the Outbox (settings cannot enable sending); the AI key stays in `.env`; every change audited with before/after; all values read fresh from the DB on use (no restart).
   - Depends on: M11, M16. Done when: settings are validated, audited and applied without restart.
 - **M7 Duplicate management.** Match by domain / email / LinkedIn / name; merge with snapshot and undo.
   - Depends on: M4, M5. Done when: merge + undo work and no duplicate active domains exist.
@@ -388,3 +390,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.22 | M23 detailed: tabbed company page with summary header, new contact page, opportunity placeholder until M19, reachability test. | Owner |
 | 2026-09-28 | 1.23 | M22 detailed: global search over 6 record types, reply/template/date/text Leads filters, pg_trgm indexes, <300 ms at 10k companies. | Owner |
 | 2026-09-28 | 1.24 | M19 detailed: 8 opportunity stages (closes the last §7 stage gap), one-click creation from a reply, DB-logged stage history, AI suggestions only, Opportunities pages, real dashboard/company opportunity data. | Owner |
+| 2026-09-28 | 1.25 | M29 detailed: Settings page for limits, cooldowns, AI on/off + validated model, notification kinds; kill switch stays on Outbox; key stays in .env; audited; live without restart. | Owner |
