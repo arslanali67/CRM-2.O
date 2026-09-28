@@ -1,5 +1,6 @@
 """M30: log redaction, cross-site request rejection and login lockout."""
 import logging
+import os
 import re
 import threading
 import time
@@ -72,7 +73,7 @@ def install_log_redaction():
 # ---------- CSRF: reject cross-site state-changing requests ----------
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
-ALLOWED_ORIGINS = {"http://localhost:3000", "http://127.0.0.1:3000"}
+ALLOWED_ORIGINS = set(os.environ.get("APP_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(","))
 
 
 def cross_site(request: Request) -> bool:

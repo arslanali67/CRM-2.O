@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.28
+- **Spec version:** 1.29
 - **Last updated:** 2026-09-28
 
 ---
@@ -305,6 +305,20 @@ Goal: ready for daily use.
   - **Owner to-dos (listed, not gating):** rotate the Gemini key that was pasted into chat; enable disk encryption (BitLocker); keep a private copy of `.env`.
 - **M31 Testing [SAFETY].** Unit, integration, API, E2E, plus safety suite S1–S12 (e.g. reply → no send, no reply → no follow-up).
   - Continuous. Done when: safety suite S1–S12 and CI are green.
+  - **Safety suite S1–S12** (`tests/test_safety_suite.py`, one named test per case, end to end through API, database, sender and inbox sync with the fake Gmail):
+    - S1 Reply → no send: a company reply cancels its pending emails; nothing more is sent to it automatically.
+    - S2 No reply → no follow-up: time passes without a reply; no email is created or sent; follow-ups exist only as owner tasks.
+    - S3 No approval → no send: drafts never send; the database refuses queued/sent without a matching approval.
+    - S4 Edit voids approval: any change to recipient, subject, body or CV after approval blocks sending until re-approved.
+    - S5 Exactly once: one approval sends one email; no bulk approve; a crash mid-send never sends twice.
+    - S6 Do-not-contact: blocked email/domain/company never receives mail; blocking cancels pending emails; a hard bounce blocks the address.
+    - S7 Kill switch: sending OFF sends nothing; switching off applies before the next email; Settings cannot enable it; a restore forces it off.
+    - S8 Limits: daily cap, minimum gap and recipient/company cooldowns enforced at send time.
+    - S9 Inbound never triggers outbound: replies, auto-replies, bounces, unrelated mail and spam never create or send an email.
+    - S10 AI cannot act: AI output (even from a hostile email) never sends, approves, changes a stage or creates an opportunity.
+    - S11 No other channels: the code only contacts Gmail SMTP/IMAP and Gemini (network calls scanned against an allowlist); no LinkedIn or job sites.
+    - S12 No negotiation or applying: emails are only created from the owner's template by the owner's action; no endpoint or background task creates emails by itself.
+  - **E2E:** Playwright (`@playwright/test`, dev-only) against the real Docker stack with sending OFF and no Gmail account: login, lockout, CSV import, leads, compose → approve (stays queued, never sent), settings, backup page, security headers. Runs in CI.
 - **M33 Documentation.** README, setup, email integration, AI, troubleshooting, user guide.
   - Done when: a clean machine can be set up from the docs alone.
 - **M34 Final QA.** Full checklist plus one week of real use at 5 emails/day.
@@ -373,7 +387,7 @@ Anything not listed in this file, including:
 ## 7. Known gaps
 
 The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pdf` for full per-milestone detail. That blueprint is **not** in this folder. Items it defines are not in scope here until they are added to this file:
-- Safety test cases S1–S12 (M31).
+- ~~Safety test cases S1–S12 (M31).~~ Closed 2026-09-28: defined by the owner in M31 (v1.29).
 
 ## 8. Open questions (all answered 2026-09-27)
 
@@ -419,3 +433,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.26 | M7 detailed: duplicate suggestions (domain / email / LinkedIn / name), manual merge with survivor choice, snapshot + undo, do-not-contact carry-over, no merge with pending emails. | Owner |
 | 2026-09-28 | 1.27 | M32 detailed: daily catch-up pg_dump (14 kept, manifest), /backup page, CLI-only restore that forces sending off and returns approved/queued emails to draft, restore drill, CSV + full JSON/CV export; PostgreSQL 18 client tools in the backend image. | Owner |
 | 2026-09-28 | 1.28 | M30 detailed: 13-item security checklist as the definition of done (CSRF origin check, login lockout, log redaction, security headers, header-injection guard, secret-strength check, CI secret scan, CI dependency audit with new CI-only tool pip-audit, plus checks for existing protections); owner to-dos listed. | Owner |
+| 2026-09-28 | 1.29 | M31 detailed: safety suite S1–S12 defined (closes the last §7 gap); Playwright browser E2E (new dev-only dependency @playwright/test) against the Docker stack in CI. | Owner |

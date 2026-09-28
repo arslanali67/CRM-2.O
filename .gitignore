@@ -1,5 +1,9 @@
 .env
 backups/
+e2e-backups/
+frontend/playwright-report/
+frontend/test-results/
+frontend/e2e/.env.e2e
 __pycache__/
 .pytest_cache/
 .venv/

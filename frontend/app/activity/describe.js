@@ -1,5 +1,13 @@
 // Plain-language text for audit_log events. Unknown actions fall back to the raw name.
 export function describe(e) {
+  try {
+    return describeEvent(e);
+  } catch {
+    return e.action;  // an unexpected data shape must never break the Activity page or dashboard
+  }
+}
+
+function describeEvent(e) {
   const d = e.data || {};
   const [type, verb] = e.action.split(".");
   if (type === "outbound_email") {
@@ -21,6 +29,9 @@ export function describe(e) {
     if (verb === "cancelled" && d.reason === "company_replied") return `Pending email to ${d.to_email} cancelled: the company replied`;
     const why = d.reason === "do_not_contact" ? " (recipient blocked)" : "";
     return `Email to ${d.to_email} ${verb}${why}`;
+  }
+  if (e.action === "settings.updated") {  // values are [old, new] pairs only for this event
+    return `Settings changed: ${Object.entries(d).map(([k, v]) => `${k.replaceAll("_", " ")} ${JSON.stringify(v?.[0])} → ${JSON.stringify(v?.[1])}`).join("; ")}`;
   }
   const text = {
     "profile.updated": "Profile updated",
@@ -64,7 +75,6 @@ export function describe(e) {
     "backup.restored": `Restored from backup ${d.file}: sending OFF, ${d.back_to_draft} email(s) back to draft, ${d.marked_failed} marked failed`,
     "export.csv": `Exported ${d.kind?.replaceAll("_", " ")} as CSV (${d.rows} rows)`,
     "export.full": `Full export downloaded (${d.tables} tables, ${d.rows} rows)`,
-    "settings.updated": `Settings changed: ${Object.entries(d).map(([k, [o, n]]) => `${k.replaceAll("_", " ")} ${JSON.stringify(o)} → ${JSON.stringify(n)}`).join("; ")}`,
     "inbound.labeled": `${{ reply: "Reply", auto_reply: "Auto-reply", bounce: "Bounce", unrelated: "Unrelated message" }[d.label] || "Message"} from ${d.from_email}: ${d.subject}${d.effects?.length ? ` (${d.effects.join(", ")})` : ""}`,
     "inbound.analysed": `AI analysis: ${d.ai_label ? d.ai_label.replaceAll("_", " ") : "label not proven"}${d.dropped ? ` (${d.dropped} unproven item(s) dropped)` : ""}`,
     "import.completed": `CSV imported: ${d.file} (${d.new} new companies, ${d.contacts} contacts, ${d.duplicate} duplicates skipped)`,

@@ -2,13 +2,14 @@
 x-backend: &backend
   build: ./backend
   image: crm-backend:local  # one image for api, worker and beat, so they can never run different code
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}  # the E2E stack points this at its own test-only file
   environment:
     DATABASE_URL: postgresql://crm:${POSTGRES_PASSWORD}@postgres:5432/crm
     REDIS_URL: redis://redis:6379/0
     BACKUP_DIR: /backups
+    APP_ORIGINS: http://localhost:${WEB_PORT:-3000},http://127.0.0.1:${WEB_PORT:-3000}
   volumes:
-    - ./backups:/backups  # M32: backups live on the laptop, outside Docker (git-ignored)
+    - ${BACKUP_HOST_DIR:-./backups}:/backups  # M32: backups live on the laptop, outside Docker (git-ignored)
   depends_on:
     postgres: { condition: service_healthy }
     redis: { condition: service_healthy }
@@ -53,7 +54,7 @@ services:
     build: ./frontend
     depends_on: [api]
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
     restart: unless-stopped
 
 volumes:

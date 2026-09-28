@@ -16,7 +16,9 @@ export default function Login() {
       body: JSON.stringify({ email: form.get("email"), password: form.get("password") }),
     });
     if (res.ok) router.replace("/");
-    else setError(res.status === 401 ? "Invalid email or password" : "Server error");
+    else if (res.status === 401) setError("Invalid email or password");
+    else if (res.status === 429) setError((await res.json()).detail);  // M30 lockout: says how long to wait
+    else setError("Server error");
   }
 
   return (
