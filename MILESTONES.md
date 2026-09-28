@@ -31,7 +31,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M15 Reply detection
 - [ ] M16 AI reply analysis (built; accuracy eval pending: Gemini free tier allows 20 requests/day/model, owner deferred)
 - [x] M17 Notifications
-- [ ] M18 Dashboard
+- [ ] M18 Dashboard (built; own tests pass; awaiting batch verification)
 
 ## Phase 1D: Workspace & Hardening (Wk 17–22)
 - [ ] M23 Company / contact detail

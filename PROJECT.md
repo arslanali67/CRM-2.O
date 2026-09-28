@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.20
+- **Spec version:** 1.21
 - **Last updated:** 2026-09-27
 
 ---
@@ -237,6 +237,11 @@ Goal: never miss a reply, never answer automatically.
   - **UI:** top bar with bell and unread count on every page (refresh every 30 s), dropdown of latest, Notifications page, mark read / mark all read. In-app only; nothing is emailed.
   - Depends on: M16 (works with M15 labels; AI priority applies once analyses exist). Done when: exactly one notification per event, deep-linked.
 - **M18 Dashboard.** KPIs: leads, sent, replies, reply rate, interested, opportunities, interviews, offers; activity feeds.
+  - **Period:** 7 / 30 / 90 days or all time.
+  - **KPIs:** leads = active companies (+ by stage); sent = emails sent in period (+ daily series); replies = inbound labelled `reply` in period (+ distinct companies); reply rate = companies that replied ÷ companies emailed in period; interested = replies with AI label interested / interview_request / scheduling / needs_info / offer; offers = AI label offer; bounces and auto-replies as health signals.
+  - **Opportunities and interviews:** placeholder tiles until M19 / M20 wire in real counts (owner's choice; no proxies).
+  - **Feeds:** latest replies (with labels), upcoming and overdue tasks, recent activity.
+  - **Performance:** one API call, indexed queries; measured < 500 ms with 10k companies and thousands of emails. Tests recompute every KPI with independent SQL.
   - Depends on: M17. Done when: KPIs match SQL checks and the page loads in <500 ms.
 
 **Phase exit:** a reply appears within one sync interval, correctly labelled, and the provider records **zero** automatic sends.
@@ -368,3 +373,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-27 | 1.18 | M15 detailed: five ordered rules with DSN parsing and auto-reply headers; effects: replied stage, bounced marking, hard bounce → do-not-contact, reply → cancel pending emails to that company. | Owner |
 | 2026-09-27 | 1.19 | M16 detailed: the 12 AI labels (closes §7 gap), code-enforced verbatim evidence, replies only with quoted history stripped, background analysis, synthetic evaluation set with one approved real run. | Owner |
 | 2026-09-28 | 1.20 | M17 detailed: notification events (replies/auto-replies/bounces, sending problems, system problems), DB-trigger exactly-once with AI priority updates, deep links to the message, bell on every page. Also: default Gemini model gemini-3.8-flash (2.5 closed to new users); M16 eval deferred by owner (free tier 20 requests/day/model). | Owner |
+| 2026-09-28 | 1.21 | M18 detailed: KPI definitions with period filter, placeholder tiles for opportunities/interviews until M19/M20, feeds, <500 ms at 10k companies. Process: full test suite now runs every 2–3 milestones (owner's request); milestones stay unticked until that batch run. | Owner |
