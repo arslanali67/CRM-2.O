@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 21 / 35**
+**Progress: 24 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -36,9 +36,9 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 1D: Workspace & Hardening (Wk 17–22)
 - [x] M23 Company / contact detail
 - [x] M22 Search & filtering
-- [ ] M19 Job opportunity pipeline (built; own tests pass; awaiting batch verification)
-- [ ] M29 Settings (built; own tests pass; awaiting batch verification)
-- [ ] M7 Duplicate management (built; own tests pass; awaiting batch verification)
+- [x] M19 Job opportunity pipeline
+- [x] M29 Settings
+- [x] M7 Duplicate management
 - [ ] M32 Backup & recovery
 - [ ] M30 Security
 - [ ] M31 Testing (GATE)
