@@ -195,6 +195,58 @@ test("personalization: offered on Compose; without AI it says so, and drafts use
   expect(full.body).toContain("I have followed your work for a while.");
 });
 
+test("shell: every sidebar link opens its page inside the app shell", async () => {
+  await page.goto("/");
+  const links = await page.locator("nav.sidebar a.nav-link").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+  expect(links.length).toBe(19);
+  for (const href of links) {
+    await page.goto(href);
+    await expect(page.locator("nav.sidebar a.nav-link[aria-current=page]")).toHaveAttribute("href", href);
+    await expect(page.locator(".content h1").first()).toBeVisible();
+    await expect(page.getByText("This page couldn’t load")).toHaveCount(0);
+  }
+  await expect(page.locator(".topbar .pill")).toContainText("Sending off"); // always visible, OFF in E2E
+});
+
+test("shell: dark mode is remembered after a reload", async () => {
+  await page.goto("/");
+  const before = await page.evaluate(() => document.documentElement.dataset.theme || "");
+  await page.getByRole("button", { name: /Switch to (dark|light) mode/ }).click();
+  const after = await page.evaluate(() => document.documentElement.dataset.theme);
+  expect(after).not.toBe(before);
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => document.documentElement.dataset.theme)).toBe(after);
+});
+
+test("shell: in-app dialogs replace browser pop-ups", async () => {
+  let browserDialog = false;
+  page.on("dialog", (d) => { browserDialog = true; d.dismiss(); });
+  await page.request.post("/api/tasks", { headers: { Origin: new URL(page.url()).origin }, data: { title: "E2E dialog task" } });
+  await page.goto("/tasks");
+  await page.getByRole("button", { name: "Delete task E2E dialog task" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Delete this task?");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByText("E2E dialog task")).toBeVisible();
+  await page.getByRole("button", { name: "Delete task E2E dialog task" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("E2E dialog task")).toHaveCount(0);
+  expect(browserDialog).toBe(false);
+});
+
+test("shell: on a phone the sidebar is a drawer", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, storageState: await page.context().storageState() });
+  const p = await ctx.newPage();
+  await p.goto("/");
+  await expect(p.locator("nav.sidebar")).not.toBeInViewport();
+  await p.getByRole("button", { name: "Open menu" }).click();
+  await expect(p.locator("nav.sidebar")).toBeInViewport();
+  await p.locator("nav.sidebar").getByRole("link", { name: "Analytics" }).click();
+  await expect(p.getByRole("heading", { name: "Analytics" })).toBeVisible();
+  await expect(p.locator("nav.sidebar")).not.toBeInViewport();
+  await ctx.close();
+});
+
 test("lockout: five wrong passwords lock logins, even the right one", async ({ browser }) => {
   const p = await browser.newPage();
   for (let i = 0; i < 5; i++) {

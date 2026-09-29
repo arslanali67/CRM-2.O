@@ -22,7 +22,7 @@ function Table({ title, rows }) {
           </thead>
           <tbody>
             {rows.map((g) => (
-              <tr key={g.group} style={{ borderTop: "1px solid #eee", textAlign: "right", color: g.few_data ? "gray" : undefined }}>
+              <tr key={g.group} style={{ borderTop: "1px solid var(--border)", textAlign: "right", color: g.few_data ? "var(--muted)" : undefined }}>
                 <td align="left">{g.group}{g.few_data && <small title="fewer than 10 emails sent: don't read much into the rate"> · few data</small>}</td>
                 <td>{g.sent}</td><td>{g.replied}</td><td><b>{pct(g.reply_rate)}</b></td>
                 <td>{g.bounced_hard} / {g.bounced_soft}</td><td>{pct(g.bounce_rate)}</td><td>{g.opportunities}</td>
@@ -61,7 +61,7 @@ export default function Analytics() {
             {o.bounced_hard + o.bounced_soft} bounced ({pct(o.bounce_rate)}) · {o.opportunities} opportunities
           </p>
           {SECTIONS.map(([k, title]) => <Table key={k} title={title} rows={a[k]} />)}
-          <p style={{ color: "gray", marginTop: 24 }}><small>
+          <p style={{ color: "var(--muted)", marginTop: 24 }}><small>
             A reply is credited to the latest email sent to that company before it arrived; auto-replies and bounces never count.
             Companies with several industries count in each. Groups with fewer than {a.few_data_below} emails are marked
             "few data". Computed in {a.query_ms} ms.

@@ -8,6 +8,7 @@ import { NotesPanel, TasksPanel } from "../../tasks/panels";
 import { CreateOpportunity, StageBadge } from "../../opportunities/shared";
 import { ResearchPanel } from "../research";
 import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, STAGES, errorText } from "../shared";
+import { useDialog } from "../../ui";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
 const full = { display: "block", width: "100%" };
@@ -24,6 +25,7 @@ async function call(url, method, body) {
 }
 
 export default function Company() {
+  const dialog = useDialog();
   const { id } = useParams();
   const router = useRouter();
   const [company, setCompany] = useState(null);
@@ -67,16 +69,16 @@ export default function Company() {
     if (await run(call(`/api/contacts/${cid}`, "PUT", body), "Contact saved.")) setEditing(null);
   };
   const archiveContact = (cid, archive) => run(call(`/api/contacts/${cid}/${archive ? "archive" : "restore"}`, "POST"), archive ? "Contact archived." : "Contact restored.");
-  const setStage = (stage) => {
+  const setStage = async (stage) => {
     let close_reason = "";
     if (stage === "closed") {
-      close_reason = window.prompt(`Why close ${company.name}?`) || "";
+      close_reason = (await dialog.prompt(`Close ${company.name}?`, { body: "A reason is required and kept in the history.", required: true, confirmLabel: "Close lead" })) || "";
       if (!close_reason.trim()) return;
     }
     run(call("/api/leads/stage", "POST", { company_ids: [company.id], stage, close_reason }), `Stage set to ${stage}.`);
   };
-  const blockCompany = () => {
-    const reason = window.prompt(`Why block ${company.name}? Blocks its domain and all its contacts.`);
+  const blockCompany = async () => {
+    const reason = await dialog.prompt(`Block ${company.name}?`, { body: "Blocks its domain and all its contacts. Pending emails are cancelled. A reason is required.", required: true, danger: true, confirmLabel: "Block company" });
     if (reason?.trim()) run(call("/api/suppressions", "POST", { kind: "company", company_id: company.id, reason }), "Company blocked.");
   };
 
@@ -91,11 +93,11 @@ export default function Company() {
       {/* Summary header */}
       <p style={{ margin: "4px 0" }}>
         <b>{company.stage.replace("_", " ")}</b>{company.domain && ` · ${company.domain}`}
-        {o?.blocked && <> · <mark style={{ background: "crimson", color: "white" }}>blocked</mark></>}
+        {o?.blocked && <> · <mark style={{ background: "var(--danger)", color: "var(--surface)" }}>blocked</mark></>}
         {o && <> · last emailed {fmt(o.last_emailed_at)}</>}
       </p>
       {o && (
-        <p style={{ color: "gray", margin: "4px 0" }}><small>
+        <p style={{ color: "var(--muted)", margin: "4px 0" }}><small>
           {o.contacts} contacts · {o.sent} sent · {o.replies} replies · {o.open_tasks} open tasks
           {o.last_reply && <> · last reply {fmt(o.last_reply.received_at)} from {o.last_reply.from_name || o.last_reply.from_email}
             {o.last_reply.ai_label && ` (AI: ${o.last_reply.ai_label.replaceAll("_", " ")})`}</>}
@@ -103,7 +105,7 @@ export default function Company() {
       )}
       {msg && <p role="status">{msg}</p>}
 
-      <nav style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: "1px solid #ddd", margin: "12px 0" }}>
+      <nav style={{ display: "flex", gap: 4, flexWrap: "wrap", borderBottom: "1px solid var(--border)", margin: "12px 0" }}>
         {TABS.map((t) => (
           <button key={t} onClick={() => setTab(t)}
                   style={{ border: "none", borderBottom: t === tab ? "3px solid steelblue" : "3px solid transparent",
@@ -116,12 +118,12 @@ export default function Company() {
       {tab === "Overview" && (
         <>
           {o?.last_reply && (
-            <div style={{ border: "1px solid #ddd", padding: 8, marginBottom: 12 }}>
+            <div style={{ border: "1px solid var(--border)", padding: 8, marginBottom: 12 }}>
               <b>Latest reply</b> <LabelBadge m={o.last_reply} /> · <Link href={o.last_reply.link}>{o.last_reply.subject}</Link>
               {o.last_reply.ai_summary && <div><small>{o.last_reply.ai_summary}</small></div>}
             </div>
           )}
-          <p style={{ color: "gray" }}>
+          <p style={{ color: "var(--muted)" }}>
             Source: {company.source}
             {company.source_detail?.file && ` (${company.source_detail.file}, row ${company.source_detail.row})`}
             {" · "}created {new Date(company.created_at).toLocaleString()}
@@ -132,10 +134,10 @@ export default function Company() {
                 {STAGES.map((s) => <option key={s}>{s}</option>)}
               </select>
             </label>
-            {company.close_reason && <small style={{ color: "gray" }}> closed: {company.close_reason}</small>}
+            {company.close_reason && <small style={{ color: "var(--muted)" }}> closed: {company.close_reason}</small>}
           </p>
           {company.block ? (
-            <p style={{ color: "crimson" }}>Blocked: {company.block.reason} (<Link href="/do-not-contact">manage on Do-not-contact</Link>)</p>
+            <p style={{ color: "var(--danger)" }}>Blocked: {company.block.reason} (<Link href="/do-not-contact">manage on Do-not-contact</Link>)</p>
           ) : (
             <p><button onClick={blockCompany}>Block company</button></p>
           )}
@@ -183,7 +185,7 @@ export default function Company() {
                   <>
                     <Link href={`/contacts/${c.id}`}><strong>{c.name || c.email}</strong></Link>{c.role && ` · ${c.role}`}
                     {c.email && <> · {c.email} <mark>{c.email_class}{c.email_class_manual ? " (manual)" : ""}</mark></>}
-                    {c.suppressed && <> <mark style={{ background: "crimson", color: "white" }}>blocked</mark></>}
+                    {c.suppressed && <> <mark style={{ background: "var(--danger)", color: "var(--surface)" }}>blocked</mark></>}
                     {c.archived_at && " · archived"}{" "}
                     {!c.archived_at && (
                       <button onClick={() => setEditing({
@@ -214,7 +216,7 @@ export default function Company() {
         <>
           {emailThreads.length === 0 && <p>No emails yet.</p>}
           {emailThreads.map((t) => (
-            <div key={t.thread_key} style={{ borderLeft: "3px solid #ddd", paddingLeft: 8, margin: "8px 0" }}>
+            <div key={t.thread_key} style={{ borderLeft: "3px solid var(--border)", paddingLeft: 8, margin: "8px 0" }}>
               <Link href={`/threads/${t.thread_key}`}><small>thread ({t.emails.length} sent, {t.inbound.length} received)</small></Link>
               {t.emails.map((e) => (
                 <div key={`o${e.id}`}>
@@ -242,13 +244,13 @@ export default function Company() {
           {o?.opportunities?.length === 0 && <p>No opportunities yet. Create one from a reply, or manually:</p>}
           {o?.opportunities?.map((op) => (
             <div key={op.id}><Link href={op.link}><b>{op.title}</b></Link> <StageBadge stage={op.stage} />
-              <small style={{ color: "gray" }}> · since {new Date(op.stage_changed_at).toLocaleDateString()}</small></div>
+              <small style={{ color: "var(--muted)" }}> · since {new Date(op.stage_changed_at).toLocaleDateString()}</small></div>
           ))}
           {o?.interviews?.length > 0 && <>
             <h3>Interviews</h3>
             {o.interviews.map((i) => (
               <div key={i.id}><Link href={i.link}>{i.title}</Link>{" "}
-                <small style={{ color: "gray" }}>· {new Date(i.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · {i.status}</small></div>
+                <small style={{ color: "var(--muted)" }}>· {new Date(i.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · {i.status}</small></div>
             ))}
           </>}
           <p><CreateOpportunity companyId={company.id} label="New opportunity (manual)" /></p>

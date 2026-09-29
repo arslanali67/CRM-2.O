@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { describe } from "../../activity/describe";
 import { errorText } from "../../companies/shared";
+import { useDialog } from "../../ui";
 
 async function call(url, method = "GET", body) {
   const res = await fetch(url, {
@@ -12,9 +13,10 @@ async function call(url, method = "GET", body) {
   return { ok: res.ok, status: res.status, data: await res.json() };
 }
 
-const box = { border: "1px solid #ccc", padding: 12, background: "#fafafa" };
+const box = { border: "1px solid var(--border)", padding: 12, background: "var(--surface-2)" };
 
 export default function Email() {
+  const dialog = useDialog();
   const { id } = useParams();
   const router = useRouter();
   const [e, setE] = useState(null);
@@ -52,7 +54,7 @@ export default function Email() {
   }
 
   async function action(name, confirmText) {
-    if (confirmText && !window.confirm(confirmText)) return;
+    if (confirmText && !await dialog.confirm(confirmText, { confirmLabel: "Yes", danger: name === "discard" })) return;
     const r = await call(`/api/outbound-emails/${id}/${name}`, "POST");
     setMsg(r.ok ? `Now ${r.data.status}.` : errorText(r.data));
     load();
@@ -69,14 +71,14 @@ export default function Email() {
     <main style={{ maxWidth: 800 }}>
       <p><Link href="/outbox">← Outbox</Link> · <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link></p>
       <h1>Email #{e.id} <small>({e.status})</small></h1>
-      {e.cancel_reason && <p style={{ color: "crimson" }}>Cancelled: {e.cancel_reason}</p>}
-      {e.failure_reason && <p style={{ color: "crimson" }}>Failed: {e.failure_reason}</p>}
-      {e.sent_at && <p style={{ color: "green" }}>Sent {new Date(e.sent_at).toLocaleString()} · Message-ID <code>{e.provider_message_id}</code></p>}
+      {e.cancel_reason && <p style={{ color: "var(--danger)" }}>Cancelled: {e.cancel_reason}</p>}
+      {e.failure_reason && <p style={{ color: "var(--danger)" }}>Failed: {e.failure_reason}</p>}
+      {e.sent_at && <p style={{ color: "var(--success)" }}>Sent {new Date(e.sent_at).toLocaleString()} · Message-ID <code>{e.provider_message_id}</code></p>}
 
       <h2>Exact preview</h2>
       <div style={box}>
         <div><b>From:</b> {e.from.name || <i>(no name in profile)</i>} &lt;{e.from.email || "no address"}&gt;
-          {!e.from.account_connected && <small style={{ color: "crimson" }}> (no Gmail connected: <Link href="/email-account">connect one</Link>)</small>}
+          {!e.from.account_connected && <small style={{ color: "var(--danger)" }}> (no Gmail connected: <Link href="/email-account">connect one</Link>)</small>}
         </div>
         <div><b>To:</b> {e.contact_name ? `${e.contact_name} ` : ""}&lt;{e.to_email}&gt; <mark>{e.email_class}</mark></div>
         <div><b>Subject:</b> {e.subject}</div>
@@ -85,23 +87,23 @@ export default function Email() {
         <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0 }}>{e.body}</pre>
       </div>
       {e.personalization?.sentences?.length > 0 && (
-        <div style={{ border: "2px solid #d97706", borderRadius: 6, padding: 10, margin: "8px 0" }}>
+        <div style={{ border: "2px solid var(--warning)", borderRadius: 6, padding: 10, margin: "8px 0" }}>
           <b>AI-written sentences in this email</b> (check them before approving):
           {e.personalization.sentences.map((s, i) => (
             <div key={i} style={{ marginTop: 6 }}>
-              <mark style={{ background: "#fde68a" }}>{s.text}</mark>
-              {!e.body.includes(s.text) && <small style={{ color: "gray" }}> (edited or removed since)</small>}
+              <mark style={{ background: "var(--warning-bg)" }}>{s.text}</mark>
+              {!e.body.includes(s.text) && <small style={{ color: "var(--muted)" }}> (edited or removed since)</small>}
               <ul style={{ margin: "2px 0" }}>{s.facts.map((f) => (
                 <li key={f.id}><small>cites verified fact: “{f.fact}” · source: {/^https?:\/\//.test(f.source)
                   ? <a href={f.source} target="_blank" rel="noopener noreferrer">{f.source}</a> : f.source}</small></li>
               ))}</ul>
             </div>
           ))}
-          {e.personalization.dropped?.length > 0 && <small style={{ color: "gray" }}>
+          {e.personalization.dropped?.length > 0 && <small style={{ color: "var(--muted)" }}>
             {e.personalization.dropped.length} AI sentence(s) were dropped as unproven and are not in the email.</small>}
         </div>
       )}
-      <p style={{ color: "gray" }}><small>
+      <p style={{ color: "var(--muted)" }}><small>
         {e.template_name && `From template ${e.template_name} v${e.template_version} · `}fingerprint {e.content_hash_hex.slice(0, 12)}…
       </small></p>
 
@@ -110,7 +112,7 @@ export default function Email() {
           <summary>Safety checks ({e.checks.stage}): {blocking.length ? `${blocking.length} failing` : "all passing"}</summary>
           <ol>
             {checks.map((c) => (
-              <li key={c.id} style={{ color: c.ok ? (c.applies ? "green" : "gray") : "crimson" }}>
+              <li key={c.id} style={{ color: c.ok ? (c.applies ? "var(--success)" : "var(--muted)") : "var(--danger)" }}>
                 {c.name}{!c.ok && `: ${c.detail}`}{!c.applies && " (checked at send)"}
               </li>
             ))}
@@ -130,16 +132,16 @@ export default function Email() {
       )}
       {msg && <p role="status">{msg}</p>}
       {failedChecks && (
-        <ul style={{ color: "crimson" }}>{failedChecks.map((c) => <li key={c.id}>{c.id}. {c.name}: {c.detail}</li>)}</ul>
+        <ul style={{ color: "var(--danger)" }}>{failedChecks.map((c) => <li key={c.id}>{c.id}. {c.name}: {c.detail}</li>)}</ul>
       )}
 
       <h2 style={{ marginTop: 32 }}>Status timeline</h2>
       <ol>
         {timeline.map((t) => (
-          <li key={t.id}><small style={{ color: "gray" }}>{new Date(t.at).toLocaleString()} · {t.actor}</small> {describe(t)}</li>
+          <li key={t.id}><small style={{ color: "var(--muted)" }}>{new Date(t.at).toLocaleString()} · {t.actor}</small> {describe(t)}</li>
         ))}
       </ol>
-      <p style={{ color: "gray" }}><small>
+      <p style={{ color: "var(--muted)" }}><small>
         Message-ID <code>{e.provider_message_id || "not assigned yet"}</code>
         {" · "}Gmail message <code>{e.gmail_msgid || "unknown yet"}</code>
         {" · "}<Link href={`/threads/${e.thread_key}`}>Gmail thread {e.gmail_thrid || "(not linked yet)"}</Link>

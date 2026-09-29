@@ -58,7 +58,7 @@ export default function Templates() {
                           style={{ display: "block", width: "100%" }} /></label>
         <TemplateFields value={form} onChange={setForm} />
         <button type="submit">Create template</button>
-        {msg && <p role="alert" style={{ color: "crimson" }}>{msg}</p>}
+        {msg && <p role="alert" style={{ color: "var(--danger)" }}>{msg}</p>}
       </form>
     </main>
   );

@@ -94,17 +94,17 @@ export default function Template() {
         <button type="submit">Preview</button>
       </form>
       {preview && (
-        <div style={{ border: "1px solid #ddd", padding: 12, marginTop: 8 }}>
+        <div style={{ border: "1px solid var(--border)", padding: 12, marginTop: 8 }}>
           {preview.recipient
             ? <p>To: {preview.recipient.email} <mark>{preview.recipient.email_class}</mark></p>
-            : preview.error ? null : <p style={{ color: "crimson" }}>No eligible recipient at this company.</p>}
+            : preview.error ? null : <p style={{ color: "var(--danger)" }}>No eligible recipient at this company.</p>}
           {preview.ok ? (
             <>
               <p><strong>{preview.subject}</strong></p>
               <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>{preview.body}</pre>
             </>
           ) : (
-            <p style={{ color: "crimson" }}>
+            <p style={{ color: "var(--danger)" }}>
               {preview.error || <>Cannot render (v{preview.version}). Unresolved: {preview.unresolved.map((u) => <code key={u}> {`{{${u}}}`}</code>)}. Fill them in (profile, company, contact) or add a fallback.</>}
             </p>
           )}
@@ -118,7 +118,7 @@ export default function Template() {
       {t.versions.map((v) => (
         <details key={v.version}>
           <summary>v{v.version} · {new Date(v.created_at).toLocaleString()} · <code>{v.subject}</code></summary>
-          <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", background: "#f7f7f7", padding: 8 }}>{v.body}</pre>
+          <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", background: "var(--surface-2)", padding: 8 }}>{v.body}</pre>
         </details>
       ))}
     </main>

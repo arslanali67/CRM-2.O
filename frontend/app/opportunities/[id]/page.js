@@ -37,14 +37,14 @@ export default function Opportunity() {
     <main style={{ maxWidth: 800 }}>
       <p><Link href="/opportunities">← Opportunities</Link> · <Link href={`/companies/${o.company_id}`}>{o.company_name}</Link></p>
       <h1 style={{ marginBottom: 4 }}>{o.title} <StageBadge stage={o.stage} /></h1>
-      <p style={{ color: "gray" }}><small>
+      <p style={{ color: "var(--muted)" }}><small>
         {o.contact_name && <>Contact: <Link href={`/contacts/${o.contact_id}`}>{o.contact_name}</Link> · </>}
         {o.source_link ? <>From reply: <Link href={o.source_link}>{o.source_subject}</Link></> : "created manually"}
         {" · "}since {new Date(o.created_at).toLocaleDateString()}
       </small></p>
 
       {o.suggestion && (
-        <p style={{ background: "#f5f7ff", padding: 8 }}>
+        <p style={{ background: "var(--accent-bg)", padding: 8 }}>
           AI read the latest reply as <b>{o.suggestion.ai_label.replaceAll("_", " ")}</b>
           {o.suggestion.evidence && <> (“<i>{o.suggestion.evidence}</i>”)</>}. Move to <b>{o.suggestion.stage}</b>?{" "}
           <button onClick={() => move(o.suggestion.stage, `accepted AI suggestion (${o.suggestion.ai_label})`)}>Yes, move</button>
@@ -67,7 +67,7 @@ export default function Opportunity() {
         {o.history.map((h) => (
           <li key={h.id}>
             {h.from_stage ? <>{h.from_stage} → </> : "created as "}<b>{h.to_stage}</b>
-            <small style={{ color: "gray" }}> · {new Date(h.at).toLocaleString()} · {h.actor}{h.reason && ` · ${h.reason}`}</small>
+            <small style={{ color: "var(--muted)" }}> · {new Date(h.at).toLocaleString()} · {h.actor}{h.reason && ` · ${h.reason}`}</small>
           </li>
         ))}
       </ol>

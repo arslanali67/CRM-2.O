@@ -1,11 +1,8 @@
-const LABEL_STYLE = {
-  reply: { background: "#c8f7c5" }, auto_reply: { background: "#fff3c4" },
-  bounce: { background: "crimson", color: "white" }, unrelated: { background: "#eee" },
-};
+const TONE = { reply: "success", auto_reply: "warning", bounce: "danger", unrelated: "" };
 
 // Reply-detection label (M15); hover shows which rule matched.
 export function LabelBadge({ m }) {
   if (!m.label) return null;
   const text = m.label === "bounce" ? `${m.bounce_type} bounce` : m.label.replace("_", "-");
-  return <mark title={m.label_rule} style={LABEL_STYLE[m.label]}>{text}</mark>;
+  return <span className={`badge${TONE[m.label] ? ` badge-${TONE[m.label]}` : ""}`} title={m.label_rule}>{text}</span>;
 }

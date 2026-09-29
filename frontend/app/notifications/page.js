@@ -26,12 +26,12 @@ export default function Notifications() {
     <main style={{ maxWidth: 700 }}>
       <p><Link href="/">← Home</Link></p>
       <h1>Notifications</h1>
-      <p style={{ color: "gray" }}><small>In-app only. Unread first, then high → normal → low priority. The system never replies on its own.</small></p>
+      <p style={{ color: "var(--muted)" }}><small>In-app only. Unread first, then high → normal → low priority. The system never replies on its own.</small></p>
       <p style={{ display: "flex", gap: 8 }}>
         <label><input type="checkbox" checked={unreadOnly} onChange={(e) => { setUnreadOnly(e.target.checked); load(e.target.checked); }} /> Unread only</label>
         <button onClick={readAll}>Mark all read</button>
       </p>
-      <div style={{ border: "1px solid #eee" }}>
+      <div style={{ border: "1px solid var(--border)" }}>
         {items.map((n) => <NotificationItem key={n.id} n={n} onOpen={() => openNotification(n, router)} />)}
       </div>
       {items.length === 0 && <p>Nothing here.</p>}

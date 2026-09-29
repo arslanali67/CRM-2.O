@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
 import { NotesPanel } from "../tasks/panels";
+import { useDialog } from "../ui";
 
 const myZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 const blank = () => ({ title: "", local_start: "", time_zone: myZone(), duration_minutes: 60, kind: "video",
@@ -13,7 +14,7 @@ export function When({ i }) {
   return (
     <span>
       <b>{i.local_label}</b>
-      {i.time_zone !== myZone() && <small style={{ color: "gray" }}> · your time: {mine}</small>}
+      {i.time_zone !== myZone() && <small style={{ color: "var(--muted)" }}> · your time: {mine}</small>}
     </span>
   );
 }
@@ -24,6 +25,7 @@ async function send(url, method, body) {
 }
 
 export function InterviewsPanel({ opportunityId, onChange }) {
+  const dialog = useDialog();
   const [list, setList] = useState([]);
   const [zones, setZones] = useState([]);
   const [form, setForm] = useState(null);      // null = closed; {id?} when adding/editing
@@ -52,8 +54,9 @@ export function InterviewsPanel({ opportunityId, onChange }) {
   }
 
   async function status(i, s) {
-    const outcome = s === "done" ? window.prompt("Outcome (optional)", i.outcome) ?? "" : "";
-    if (s === "cancelled" && !window.confirm(`Cancel "${i.title}"?`)) return;
+    const outcome = s === "done" ? await dialog.prompt(`Mark "${i.title}" as done`, { label: "Outcome (optional)", placeholder: "How did it go?", defaultValue: i.outcome, confirmLabel: "Mark done" }) : "";
+    if (outcome === null) return;
+    if (s === "cancelled" && !await dialog.confirm(`Cancel "${i.title}"?`, { body: "Reminders stop; the calendar file shows it as cancelled.", danger: true, confirmLabel: "Cancel interview", cancelLabel: "Keep" })) return;
     await send(`/api/interviews/${i.id}/status`, "POST", { status: s, outcome });
     load();
   }
@@ -63,10 +66,10 @@ export function InterviewsPanel({ opportunityId, onChange }) {
       <h2>Interviews</h2>
       {list.length === 0 && <p>No interviews yet.</p>}
       {list.map((i) => (
-        <div key={i.id} id={`interview-${i.id}`} style={{ borderTop: "1px solid #eee", padding: "8px 0" }}>
+        <div key={i.id} id={`interview-${i.id}`} style={{ borderTop: "1px solid var(--border)", padding: "8px 0" }}>
           <div>
             <b>{i.title}</b> · <When i={i} /> · {i.duration_minutes} min · {KINDS.find(([k]) => k === i.kind)?.[1]}
-            {" "}<mark style={{ background: i.status === "scheduled" ? "#dbeafe" : i.status === "done" ? "#c8f7c5" : "#eee" }}>{i.status}</mark>
+            {" "}<mark style={{ background: i.status === "scheduled" ? "var(--accent-bg)" : i.status === "done" ? "var(--success-bg)" : "var(--border)" }}>{i.status}</mark>
           </div>
           {i.location && <div>{/^https?:\/\//i.test(i.location)
             ? <a href={i.location} target="_blank" rel="noopener noreferrer">{i.location}</a> : i.location}</div>}
@@ -90,12 +93,12 @@ export function InterviewsPanel({ opportunityId, onChange }) {
         <button onClick={() => setForm(blank())}>Record an interview</button>
         {hint && <> {" "}<button onClick={() => setForm({ ...blank(), title: "Interview", local_start: hint.local_start })}>
           Prefill from AI suggestion ({hint.text})</button>
-          <br /><small style={{ color: "gray" }}>From the reply: “{hint.evidence}”. Check the time zone before saving.</small></>}
+          <br /><small style={{ color: "var(--muted)" }}>From the reply: “{hint.evidence}”. Check the time zone before saving.</small></>}
       </p>}
       {msg && <p>{msg}</p>}
 
       {form && (
-        <form onSubmit={save} style={{ display: "grid", gap: 6, maxWidth: 520, border: "1px solid #ddd", padding: 12 }}>
+        <form onSubmit={save} style={{ display: "grid", gap: 6, maxWidth: 520, border: "1px solid var(--border)", padding: 12 }}>
           <b>{form.id ? "Edit interview" : "Record an interview"}</b>
           <label>Title <input required value={form.title} onChange={(e) => set("title", e.target.value)} placeholder="First call with CTO" /></label>
           <label>Date and time <input type="datetime-local" required value={form.local_start} onChange={(e) => set("local_start", e.target.value)} /></label>
@@ -112,7 +115,7 @@ export function InterviewsPanel({ opportunityId, onChange }) {
           <label>Interviewers <input value={form.interviewers} onChange={(e) => set("interviewers", e.target.value)} /></label>
           <label>Notes <textarea rows={3} value={form.notes} onChange={(e) => set("notes", e.target.value)} /></label>
           <span><button type="submit">Save</button> <button type="button" onClick={() => setForm(null)}>Close</button></span>
-          <small style={{ color: "gray" }}>Reminders appear in the app 24 h and 1 h before. Nothing is ever emailed.</small>
+          <small style={{ color: "var(--muted)" }}>Reminders appear in the app 24 h and 1 h before. Nothing is ever emailed.</small>
         </form>
       )}
     </section>

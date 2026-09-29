@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
 import { TaskRow, localToday } from "./panels";
 
-const GROUPS = [["overdue", "Overdue", "crimson"], ["due_today", "Today"], ["upcoming", "Upcoming"], ["no_date", "No date"]];
+const GROUPS = [["overdue", "Overdue", "var(--danger)"], ["due_today", "Today"], ["upcoming", "Upcoming"], ["no_date", "No date"]];
 
 export default function Tasks() {
   const router = useRouter();
@@ -38,7 +38,7 @@ export default function Tasks() {
     <main style={{ maxWidth: 800 }}>
       <p><Link href="/">← Home</Link></p>
       <h1>Tasks</h1>
-      <p style={{ color: "gray" }}>Follow-ups are reminders for you. Nothing here ever sends an email. Today is {data.today}.</p>
+      <p style={{ color: "var(--muted)" }}>Follow-ups are reminders for you. Nothing here ever sends an email. Today is {data.today}.</p>
 
       <form onSubmit={add} style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
         <input required placeholder="New task" aria-label="New task" value={form.title}

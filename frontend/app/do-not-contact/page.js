@@ -3,10 +3,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
+import { useDialog } from "../ui";
 
 const target = (s) => s.email || s.domain || `${s.company_name} (company)`;
 
 export default function DoNotContact() {
+  const dialog = useDialog();
   const router = useRouter();
   const [list, setList] = useState(null);
   const [form, setForm] = useState({ kind: "email", value: "", reason: "" });
@@ -34,7 +36,7 @@ export default function DoNotContact() {
   }
 
   async function lift(s) {
-    const reason = window.prompt(`Why lift the block on ${target(s)}? (required, kept in the audit log)`);
+    const reason = await dialog.prompt(`Lift the block on ${target(s)}?`, { body: "A reason is required and kept in the audit log.", required: true, confirmLabel: "Lift block" });
     if (!reason?.trim()) return;
     const res = await fetch(`/api/suppressions/${s.id}/lift`, {
       method: "POST",

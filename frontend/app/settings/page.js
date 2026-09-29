@@ -65,7 +65,7 @@ export default function Settings() {
           <p key={k}>
             <label>{label}: <input type="number" required min={min} max={max} value={form[k]}
                                    onChange={(e) => set(k, e.target.value === "" ? "" : Number(e.target.value))} /></label>
-            <small style={{ color: "gray" }}> ({min}–{max})</small>
+            <small style={{ color: "var(--muted)" }}> ({min}–{max})</small>
           </p>
         ))}
 
@@ -77,7 +77,7 @@ export default function Settings() {
                                onChange={(e) => set("ai_model", e.target.value.trim() || null)} /></label>{" "}
           <button type="button" onClick={loadModels} disabled={!s.ai_key_present}>Show available models</button>
           <datalist id="ai-models">{(models || []).map((m) => <option key={m} value={m} />)}</datalist>
-          <br /><small style={{ color: "gray" }}>In use: {s.ai_effective_model}. A new model is checked against Google&apos;s list before saving.</small>
+          <br /><small style={{ color: "var(--muted)" }}>In use: {s.ai_effective_model}. A new model is checked against Google&apos;s list before saving.</small>
         </p>
 
         <h3>Notifications</h3>
@@ -96,7 +96,7 @@ export default function Settings() {
         ? <p>{acc.display_name ? `${acc.display_name} <${acc.email_address}>` : acc.email_address} · {acc.connected ? (acc.last_test_ok ? "connected" : "test failed") : "disconnected"}</p>
         : <p>Not configured.</p>}
       <p><Link href="/email-account">Manage email account</Link></p>
-      <p><small style={{ color: "gray" }}>Last changed {new Date(s.updated_at).toLocaleString()}. Every change is recorded in <Link href="/activity">Activity</Link>.</small></p>
+      <p><small style={{ color: "var(--muted)" }}>Last changed {new Date(s.updated_at).toLocaleString()}. Every change is recorded in <Link href="/activity">Activity</Link>.</small></p>
     </main>
   );
 }

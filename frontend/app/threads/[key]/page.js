@@ -43,13 +43,13 @@ export default function Thread() {
       <p><Link href="/history">← History</Link> · <Link href="/inbox">Inbox</Link>
         {companyId && <> · <Link href={`/companies/${companyId}`}>{first.company_name || "company"}</Link></>}</p>
       <h1>{first.subject}</h1>
-      <p style={{ color: "gray" }}><small>
+      <p style={{ color: "var(--muted)" }}><small>
         {t.gmail_thread ? `Gmail thread ${t.thread_key}` : "Not yet linked to a Gmail thread"} · {t.emails.length} sent,{" "}
         {t.inbound.length} received. The system never replies on its own.
       </small></p>
       {items.map((x) => (
         <article key={`${x.kind}-${x.id}`} id={`${x.kind}-${x.id}`}
-                 style={{ border: "1px solid #ddd", borderLeft: `4px solid ${x.kind === "in" ? "seagreen" : "steelblue"}`, padding: 12, marginBottom: 12,
+                 style={{ border: "1px solid var(--border)", borderLeft: `4px solid ${x.kind === "in" ? "var(--success)" : "var(--accent)"}`, padding: 12, marginBottom: 12,
                           outline: target === `${x.kind}-${x.id}` ? "3px solid gold" : "none" }}>
           {x.kind === "out" ? (
             <div><b>You → {x.to_email}</b> · <Link href={`/outbox/${x.id}`}>{x.status}</Link>

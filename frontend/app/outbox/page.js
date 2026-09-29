@@ -2,19 +2,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useDialog } from "../ui";
 
 const TABS = ["draft", "queued", "sending", "sent", "failed", "cancelled"];
 
 function SendingSwitch() {
+  const dialog = useDialog();
   const [s, setS] = useState(null);
   const [msg, setMsg] = useState("");
   const load = () => fetch("/api/sending").then((r) => r.ok && r.json()).then((d) => d && setS(d));
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
 
   async function toggle() {
-    if (!s.enabled && !window.confirm(
-      `Start sending?\n\nQueued emails (${s.queued}) will go out from ${s.account}, one at a time: ` +
-      `at most ${s.daily_cap} per 24 hours, ${s.min_gap_seconds} s apart. Every safety check runs again before each send.`)) return;
+    if (!s.enabled && !await dialog.confirm("Start sending?", { danger: true, confirmLabel: "Start sending",
+      body: `Queued emails (${s.queued}) will go out from ${s.account}, one at a time: ` +
+            `at most ${s.daily_cap} per 24 hours, ${s.min_gap_seconds} s apart. Every safety check runs again before each send.` })) return;
     const res = await fetch(`/api/sending/${s.enabled ? "disable" : "enable"}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: true }),
     });
@@ -25,7 +27,7 @@ function SendingSwitch() {
 
   if (!s) return null;
   return (
-    <div style={{ border: `2px solid ${s.enabled ? "crimson" : "#999"}`, padding: 12, margin: "12px 0" }}>
+    <div style={{ border: `2px solid ${s.enabled ? "var(--danger)" : "var(--muted)"}`, padding: 12, margin: "12px 0" }}>
       <b>Sending is {s.enabled ? "ON" : "OFF"}</b>{" "}
       <button onClick={toggle} disabled={!s.enabled && !s.account_ready} style={{ fontWeight: "bold" }}>
         {s.enabled ? "Stop sending" : "Enable sending"}
@@ -35,7 +37,7 @@ function SendingSwitch() {
         {s.last_sent_at && ` · last sent ${new Date(s.last_sent_at).toLocaleString()}`}
         {!s.account_ready && <> · <Link href="/email-account">connect and test an email account</Link> to enable</>}
       </small></div>
-      {msg && <p role="alert" style={{ color: "crimson" }}>{msg}</p>}
+      {msg && <p role="alert" style={{ color: "var(--danger)" }}>{msg}</p>}
     </div>
   );
 }
@@ -70,10 +72,10 @@ export default function Outbox() {
         <thead><tr><th align="left">To</th><th align="left">Company</th><th align="left">Subject</th><th align="left">When</th></tr></thead>
         <tbody>
           {data.emails.map((e) => (
-            <tr key={e.id} style={{ borderTop: "1px solid #eee" }}>
+            <tr key={e.id} style={{ borderTop: "1px solid var(--border)" }}>
               <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link>{e.has_attachment && " 📎"}</td>
               <td>{e.company_name}</td>
-              <td>{e.subject}{(e.cancel_reason || e.failure_reason) && <div style={{ color: "crimson" }}><small>{e.cancel_reason || e.failure_reason}</small></div>}</td>
+              <td>{e.subject}{(e.cancel_reason || e.failure_reason) && <div style={{ color: "var(--danger)" }}><small>{e.cancel_reason || e.failure_reason}</small></div>}</td>
               <td><small>{new Date(e.sent_at || e.approved_at || e.created_at).toLocaleString()}</small></td>
             </tr>
           ))}

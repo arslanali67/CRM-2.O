@@ -26,13 +26,13 @@ function SyncStatus({ onSynced }) {
 
   if (!s) return null;
   return (
-    <div style={{ border: "1px solid #ccc", padding: 12, margin: "12px 0" }}>
+    <div style={{ border: "1px solid var(--border)", padding: 12, margin: "12px 0" }}>
       <b>Inbox sync</b> (read-only, every 2 minutes; nothing is marked read or changed){" "}
       <button onClick={run} disabled={busy || !s.account_ready}>Sync now</button>
       {!s.account_ready && <> · <Link href="/email-account">connect an email account</Link></>}
       <ul style={{ margin: "6px 0" }}>
         {s.mailboxes.map((b) => (
-          <li key={b.mailbox} style={{ color: b.last_ok === false ? "crimson" : undefined }}>
+          <li key={b.mailbox} style={{ color: b.last_ok === false ? "var(--danger)" : undefined }}>
             {b.imap_name || b.mailbox}: {b.last_sync_at ? `synced ${new Date(b.last_sync_at).toLocaleString()}` : "not synced yet"}
             {" · "}{b.seen_count} examined, {b.stored_count} relevant stored
             {b.last_error && ` · error: ${b.last_error}`}
@@ -71,7 +71,7 @@ export default function Inbox() {
     <main style={{ maxWidth: 900 }}>
       <p><Link href="/">← Home</Link> · <Link href="/history">History</Link></p>
       <h1>Inbox</h1>
-      <p style={{ color: "gray" }}>Only outreach-related messages are stored. The system never replies on its own.</p>
+      <p style={{ color: "var(--muted)" }}>Only outreach-related messages are stored. The system never replies on its own.</p>
       <SyncStatus onSynced={() => load()} />
       {ai && (
         <p><small>AI analysis ({ai.model}): {ai.enabled ? `on · ${ai.ok || 0} analysed, ${ai.pending} waiting` +
@@ -92,17 +92,17 @@ export default function Inbox() {
         <tbody>
           {msgs.map((m) => (
             <Fragment key={m.id}>
-              <tr style={{ borderTop: "1px solid #eee", cursor: "pointer" }} onClick={() => show(m.id)}>
-                <td>{m.from_name || m.from_email}<div><small style={{ color: "gray" }}>{m.from_email}</small></div></td>
+              <tr style={{ borderTop: "1px solid var(--border)", cursor: "pointer" }} onClick={() => show(m.id)}>
+                <td>{m.from_name || m.from_email}<div><small style={{ color: "var(--muted)" }}>{m.from_email}</small></div></td>
                 <td>{m.subject}{m.mailbox === "spam" && <mark> spam</mark>}{m.attachment_names.length > 0 && " 📎"}
-                  <div><small style={{ color: "gray" }}>{m.snippet}</small></div></td>
+                  <div><small style={{ color: "var(--muted)" }}>{m.snippet}</small></div></td>
                 <td>{m.company_id ? <Link href={`/companies/${m.company_id}`}>{m.company_name}</Link> : "—"}</td>
-                <td><LabelBadge m={m} /><div><small style={{ color: "gray" }}>{m.label_rule}</small></div>
+                <td><LabelBadge m={m} /><div><small style={{ color: "var(--muted)" }}>{m.label_rule}</small></div>
                   {m.ai_label && <div><small>AI: <b>{m.ai_label.replaceAll("_", " ")}</b></small></div>}</td>
                 <td><small>{m.received_at && new Date(m.received_at).toLocaleString()}</small></td>
               </tr>
               {open?.id === m.id && (
-                <tr><td colSpan={5} style={{ background: "#fafafa", padding: 12 }}>
+                <tr><td colSpan={5} style={{ background: "var(--surface-2)", padding: 12 }}>
                   <div><small>To: {open.to_emails} · <Link href={`/threads/${open.thread_key}`}>open thread</Link>
                     {open.attachment_names.length > 0 && ` · attachments: ${open.attachment_names.join(", ")} (not stored)`}</small></div>
                   {open.label === "reply" && open.company_id && (

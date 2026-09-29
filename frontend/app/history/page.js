@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 const STATUSES = ["queued", "sending", "sent", "failed", "cancelled"];
 const NO_FILTERS = { status: "", q: "", since: "", until: "" };
-const COLOR = { sent: "green", failed: "crimson", cancelled: "gray", sending: "darkorange", queued: "steelblue" };
+const COLOR = { sent: "var(--success)", failed: "var(--danger)", cancelled: "var(--muted)", sending: "var(--warning)", queued: "var(--accent)" };
 
 export default function History() {
   const router = useRouter();
@@ -44,13 +44,13 @@ export default function History() {
         <thead><tr><th align="left">Status</th><th align="left">To</th><th align="left">Company</th><th align="left">Subject</th><th align="left">When</th><th /></tr></thead>
         <tbody>
           {data.emails.map((e) => (
-            <tr key={e.id} style={{ borderTop: "1px solid #eee", verticalAlign: "top" }}>
+            <tr key={e.id} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
               <td style={{ color: COLOR[e.status] }}>{e.status}</td>
               <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link></td>
               <td>{e.company_id ? <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link> : "—"}</td>
               <td>
                 {e.subject}
-                {(e.failure_reason || e.cancel_reason) && <div style={{ color: "crimson" }}><small>{e.failure_reason || e.cancel_reason}</small></div>}
+                {(e.failure_reason || e.cancel_reason) && <div style={{ color: "var(--danger)" }}><small>{e.failure_reason || e.cancel_reason}</small></div>}
               </td>
               <td><small>{new Date(e.last_activity_at).toLocaleString()}</small></td>
               <td><Link href={`/threads/${e.thread_key}`}><small>thread</small></Link></td>

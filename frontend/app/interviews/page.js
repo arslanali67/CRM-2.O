@@ -26,7 +26,7 @@ export default function Interviews() {
         <table cellPadding={6} style={{ borderCollapse: "collapse" }}>
           <tbody>
             {list.map((i) => (
-              <tr key={i.id} style={{ borderBottom: "1px solid #eee", verticalAlign: "top" }}>
+              <tr key={i.id} style={{ borderBottom: "1px solid var(--border)", verticalAlign: "top" }}>
                 <td><When i={i} /><br /><small>{i.duration_minutes} min · {i.kind} · {i.status}</small></td>
                 <td><Link href={`/opportunities/${i.opportunity_id}#interview-${i.id}`}><b>{i.title}</b></Link>
                   <br /><small>{i.company_name} · {i.opportunity_title}</small></td>
@@ -36,7 +36,7 @@ export default function Interviews() {
           </tbody>
         </table>
       )}
-      <p><small style={{ color: "gray" }}>Reminders appear in the notifications bell 24 h and 1 h before (switchable in Settings).</small></p>
+      <p><small style={{ color: "var(--muted)" }}>Reminders appear in the notifications bell 24 h and 1 h before (switchable in Settings).</small></p>
     </main>
   );
 }

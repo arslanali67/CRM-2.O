@@ -1,19 +1,19 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useDialog } from "../ui";
 
 export const STAGES = ["new", "applied", "screening", "interviewing", "offer", "hired", "rejected", "withdrawn"];
-export const STAGE_COLOR = { new: "#888", applied: "steelblue", screening: "teal", interviewing: "darkorange",
-  offer: "seagreen", hired: "green", rejected: "crimson", withdrawn: "#aaa" };
+const STAGE_TONE = { new: "", applied: "accent", screening: "accent", interviewing: "warning", offer: "success",
+  hired: "success", rejected: "danger", withdrawn: "" };
 
-export const StageBadge = ({ stage }) => (
-  <mark style={{ background: STAGE_COLOR[stage], color: "white", padding: "0 6px", borderRadius: 4 }}>{stage}</mark>
-);
+export const StageBadge = ({ stage }) => <span className={`badge${STAGE_TONE[stage] ? ` badge-${STAGE_TONE[stage]}` : ""}`}>{stage}</span>;
 
 // M19: one click from a reply (never automatic). Prefills a title; the owner can change it.
 export function CreateOpportunity({ messageId, companyId, suggestedTitle, label = "Create opportunity" }) {
+  const dialog = useDialog();
   const router = useRouter();
   async function create() {
-    const title = window.prompt("Role / opportunity title:", suggestedTitle || "");
+    const title = await dialog.prompt("Create opportunity", { label: "Role / opportunity title", defaultValue: suggestedTitle || "", required: true, confirmLabel: "Create" });
     if (!title?.trim()) return;
     const body = messageId ? { inbound_message_id: messageId, title } : { company_id: companyId, title };
     const res = await fetch("/api/opportunities", {
@@ -21,7 +21,7 @@ export function CreateOpportunity({ messageId, companyId, suggestedTitle, label 
     });
     const data = await res.json();
     if (res.ok) router.push(`/opportunities/${data.id}`);
-    else window.alert(data.detail || "Could not create the opportunity");
+    else await dialog.alert("Couldn't create the opportunity", { body: data.detail || "" });
   }
   return <button onClick={create}>{label}</button>;
 }

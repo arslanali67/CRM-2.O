@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
+import { useDialog } from "../ui";
 
 async function call(url, method = "GET", body) {
   const res = await fetch(url, {
@@ -12,10 +13,11 @@ async function call(url, method = "GET", body) {
 }
 
 const Result = ({ label, r }) => r && (
-  <li style={{ color: r.ok ? "green" : "crimson" }}>{label}: {r.ok ? "✓" : "✗"} {r.detail}</li>
+  <li style={{ color: r.ok ? "var(--success)" : "var(--danger)" }}>{label}: {r.ok ? "✓" : "✗"} {r.detail}</li>
 );
 
 export default function EmailAccount() {
+  const dialog = useDialog();
   const router = useRouter();
   const [acc, setAcc] = useState(null);
   const [form, setForm] = useState({ email_address: "", display_name: "", app_password: "" });
@@ -50,7 +52,7 @@ export default function EmailAccount() {
   }
 
   async function disconnect() {
-    if (!window.confirm("Disconnect and delete the stored app password?")) return;
+    if (!await dialog.confirm("Disconnect Gmail?", { body: "The stored app password is deleted. Sending and inbox sync stop until you connect again.", danger: true, confirmLabel: "Disconnect" })) return;
     await call("/api/email-account", "DELETE");
     setMsg("Disconnected; the app password was deleted.");
     load();
@@ -65,13 +67,13 @@ export default function EmailAccount() {
       <h1>Email account</h1>
 
       {acc.configured ? (
-        <div style={{ border: "1px solid #ddd", padding: 12 }}>
+        <div style={{ border: "1px solid var(--border)", padding: 12 }}>
           <p>
             <b>{acc.email_address}</b>{" "}
-            {acc.connected ? <mark style={{ background: "#c8f7c5" }}>connected</mark>
+            {acc.connected ? <mark style={{ background: "var(--success-bg)" }}>connected</mark>
               : acc.has_password ? <mark>not verified</mark> : <mark>disconnected</mark>}
           </p>
-          <p style={{ color: "gray" }}><small>
+          <p style={{ color: "var(--muted)" }}><small>
             SMTP {acc.smtp_host}:{acc.smtp_port} (SSL) · IMAP {acc.imap_host}:{acc.imap_port} (SSL) ·
             app password {acc.has_password ? "stored encrypted" : "not stored"}
             {acc.last_test_at && ` · last tested ${new Date(acc.last_test_at).toLocaleString()}`}
@@ -86,7 +88,7 @@ export default function EmailAccount() {
       {msg && <p role="status">{msg}</p>}
 
       <h2 style={{ marginTop: 24 }}>{acc.configured ? "Update account" : "Connect Gmail"}</h2>
-      <ol style={{ color: "gray" }}>
+      <ol style={{ color: "var(--muted)" }}>
         <li>Turn on 2-Step Verification for your Google account.</li>
         <li>Create an app password: Google Account → Security → App passwords.</li>
         <li>Paste it below. It is encrypted before it is stored and is never shown again.</li>

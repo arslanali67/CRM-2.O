@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { COMPANY_FIELDS, STAGES, errorText } from "./shared";
+import { useDialog } from "../ui";
 
 const EMPTY_COMPANY = Object.fromEntries(COMPANY_FIELDS.map(([k]) => [k, ""]));
 const NO_FILTERS = { q: "", stage: "", country: "", city: "", industry: "", source: "", has_email: "", has_careers: "",
@@ -12,6 +13,7 @@ const AI_LABELS = ["interview_request", "interested", "needs_info", "scheduling"
                    "keep_on_file", "not_hiring", "rejection", "offer", "unsubscribe_request", "other"];
 
 export default function Leads() {
+  const dialog = useDialog();
   const router = useRouter();
   const [filters, setFilters] = useState(NO_FILTERS);
   const [data, setData] = useState(null);
@@ -54,7 +56,7 @@ export default function Leads() {
   async function applyStage() {
     let close_reason = "";
     if (bulkStage === "closed") {
-      close_reason = window.prompt(`Why close ${selected.size} lead(s)?`) || "";
+      close_reason = (await dialog.prompt(`Close ${selected.size} lead(s)?`, { body: "A reason is required and kept in the history.", required: true, confirmLabel: "Close leads" })) || "";
       if (!close_reason.trim()) return;
     }
     const r = await post("/api/leads/stage", { company_ids: [...selected], stage: bulkStage, close_reason });
@@ -155,17 +157,17 @@ export default function Leads() {
         </thead>
         <tbody>
           {leads.map((l) => (
-            <tr key={l.id} style={{ borderTop: "1px solid #eee" }}>
+            <tr key={l.id} style={{ borderTop: "1px solid var(--border)" }}>
               <td><input type="checkbox" aria-label={`Select ${l.name}`} checked={selected.has(l.id)} onChange={() => toggle(l.id)} /></td>
-              <td><Link href={`/companies/${l.id}`}>{l.name}</Link> <small style={{ color: "gray" }}>{l.domain}</small></td>
-              <td>{l.stage}{l.close_reason && <small style={{ color: "gray" }}> ({l.close_reason})</small>}</td>
+              <td><Link href={`/companies/${l.id}`}>{l.name}</Link> <small style={{ color: "var(--muted)" }}>{l.domain}</small></td>
+              <td>{l.stage}{l.close_reason && <small style={{ color: "var(--muted)" }}> ({l.close_reason})</small>}</td>
               <td>{l.city}</td>
               <td><small>{l.industry}</small></td>
               <td align="right">{l.usable_emails}{l.careers_emails > 0 && <mark title="has a careers email"> careers</mark>}</td>
               <td><small>{l.last_emailed_at ? new Date(l.last_emailed_at).toLocaleDateString() : "—"}</small></td>
               <td><small>{l.last_reply_at ? new Date(l.last_reply_at).toLocaleDateString() : "—"}</small></td>
               <td>
-                {l.blocked && <mark style={{ background: "crimson", color: "white" }}>blocked</mark>}
+                {l.blocked && <mark style={{ background: "var(--danger)", color: "var(--surface)" }}>blocked</mark>}
                 {l.in_compose_list && <mark> in list</mark>}
               </td>
             </tr>

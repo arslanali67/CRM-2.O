@@ -38,12 +38,12 @@ export default function Backup() {
       <h1>Backup & export</h1>
 
       <h3>Backups</h3>
-      <p style={{ color: s.warn ? "crimson" : undefined }}>
+      <p style={{ color: s.warn ? "var(--danger)" : undefined }}>
         {last ? `Last backup ${new Date(last.created_at).toLocaleString()} (${Math.round(s.age_hours)} h ago).` : "No backup yet."}
         {s.warn && ` Older than ${s.warn_hours} h: make one now.`}
       </p>
       <p><button onClick={backupNow} disabled={busy}>Back up now</button> {msg}</p>
-      <p><small style={{ color: "gray" }}>
+      <p><small style={{ color: "var(--muted)" }}>
         A backup is made automatically once a day while the app is running (the last {s.keep} are kept) in the <code>backups</code> folder
         of the project. <code>.env</code> is not included: keep your own copy of it.
       </small></p>
@@ -69,7 +69,7 @@ export default function Backup() {
         {CSVS.map(([k, label]) => <span key={k}><a href={`/api/export/${k}.csv`}>{label} (CSV)</a> · </span>)}
         <a href="/api/export/full.zip">Full export (ZIP: every table as JSON + CV PDFs)</a>
       </p>
-      <p><small style={{ color: "gray" }}>The stored Gmail app password is never exported.</small></p>
+      <p><small style={{ color: "var(--muted)" }}>The stored Gmail app password is never exported.</small></p>
     </main>
   );
 }

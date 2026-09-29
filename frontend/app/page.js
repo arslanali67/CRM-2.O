@@ -7,14 +7,14 @@ import { LabelBadge } from "./inbox/label";
 import { localToday } from "./tasks/panels";
 
 const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["all", "All time"]];
-const tile = { border: "1px solid #ddd", borderRadius: 6, padding: "10px 12px", minWidth: 120, flex: "1 1 120px" };
+const tile = { border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px", minWidth: 120, flex: "1 1 120px" };
 
 function Tile({ label, value, sub, href }) {
   const body = (
     <div style={tile}>
       <div style={{ fontSize: 26, fontWeight: 600 }}>{value}</div>
       <div>{label}</div>
-      {sub && <small style={{ color: "gray" }}>{sub}</small>}
+      {sub && <small style={{ color: "var(--muted)" }}>{sub}</small>}
     </div>
   );
   return href ? <Link href={href} style={{ color: "inherit", textDecoration: "none", display: "contents" }}>{body}</Link> : body;
@@ -23,11 +23,11 @@ function Tile({ label, value, sub, href }) {
 function Series({ data }) {
   const max = Math.max(1, ...data.map((d) => d.sent));
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 60, borderBottom: "1px solid #ccc" }}
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 60, borderBottom: "1px solid var(--border)" }}
          aria-label="Emails sent per day">
       {data.map((d) => (
         <div key={d.day} title={`${d.day}: ${d.sent} sent`}
-             style={{ flex: 1, height: `${(d.sent / max) * 100}%`, minHeight: d.sent ? 2 : 0, background: "steelblue" }} />
+             style={{ flex: 1, height: `${(d.sent / max) * 100}%`, minHeight: d.sent ? 2 : 0, background: "var(--accent)" }} />
       ))}
     </div>
   );
@@ -55,10 +55,6 @@ export default function Home() {
     fetch(`/api/dashboard?period=${period}&today=${localToday()}`).then((r) => r.ok && r.json()).then((x) => x && setD(x));
   }, [email, period]);
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.replace("/login");
-  }
 
   if (!email) return <p>Loading…</p>;
   const k = d?.kpis;
@@ -66,15 +62,9 @@ export default function Home() {
 
   return (
     <main>
-      <p>
-        <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/interviews">Interviews</Link> · <Link href="/analytics">Analytics</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
-        <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> · <Link href="/duplicates">Duplicates</Link> ·{" "}
-        <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
-        <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link> · <Link href="/settings">Settings</Link> · <Link href="/backup">Backup & export</Link>
-      </p>
 
       {bk?.warn && (
-        <p style={{ color: "crimson" }}>
+        <p style={{ color: "var(--danger)" }}>
           {bk.backups.length ? `Last backup was ${Math.round(bk.age_hours)} h ago.` : "No backup yet."}{" "}
           <Link href="/backup">Back up now</Link>
         </p>
@@ -116,7 +106,7 @@ export default function Home() {
                 <div key={m.id} style={{ marginBottom: 6 }}>
                   <Link href={`/threads/${m.thread_key}#in-${m.id}`}>{m.from_name || m.from_email}</Link> <LabelBadge m={m} />
                   {m.ai_label && <small> · AI: {m.ai_label.replaceAll("_", " ")}</small>}
-                  <div><small style={{ color: "gray" }}>{m.company_name} · {m.subject}</small></div>
+                  <div><small style={{ color: "var(--muted)" }}>{m.company_name} · {m.subject}</small></div>
                 </div>
               ))}
             </section>
@@ -124,23 +114,22 @@ export default function Home() {
               <h3><Link href="/tasks">Tasks due</Link></h3>
               {d.tasks.length === 0 && <p>Nothing due this week.</p>}
               {d.tasks.map((t) => (
-                <div key={t.id} style={{ color: t.overdue ? "crimson" : undefined }}>{t.due_date} · {t.title}</div>
+                <div key={t.id} style={{ color: t.overdue ? "var(--danger)" : undefined }}>{t.due_date} · {t.title}</div>
               ))}
             </section>
             <section style={{ flex: "1 1 300px" }}>
               <h3><Link href="/activity">Recent activity</Link></h3>
               {d.activity.map((e) => (
-                <div key={e.id}><small style={{ color: "gray" }}>{new Date(e.at).toLocaleString()}</small> {describe(e)}</div>
+                <div key={e.id}><small style={{ color: "var(--muted)" }}>{new Date(e.at).toLocaleString()}</small> {describe(e)}</div>
               ))}
             </section>
           </div>
-          <p style={{ color: "gray" }}><small>Computed in {d.query_ms} ms.</small></p>
+          <p style={{ color: "var(--muted)" }}><small>Computed in {d.query_ms} ms.</small></p>
         </>
       )}
 
       <h3>System status</h3>
       <p>{health ? Object.entries(health).map(([key, v]) => `${key}: ${v}`).join(" · ") : "Checking…"}</p>
-      <p><small>Signed in as {email}</small> <button onClick={logout}>Sign out</button></p>
     </main>
   );
 }

@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.39
+- **Spec version:** 1.40
 - **Last updated:** 2026-09-28
 
 ---
@@ -375,6 +375,12 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
 **Decisions (owner, 2026-09-30):** own design system in plain CSS (CSS variables + CSS modules built into Next.js; **no new dependencies**); hand-made SVG charts (no chart library); the Kanban board stays in Phase 3.
 
 - **F1 Design system & app shell.** Tokens (colour, type, spacing) with light and dark mode; reusable components (buttons, inputs, selects, tables, tabs, cards, badges, in-app confirm dialogs replacing browser pop-ups, toasts, empty/loading/error states); sidebar navigation grouped Work / Insights / Setup; top bar with search, bell and account menu; mobile drawer.
+  - **Tokens** (`app/globals.css`): colours (background, surfaces, borders, text, one accent blue, success/warning/danger), spacing, radius, type scale with the system font stack (no web fonts); light and dark mode following the system, with a remembered manual toggle.
+  - **Components** (`app/ui/`): Button, Field (label/hint/error), Input, Select, Textarea, Checkbox, Card, Badge, Table, Tabs, PageHeader, Stat, EmptyState, Spinner, ErrorState, Toast, Confirm/Prompt dialog.
+  - **App shell** on every signed-in page: sidebar grouped Work (Dashboard, Leads, Compose, Outbox, Inbox, Opportunities, Interviews, Tasks) / Insights (Analytics, History, Activity) / Setup (Templates, Import, Duplicates, Do-not-contact, Profile & CV, Email account, Settings, Backup & export) with live count badges (queued emails, unread replies, tasks due) and the current page highlighted; top bar with search, an always-visible Sending ON/OFF pill (red when on), bell, theme toggle, account menu with sign-out; mobile drawer; login keeps its own centred layout.
+  - **No browser pop-ups:** every `window.confirm`/`prompt`/`alert` becomes an in-app dialog (the sending switch's confirmation keeps its queue/cap/gap text and explicit click).
+  - Base styles make existing pages consistent now; the dashboard's link row is removed (navigation lives in the sidebar). Page redesigns follow in F2–F8.
+  - Done when: every page renders in the shell and every sidebar link works; a test proves no browser confirm/prompt/alert remains; light and dark are readable; the mobile drawer works; E2E extended (sidebar links, in-app dialogs, theme persistence); all existing tests, S1–S12 and E2E pass.
 - **F2 Dashboard.** KPI cards, sent-per-day SVG chart, latest replies, tasks due, next interview, backup warning, system status.
 - **F3 Leads & companies.** Leads table with filter panel, sorting, paging and bulk-action bar; company page header + tabs; contact page; Import as a 3-step wizard; Duplicates.
 - **F4 Outreach.** Template editor with live preview against a real lead; Compose as a stepper; Outbox list and detail (preview, safety-check panel, Approve); prominent sending switch; History.
@@ -490,3 +496,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.37 | M27 detailed: scraped data / AI claims (verbatim evidence + URL) / owner-verified facts kept separate; only verified facts via one DB function for M9; manual Research fetches up to 3 pages of the company's own site with an SSRF guard (S11 extended to allow exactly this); built before M16's eval passes (owner's exception). | Owner |
 | 2026-09-30 | 1.38 | M9 detailed: AI fills only {{personal_line}} from verified facts with per-sentence citations; strict grounding check drops unproven sentences; highlighted with sources in the preview; one-by-one approval unchanged; max 10 per run; eval set with 0 ungrounded claims; built before M16's eval (owner's exception). | Owner |
 | 2026-09-30 | 1.39 | Phase 2b Frontend added: F1–F9 (design system & shell, dashboard, leads, outreach, inbox, pipeline, research, setup, quality), plain CSS and hand-made SVG charts with no new dependencies, Kanban stays in Phase 3, done before M34 sign-off; each F-milestone detailed and approved before building. | Owner |
+| 2026-09-30 | 1.40 | F1 detailed: tokens with light/dark, component set, grouped sidebar with live badges, always-visible sending pill, mobile drawer, in-app dialogs replace browser pop-ups; done-when with no-pop-up test and extended E2E. | Owner |

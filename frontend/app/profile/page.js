@@ -143,14 +143,14 @@ export default function Profile() {
           <>
             <p>
               {vars.unresolved.length === 0 ? "All variables resolve." : `${vars.unresolved.length} unresolved.`}{" "}
-              {vars.default_cv_set ? "Default CV set." : <span style={{ color: "crimson" }}>No default CV.</span>}
+              {vars.default_cv_set ? "Default CV set." : <span style={{ color: "var(--danger)" }}>No default CV.</span>}
             </p>
             <table>
               <tbody>
                 {Object.entries(vars.variables).map(([k, v]) => (
                   <tr key={k}>
                     <td><code>{`{{${k}}}`}</code></td>
-                    <td style={{ color: v ? "inherit" : "crimson" }}>{v || "unresolved"}</td>
+                    <td style={{ color: v ? "inherit" : "var(--danger)" }}>{v || "unresolved"}</td>
                   </tr>
                 ))}
               </tbody>

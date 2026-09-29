@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { errorText } from "../companies/shared";
 
-const STATUS_COLOR = { new: "green", duplicate: "gray", blocked: "crimson", error: "crimson" };
+const STATUS_COLOR = { new: "var(--success)", duplicate: "var(--muted)", blocked: "var(--danger)", error: "var(--danger)" };
 
 export default function Import() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function Import() {
         <>
           <h2>{imported ? "Import result" : "Preview"}</h2>
           <p>
-            {s.total} rows: <b style={{ color: "green" }}>{s.new} new</b> · {s.duplicate} duplicate · {s.blocked} blocked ·{" "}
+            {s.total} rows: <b style={{ color: "var(--success)" }}>{s.new} new</b> · {s.duplicate} duplicate · {s.blocked} blocked ·{" "}
             {s.error} error · {s.contacts} contacts to add · {s.skipped_emails} emails skipped
           </p>
           <div style={{ display: "flex", gap: 8 }}>
@@ -83,7 +83,7 @@ export default function Import() {
             </thead>
             <tbody>
               {result.rows.map((r) => (
-                <tr key={r.line} style={{ borderTop: "1px solid #eee", verticalAlign: "top" }}>
+                <tr key={r.line} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
                   <td>{r.line}</td>
                   <td>{r.company || <i>(none)</i>}</td>
                   <td>{r.domain}</td>
@@ -93,7 +93,7 @@ export default function Import() {
                     {r.skipped_emails.length > 0 && (
                       <details>
                         <summary>{r.skipped_emails.length} skipped</summary>
-                        {r.skipped_emails.map((x, i) => <div key={i} style={{ color: "gray" }}>{x.email}: {x.reason}</div>)}
+                        {r.skipped_emails.map((x, i) => <div key={i} style={{ color: "var(--muted)" }}>{x.email}: {x.reason}</div>)}
                       </details>
                     )}
                   </td>

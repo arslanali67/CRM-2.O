@@ -29,10 +29,10 @@ export default function Contact() {
       <h1 style={{ marginBottom: 4 }}>{c.name || c.email}</h1>
       <p style={{ margin: "4px 0" }}>
         {c.role && `${c.role} · `}{c.email || "no email"}{c.email_class && <> <mark>{c.email_class}{c.email_class_manual ? " (manual)" : ""}</mark></>}
-        {d.suppressed && <> <mark style={{ background: "crimson", color: "white" }}>blocked</mark></>}
+        {d.suppressed && <> <mark style={{ background: "var(--danger)", color: "var(--surface)" }}>blocked</mark></>}
         {c.archived_at && " · archived"}
       </p>
-      <p style={{ color: "gray" }}><small>
+      <p style={{ color: "var(--muted)" }}><small>
         {c.phone && `${c.phone} · `}{c.linkedin_url && <>{c.linkedin_url} · </>}source: {c.source}
         {c.source_detail?.file && ` (${c.source_detail.file}, row ${c.source_detail.row})`} · edit on the <Link href={d.company.link}>company page</Link>
       </small></p>
@@ -49,8 +49,8 @@ export default function Contact() {
         <div key={m.id} style={{ marginBottom: 4 }}>
           <Link href={m.link}>{m.subject}</Link> <LabelBadge m={m} />
           {m.ai_label && <small> · AI: {m.ai_label.replaceAll("_", " ")}</small>}
-          <small style={{ color: "gray" }}> · {m.received_at && new Date(m.received_at).toLocaleDateString()}</small>
-          {m.ai_summary && <div><small style={{ color: "gray" }}>{m.ai_summary}</small></div>}
+          <small style={{ color: "var(--muted)" }}> · {m.received_at && new Date(m.received_at).toLocaleDateString()}</small>
+          {m.ai_summary && <div><small style={{ color: "var(--muted)" }}>{m.ai_summary}</small></div>}
         </div>
       ))}
 

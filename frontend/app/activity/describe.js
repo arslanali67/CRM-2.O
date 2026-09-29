@@ -97,8 +97,8 @@ export function EventList({ events }) {
   return (
     <ul style={{ listStyle: "none", padding: 0 }}>
       {events.map((e) => (
-        <li key={e.id} style={{ padding: "6px 0", borderBottom: "1px solid #eee" }}>
-          <small style={{ color: "gray" }}>{new Date(e.at).toLocaleString()} · {e.actor}</small>
+        <li key={e.id} style={{ padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+          <small style={{ color: "var(--muted)" }}>{new Date(e.at).toLocaleString()} · {e.actor}</small>
           <div>{describe(e)}</div>
         </li>
       ))}

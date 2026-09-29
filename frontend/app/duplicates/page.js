@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
+import { useDialog } from "../ui";
 
 const REASON = { domain: "same domain", email: "contact email", linkedin: "same LinkedIn", name: "similar name" };
 
@@ -12,10 +13,11 @@ async function post(url, body) {
 }
 
 function Co({ id, name, domain }) {
-  return <><Link href={`/companies/${id}`}>{name}</Link>{domain && <small style={{ color: "gray" }}> {domain}</small>}</>;
+  return <><Link href={`/companies/${id}`}>{name}</Link>{domain && <small style={{ color: "var(--muted)" }}> {domain}</small>}</>;
 }
 
 export default function Duplicates() {
+  const dialog = useDialog();
   const router = useRouter();
   const [pairs, setPairs] = useState(null);
   const [merges, setMerges] = useState([]);
@@ -35,8 +37,9 @@ export default function Duplicates() {
     load();
   }
 
-  function merge(keep, drop) {
-    if (!window.confirm(`Keep "${keep.name}" and merge "${drop.name}" into it?\n\nAll of ${drop.name}'s contacts, emails, replies, opportunities, notes and tasks move to ${keep.name}; ${drop.name} is archived. You can undo this below.`)) return;
+  async function merge(keep, drop) {
+    if (!await dialog.confirm(`Merge "${drop.name}" into "${keep.name}"?`, { confirmLabel: "Merge",
+      body: `All of ${drop.name}'s contacts, emails, replies, opportunities, notes and tasks move to ${keep.name}; ${drop.name} is archived. You can undo this below.` })) return;
     act(post("/api/duplicates/merge", { survivor_id: keep.id, merged_id: drop.id }), `Merged "${drop.name}" into "${keep.name}".`);
   }
 
@@ -54,9 +57,9 @@ export default function Duplicates() {
           {pairs.map((p) => {
             const a = { id: p.a, name: p.a_name, domain: p.a_domain }, b = { id: p.b, name: p.b_name, domain: p.b_domain };
             return (
-              <tr key={`${p.a}-${p.b}`} style={{ borderBottom: "1px solid #eee", verticalAlign: "top" }}>
+              <tr key={`${p.a}-${p.b}`} style={{ borderBottom: "1px solid var(--border)", verticalAlign: "top" }}>
                 <td><Co {...a} /><br /><Co {...b} /></td>
-                <td>{p.reasons.map((r) => REASON[r]).join(", ")}<br /><small style={{ color: "gray" }}>{p.details.join(" · ")}</small></td>
+                <td>{p.reasons.map((r) => REASON[r]).join(", ")}<br /><small style={{ color: "var(--muted)" }}>{p.details.join(" · ")}</small></td>
                 <td>
                   <button onClick={() => merge(a, b)}>Keep first</button>{" "}
                   <button onClick={() => merge(b, a)}>Keep second</button>{" "}
@@ -75,8 +78,8 @@ export default function Duplicates() {
           #{g.id} · {new Date(g.merged_at).toLocaleString()} · <Link href={`/companies/${g.merged_id}`}>{g.merged_name}</Link> →{" "}
           <Link href={`/companies/${g.survivor_id}`}>{g.survivor_name}</Link>{" "}
           {g.undone_at
-            ? <small style={{ color: "gray" }}>undone {new Date(g.undone_at).toLocaleString()}</small>
-            : <button onClick={() => window.confirm(`Undo merge #${g.id}? ${g.merged_name} is restored with the records the merge moved.`)
+            ? <small style={{ color: "var(--muted)" }}>undone {new Date(g.undone_at).toLocaleString()}</small>
+            : <button onClick={async () => (await dialog.confirm(`Undo merge #${g.id}?`, { body: `${g.merged_name} is restored with the records the merge moved.`, confirmLabel: "Undo merge" }))
                                   && act(post(`/api/duplicates/merges/${g.id}/undo`), `Merge #${g.id} undone.`)}>Undo</button>}
         </div>
       ))}

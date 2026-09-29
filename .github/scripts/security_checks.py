@@ -4,6 +4,7 @@
 2. Localhost binding: only `web` publishes a port, and only on 127.0.0.1.
 3. No raw-HTML rendering in the frontend.
 4. The security headers are configured for every page.
+5. No browser pop-ups (window.confirm / prompt / alert) in the frontend: in-app dialogs only (F1).
 """
 import re
 import subprocess
@@ -81,6 +82,10 @@ def main() -> int:
     problems += [f"raw HTML rendering in {f}" for f in files
                  if f.startswith("frontend/app/") and f.endswith((".js", ".jsx"))
                  and "dangerouslySetInnerHTML" in Path(f).read_text(encoding="utf-8")]
+    problems += [f"browser pop-up in {f} (use the in-app dialog from app/ui)" for f in files
+                 if f.startswith("frontend/app/") and f.endswith((".js", ".jsx"))
+                 and re.search(r"\bwindow\.(confirm|prompt|alert)\s*\(|(?<![.\w])(confirm|prompt|alert)\s*\(\s*[`'\"]",
+                               Path(f).read_text(encoding="utf-8"))]
     config = Path("frontend/next.config.mjs").read_text(encoding="utf-8")
     problems += [f"security header {h} not configured" for h in HEADERS if h not in config]
     for p in problems:

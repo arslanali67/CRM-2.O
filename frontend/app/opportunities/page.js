@@ -28,7 +28,7 @@ export default function Opportunities() {
     <main>
       <p><Link href="/">← Home</Link></p>
       <h1>Opportunities</h1>
-      <p style={{ color: "gray" }}><small>Create one from a reply (Inbox or thread). Stages only move by your choice or a
+      <p style={{ color: "var(--muted)" }}><small>Create one from a reply (Inbox or thread). Stages only move by your choice or a
         recorded fact; AI labels only suggest.</small></p>
       {STAGES.map((stage) => {
         const items = data.opportunities.filter((o) => o.stage === stage);
@@ -36,7 +36,7 @@ export default function Opportunities() {
           <section key={stage} style={{ marginBottom: 16 }}>
             <h3 style={{ marginBottom: 4 }}><StageBadge stage={stage} /> {items.length}</h3>
             {items.map((o) => (
-              <div key={o.id} style={{ borderLeft: "3px solid #ddd", paddingLeft: 8, margin: "4px 0" }}>
+              <div key={o.id} style={{ borderLeft: "3px solid var(--border)", paddingLeft: 8, margin: "4px 0" }}>
                 <Link href={`/opportunities/${o.id}`}><b>{o.title}</b></Link> · <Link href={`/companies/${o.company_id}`}>{o.company_name}</Link>
                 {o.contact_name && <small> · {o.contact_name}</small>}{" "}
                 <select aria-label={`Stage of ${o.title}`} value={o.stage} onChange={(e) => move(o, e.target.value)}>
