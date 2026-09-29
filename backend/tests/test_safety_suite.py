@@ -34,6 +34,7 @@ def run_background_jobs(test_url, rounds=3):
         worker.send_tick()
         worker.inbox_sync()
         worker.ai_analysis()
+        worker.interview_reminders()
         age_last_send(test_url, minutes=5)
 
 
@@ -295,7 +296,8 @@ def test_S12_emails_only_come_from_the_owners_template_action(world, client, gma
     assert all("INSERT INTO outbound_emails" not in p.read_text(encoding="utf-8") for p in MIGRATIONS.glob("*.sql"))
     assert TestClient(app).post("/compose-list/drafts", json={"template_id": 1}).status_code == 401  # owner only
     tasks = {v["task"] for v in worker.celery_app.conf.beat_schedule.values()}
-    assert tasks == {"app.worker.send_tick", "app.worker.inbox_sync", "app.worker.ai_analysis", "app.worker.backup"}
+    assert tasks == {"app.worker.send_tick", "app.worker.inbox_sync", "app.worker.ai_analysis", "app.worker.backup",
+                     "app.worker.interview_reminders"}  # every new background job must be reviewed here (M20: notifications only)
     ids = {i for i, _ in outbound(test_url)}
     enable(client)
     run_background_jobs(test_url, rounds=4)
