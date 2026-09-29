@@ -21,6 +21,7 @@ from app.ai_analysis import THROTTLE_SECONDS, AIError, analyse_text, norm
 
 SET = Path(__file__).resolve().parent.parent / "ai_eval" / "eval_set.json"
 RESULTS = Path(__file__).resolve().parent.parent / "ai_eval" / "results"
+BUSY_WAITS = [30, 90]  # seconds before retrying a busy (503) answer
 
 
 def main(argv=sys.argv[1:]) -> int:
@@ -36,15 +37,20 @@ def main(argv=sys.argv[1:]) -> int:
     for n, it in enumerate(items):
         if n:
             time.sleep(THROTTLE_SECONDS)
-        for attempt in range(5):  # the free tier is sometimes busy (503) or rate limited (429): back off
+        # Every attempt counts against the free tier's daily quota, so retry sparingly.
+        for attempt, wait in enumerate(BUSY_WAITS + [None]):
             try:
                 r = analyse_text(it["subject"], it["body"], it["received"])
                 break
             except AIError as e:
-                if attempt == 4:
+                if "rate limited" in str(e):  # daily quota used up: stop, save nothing, try after the reset
+                    print(f"#{it['id']}: {e}\nQuota used up; nothing was saved. Run this part again after the "
+                          "quota resets (midnight Pacific time).")
+                    return 3
+                if wait is None:
                     r = {"status": "error", "label": None, "extracted": {}, "dropped": [], "error": str(e)}
                 else:
-                    time.sleep(15 * (attempt + 1))
+                    time.sleep(wait)
         got = r["label"] if r["status"] == "ok" else f"<{r['status']}: {r.get('error', '')}>"
         text = norm(r.get("analysed_text", ""))
         rows.append({"id": it["id"], "expected": it["expected"], "got": got, "error": r["status"] == "error",

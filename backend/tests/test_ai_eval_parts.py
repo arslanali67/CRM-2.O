@@ -35,3 +35,34 @@ def test_combined_score_can_fail(tmp_path, monkeypatch, capsys):
     run_ai_eval.main(["--part", "2"])
     assert run_ai_eval.main(["--part", "1"]) == 1  # 35/40 = 87.5%
     assert "M16 EVAL: FAIL" in capsys.readouterr().out
+
+
+def test_quota_exhaustion_stops_at_once_and_saves_nothing(tmp_path, monkeypatch, capsys):
+    from app.ai_analysis import AIError
+    calls = []
+
+    def limited(subject, body, received):
+        calls.append(subject)
+        raise AIError("rate limited by Gemini (free tier); will retry")
+    monkeypatch.setattr(run_ai_eval, "RESULTS", tmp_path)
+    monkeypatch.setattr(run_ai_eval.settings, "GEMINI_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(run_ai_eval, "analyse_text", limited)
+    assert run_ai_eval.main(["--part", "1"]) == 3
+    assert len(calls) == 1 and not list(tmp_path.iterdir())  # one request spent, no result file
+    assert "Quota used up" in capsys.readouterr().out
+
+
+def test_busy_answers_get_two_spaced_retries(tmp_path, monkeypatch):
+    from app.ai_analysis import AIError
+    waits, calls = [], []
+
+    def busy(subject, body, received):
+        calls.append(subject)
+        raise AIError("Gemini is busy (HTTP 503); will retry")
+    monkeypatch.setattr(run_ai_eval, "RESULTS", tmp_path)
+    monkeypatch.setattr(run_ai_eval.settings, "GEMINI_API_KEY", "test-key-not-real")
+    monkeypatch.setattr(run_ai_eval, "analyse_text", busy)
+    monkeypatch.setattr(run_ai_eval, "THROTTLE_SECONDS", 0)
+    monkeypatch.setattr(run_ai_eval.time, "sleep", waits.append)
+    run_ai_eval.main(["--part", "1"])
+    assert len(calls) == 20 * 3 and waits.count(30) == 20 and waits.count(90) == 20
