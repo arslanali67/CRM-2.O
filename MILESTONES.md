@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 31 / 35**
+**Progress: 33 / 35**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -46,8 +46,8 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [ ] M34 Final QA
 
 ## Phase 2: Assist (Mo 6–7)
-- [ ] M9 AI personalization (built; own tests + E2E pass; awaiting batch verification; M16 eval exception)
-- [ ] M27 Company research (built; own tests + E2E pass; awaiting batch verification; M16 eval exception)
+- [x] M9 AI personalization (grounding eval: 0/19 ungrounded accepted; built before M16 eval passed: owner exception)
+- [x] M27 Company research (built before M16 eval passed: owner exception)
 - [x] M20 Interview management
 - [x] M28 Analytics
 
