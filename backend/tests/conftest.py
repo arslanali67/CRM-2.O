@@ -52,6 +52,20 @@ class RealAIBlocked(RuntimeError):
     pass
 
 
+class RealWebBlocked(RuntimeError):
+    pass
+
+
+@pytest.fixture(autouse=True)
+def no_real_web(monkeypatch):
+    """Every test: company-site fetching (M27) raises. Tests install a fake fetcher on top."""
+    from app import research
+
+    def blocked(*a, **kw):
+        raise RealWebBlocked("tests must never fetch real web pages; install a fake")
+    monkeypatch.setattr(research, "fetch_url", blocked)
+
+
 @pytest.fixture(autouse=True)
 def no_real_ai(monkeypatch):
     """Every test: calls to Gemini raise, and no real key is ever used. Tests install a fake model on top."""
@@ -132,7 +146,7 @@ def _clean_rollback_conn(test_url, **kwargs):
     """
     with psycopg.connect(test_url, **kwargs) as conn:
         conn.execute("SET LOCAL session_replication_role = replica")  # bypass guard triggers for the reset
-        for table in ("company_merges", "duplicate_dismissals", "notifications", "interviews", "opportunity_stage_history", "opportunities", "ai_analyses", "inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts",
+        for table in ("company_merges", "duplicate_dismissals", "notifications", "verified_facts", "ai_claims", "page_snapshots", "interviews", "opportunity_stage_history", "opportunities", "ai_analyses", "inbound_messages", "suppressions", "outbound_emails", "compose_list", "contacts",
                       "companies"):
             conn.execute(f"DELETE FROM {table}")
         conn.execute("DELETE FROM app_settings")
@@ -170,6 +184,9 @@ def client(test_url, monkeypatch):
         conn.execute("DELETE FROM company_merges")
         conn.execute("DELETE FROM duplicate_dismissals")
         conn.execute("DELETE FROM notifications")
+        conn.execute("DELETE FROM verified_facts")
+        conn.execute("DELETE FROM ai_claims")
+        conn.execute("DELETE FROM page_snapshots")
         conn.execute("DELETE FROM interviews")
         conn.execute("DELETE FROM opportunity_stage_history")
         conn.execute("DELETE FROM opportunities")

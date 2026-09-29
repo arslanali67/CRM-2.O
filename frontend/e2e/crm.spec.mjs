@@ -157,6 +157,22 @@ test("analytics: the page loads with its breakdowns", async () => {
   await expect(page.getByText(/0 sent/)).toBeVisible(); // sending stays OFF in E2E
 });
 
+test("research: three separate sections; a fact added by hand reaches personalization", async () => {
+  const leads = await (await page.request.get("/api/leads")).json();
+  const beta = leads.leads.find((l) => l.name === "E2E Beta Vision");
+  await page.goto(`/companies/${beta.id}`);
+  await page.getByRole("button", { name: "Research", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /Verified facts/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /AI claims/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Scraped data/ })).toBeVisible();
+  await page.getByLabel("Fact", { exact: true }).fill("Builds computer-vision QA for factories");
+  await page.getByLabel("Source", { exact: true }).fill("CEO interview, Tagesspiegel 2026");
+  await page.getByRole("button", { name: "Add fact" }).click();
+  await expect(page.getByText("Fact added.")).toBeVisible();
+  const facts = await (await page.request.get(`/api/companies/${beta.id}/facts`)).json();
+  expect(facts.map((f) => f.fact)).toEqual(["Builds computer-vision QA for factories"]);
+});
+
 test("lockout: five wrong passwords lock logins, even the right one", async ({ browser }) => {
   const p = await browser.newPage();
   for (let i = 0; i < 5; i++) {

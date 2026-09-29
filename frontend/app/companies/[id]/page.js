@@ -6,11 +6,12 @@ import { EventList } from "../../activity/describe";
 import { LabelBadge } from "../../inbox/label";
 import { NotesPanel, TasksPanel } from "../../tasks/panels";
 import { CreateOpportunity, StageBadge } from "../../opportunities/shared";
+import { ResearchPanel } from "../research";
 import { COMPANY_FIELDS, CONTACT_FIELDS, EMAIL_CLASSES, STAGES, errorText } from "../shared";
 
 const EMPTY_CONTACT = Object.fromEntries(CONTACT_FIELDS.map(([k]) => [k, ""]));
 const full = { display: "block", width: "100%" };
-const TABS = ["Overview", "Contacts", "Emails & replies", "Notes", "Tasks", "Timeline", "Opportunity"];
+const TABS = ["Overview", "Contacts", "Emails & replies", "Notes", "Tasks", "Timeline", "Opportunity", "Research"];
 const fmt = (d) => (d ? new Date(d).toLocaleDateString() : "never");
 
 async function call(url, method, body) {
@@ -235,6 +236,7 @@ export default function Company() {
       {tab === "Notes" && <NotesPanel entityType="company" entityId={company.id} />}
       {tab === "Tasks" && <TasksPanel entityType="company" entityId={company.id} />}
       {tab === "Timeline" && <EventList events={timeline} />}
+      {tab === "Research" && <ResearchPanel companyId={company.id} />}
       {tab === "Opportunity" && (
         <>
           {o?.opportunities?.length === 0 && <p>No opportunities yet. Create one from a reply, or manually:</p>}

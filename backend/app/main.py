@@ -11,8 +11,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from app import (activity, ai_analysis, analytics, app_settings, backup, companies, composer, csv_import, dashboard, detail, duplicates, export, history, inbox_sync, interviews,
-                 leads, mail_account, notes_tasks, notifications, opportunities, profile, safety, search, security, sender,
+from app import (activity, ai_analysis, analytics, app_settings, backup, companies, composer, csv_import, dashboard, detail, duplicates, export, facts, history, inbox_sync, interviews,
+                 leads, mail_account, notes_tasks, notifications, opportunities, profile, research, safety, search, security, sender,
                  settings,
                  suppressions, templates)
 from app.auth import verify_password
@@ -65,6 +65,8 @@ app.include_router(backup.router)
 app.include_router(export.router)
 app.include_router(interviews.router)
 app.include_router(analytics.router)
+app.include_router(research.router)
+app.include_router(facts.router)
 app.include_router(companies.router)
 app.include_router(suppressions.router)
 app.include_router(activity.router)

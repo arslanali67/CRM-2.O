@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.36
+- **Spec version:** 1.37
 - **Last updated:** 2026-09-28
 
 ---
@@ -339,6 +339,11 @@ Goal: AI that helps without inventing.
 - **M9 AI personalization [AI].** Company-specific drafts where every claim cites an allowed fact; human review is mandatory.
   - Depends on: M10, M16. Done when: every company claim has a source.
 - **M27 Company research [AI].** Verified facts, scraped data and AI analysis kept strictly separate.
+  - **Three strictly separate kinds of information**, each in its own table and its own labelled section of a new **Research** tab on the company page: (1) **scraped data** from the CSV import ("scraped, unverified"); (2) **AI claims** extracted by Gemini from the company's own web pages, each with a verbatim quote from the page and the page URL, claims whose quote is not on the page dropped ("AI, unverified"); (3) **verified facts**: only facts the owner confirmed (Verify on an AI claim, optionally reworded, or added manually with a source), with source and verification date. Verify / reject / add / remove are audited.
+  - **Only verified facts reach personalization:** M9 reads company facts only through one database function that returns verified facts and nothing else; tests prove scraped data and AI claims can never come out of it.
+  - **Manual research:** the owner clicks Research on a company: one Gemini request per run; nothing is emailed or changed automatically; AI can never create or change a verified fact.
+  - **Website fetching (owner decision, 2026-09-30; S11 extended to allow exactly this):** on the owner's click, read-only GET of up to 3 pages (home, /about, /careers) of the company's own domain only; http(s); 10 s timeout; 1 MB per page; no JavaScript; text extracted from HTML. **SSRF guard:** the resolved IP of every request and every redirect must be public (private, loopback, link-local, reserved and Docker-internal addresses refused); at most 3 redirects, each staying on the company's domain. Fetched text is stored as a dated snapshot so every claim's evidence stays checkable.
+  - **Dependency exception (owner decision, 2026-09-30):** built while M16's sample eval is still pending; the AI step is tested with a fake model, real runs need Gemini quota.
   - Depends on: M23, M16. Done when: only verified facts reach personalization.
 - **M20 Interview management.** Timezone-safe records, in-app reminders, `.ics` export.
   - **Interview:** belongs to an opportunity; title, start (local date/time + the IANA time zone it was agreed in), duration, kind (video/phone/onsite), meeting link (http/https only) or address, interviewers, notes, status scheduled/done/cancelled, outcome note. Recording one moves the opportunity to `interviewing` via M19's fact path (never backwards). Notes and tasks accept `interview`. Never sends email. All changes audited.
@@ -459,3 +464,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.34 | MVP gate waiver: Phase 2 may start while M34 stays open (its checklist items remain required for the MVP release); M20 first. | Owner |
 | 2026-09-30 | 1.35 | M20 detailed: interviews on opportunities, zone-safe times (DST gaps/overlaps rejected), 24 h + 1 h in-app reminders exactly once (new notify kind `interview`), .ics export with stable UID, /interviews page, dashboard tile, AI-date prefill. | Owner |
 | 2026-09-30 | 1.36 | M28 detailed: /analytics with reply rate (credited to the latest prior email to the company), bounce rate hard/soft and opportunities, by template version, country, split industry and source; few-data marking; hand-checked seeded tests; < 500 ms at 10k emails. | Owner |
+| 2026-09-30 | 1.37 | M27 detailed: scraped data / AI claims (verbatim evidence + URL) / owner-verified facts kept separate; only verified facts via one DB function for M9; manual Research fetches up to 3 pages of the company's own site with an SSRF guard (S11 extended to allow exactly this); built before M16's eval passes (owner's exception). | Owner |

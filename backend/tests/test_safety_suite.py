@@ -252,8 +252,10 @@ def test_S10_ai_output_never_acts(sent, client, gmail, test_url, monkeypatch):
 
 NETWORK_MODULES = {"httpx", "smtplib", "imaplib", "socket", "requests", "urllib.request", "http.client", "aiohttp",
                    "webbrowser", "ftplib", "telnetlib", "websockets", "selenium", "playwright"}
-ALLOWED_NETWORK_USE = {"httpx": {"ai_analysis.py"}, "smtplib": {"mail_account.py", "sender.py"},
-                       "imaplib": {"mail_account.py", "inbox_sync.py", "sender.py"}}
+ALLOWED_NETWORK_USE = {"httpx": {"ai_analysis.py", "research.py"},  # research: company's own site (M27)
+                       "smtplib": {"mail_account.py", "sender.py"},
+                       "imaplib": {"mail_account.py", "inbox_sync.py", "sender.py"},
+                       "socket": {"research.py"}}  # DNS check of the SSRF guard (M27)
 ALLOWED_HOSTS = {"generativelanguage.googleapis.com"}
 
 
@@ -273,6 +275,8 @@ def test_S11_the_app_only_talks_to_gmail_and_gemini(test_url):
             assert path.name in ALLOWED_NETWORK_USE.get(mod, set()), f"{path.name} imports {mod}"
     hosts = set(re.findall(r"https://([A-Za-z0-9.-]+)", (APP / "ai_analysis.py").read_text(encoding="utf-8")))
     assert hosts == ALLOWED_HOSTS
+    # research.py only fetches the company's own domain: no hard-coded hosts at all (M27)
+    assert re.findall(r"https?://[A-Za-z0-9]", (APP / "research.py").read_text(encoding="utf-8")) == []
     for path in APP.glob("*.py"):
         assert not re.search(r"linkedin\.com|indeed\.|stepstone\.|xing\.com", path.read_text(encoding="utf-8"),
                              re.I), path.name
