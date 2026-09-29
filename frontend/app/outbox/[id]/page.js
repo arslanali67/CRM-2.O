@@ -84,6 +84,23 @@ export default function Email() {
         <hr />
         <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit", margin: 0 }}>{e.body}</pre>
       </div>
+      {e.personalization?.sentences?.length > 0 && (
+        <div style={{ border: "2px solid #d97706", borderRadius: 6, padding: 10, margin: "8px 0" }}>
+          <b>AI-written sentences in this email</b> (check them before approving):
+          {e.personalization.sentences.map((s, i) => (
+            <div key={i} style={{ marginTop: 6 }}>
+              <mark style={{ background: "#fde68a" }}>{s.text}</mark>
+              {!e.body.includes(s.text) && <small style={{ color: "gray" }}> (edited or removed since)</small>}
+              <ul style={{ margin: "2px 0" }}>{s.facts.map((f) => (
+                <li key={f.id}><small>cites verified fact: “{f.fact}” · source: {/^https?:\/\//.test(f.source)
+                  ? <a href={f.source} target="_blank" rel="noopener noreferrer">{f.source}</a> : f.source}</small></li>
+              ))}</ul>
+            </div>
+          ))}
+          {e.personalization.dropped?.length > 0 && <small style={{ color: "gray" }}>
+            {e.personalization.dropped.length} AI sentence(s) were dropped as unproven and are not in the email.</small>}
+        </div>
+      )}
       <p style={{ color: "gray" }}><small>
         {e.template_name && `From template ${e.template_name} v${e.template_version} · `}fingerprint {e.content_hash_hex.slice(0, 12)}…
       </small></p>

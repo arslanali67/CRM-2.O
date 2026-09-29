@@ -88,6 +88,17 @@ From a reply, click **Create opportunity** (one click, never automatic).
 - Every stage change is recorded with who, when and why.
 - AI labels only *suggest* a stage.
 
+### Interviews
+
+On an opportunity, click **Record an interview**:
+- Enter the date and time **in the time zone it was agreed in**. It is shown in that zone and, when different, in yours.
+- Times that don't exist or happen twice when the clocks change are refused.
+- Recording one moves the opportunity to *interviewing*.
+- Reminders appear in the bell **24 h and 1 h** before. You can switch them off in Settings.
+- **Add to calendar (.ics)** works with Google Calendar and Outlook.
+
+The **Interviews** page lists what's coming up and what's past. Nothing is ever emailed to interviewers.
+
 ## 8. Notes and tasks
 
 Notes and tasks can be attached to companies, contacts, templates and opportunities. **Tasks** shows what is due and overdue.
@@ -99,6 +110,22 @@ Notes and tasks can be attached to companies, contacts, templates and opportunit
 - Blocks are never deleted, only lifted with a reason.
 - Hard bounces add blocks automatically.
 
+## 9b. Company research and personalization
+
+- On a company page, the **Research** tab keeps three kinds of information apart:
+  - **Verified facts:** only these may be used for personalization.
+  - **AI claims:** unverified.
+  - **Scraped data:** from your CSV, unverified.
+- **Research** reads up to 3 pages of the company's own site when you click it. The AI proposes claims, each with a word-for-word quote and its page link.
+- **Verify** a claim to turn it into a fact; you can reword it first. **Reject** it otherwise, or add facts you know with a source.
+- To personalize, put `{{personal_line | your fallback sentence}}` in a template.
+- On **Compose**, tick **Personalize from verified facts**. The AI writes 1–2 sentences per company from its verified facts only.
+  - Every sentence cites its facts.
+  - Anything with a number, name, product, place or claim word (funding, customers, largest…) that isn't in the cited facts is dropped.
+  - Companies without facts get your fallback sentence.
+  - At most 10 companies per run on the free tier.
+- In the Outbox preview, AI sentences are **highlighted with the facts and sources they cite**. You still approve every email yourself.
+
 ## 10. Settings
 
 Settings covers:
@@ -108,6 +135,16 @@ Settings covers:
 - notification kinds
 
 Changes apply immediately and are recorded in **Activity**.
+
+## 10b. Analytics
+
+**Analytics** shows sent, reply rate and bounce rate (hard and soft), and opportunities, by:
+- template version
+- country
+- industry (combined industries are split)
+- source (manual or which CSV)
+
+A reply counts for the latest email sent to that company before it arrived. Groups with fewer than 10 emails are marked *few data*.
 
 ## 11. Backup, export, activity
 

@@ -13,7 +13,9 @@ MY_VARIABLES = (
 COMPANY_VARIABLES = ("company_name", "company_domain", "company_website", "company_city", "company_country",
                      "company_industry")
 CONTACT_VARIABLES = ("contact_name", "contact_first_name", "contact_role", "contact_email")
-VARIABLES = frozenset(MY_VARIABLES + COMPANY_VARIABLES + CONTACT_VARIABLES)
+# M9: 1-2 AI sentences from verified facts, only when "Personalize" is chosen; give it a fallback in templates.
+PERSONAL_VARIABLES = ("personal_line",)
+VARIABLES = frozenset(MY_VARIABLES + COMPANY_VARIABLES + CONTACT_VARIABLES + PERSONAL_VARIABLES)
 
 # {{ name }} or {{ name | fallback }}; fallback cannot contain braces or '|'.
 TOKEN_RE = re.compile(r"\{\{\s*([A-Za-z0-9_]*)\s*(?:\|([^{}|]*))?\}\}")

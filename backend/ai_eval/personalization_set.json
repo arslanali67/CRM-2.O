@@ -1,0 +1,77 @@
+[
+ {"company": "Parcelbot", "facts": [
+   {"id": 1, "category": "product", "fact": "Parcelbot builds robots that sort parcels in warehouses.", "source": "https://parcelbot.example/"},
+   {"id": 2, "category": "hiring", "fact": "Hiring a Machine Learning Engineer (Python, PyTorch).", "source": "https://parcelbot.example/careers"}],
+  "candidates": [
+   {"text": "Your robots that sort parcels in warehouses caught my attention.", "fact_ids": [1], "grounded": true},
+   {"text": "I saw you are hiring a Machine Learning Engineer who works with Python and PyTorch.", "fact_ids": [2], "grounded": true},
+   {"text": "Your robots sort 10,000 parcels an hour, which impressed me.", "fact_ids": [1], "grounded": false},
+   {"text": "Congratulations on your recent funding round.", "fact_ids": [1], "grounded": false}]},
+ {"company": "Mediscan", "facts": [
+   {"id": 3, "category": "product", "fact": "Mediscan uses computer vision to read X-ray images.", "source": "https://mediscan.example/"},
+   {"id": 4, "category": "location", "fact": "The team works from Munich and Lisbon.", "source": "https://mediscan.example/about"}],
+  "candidates": [
+   {"text": "Using computer vision to read X-ray images is work I would love to contribute to.", "fact_ids": [3], "grounded": true},
+   {"text": "I noticed the team works from Munich and Lisbon.", "fact_ids": [4], "grounded": true},
+   {"text": "Your FDA-cleared X-ray reader is impressive.", "fact_ids": [3], "grounded": false},
+   {"text": "I noticed your office in Berlin.", "fact_ids": [4], "grounded": false}]},
+ {"company": "Greenwatt", "facts": [
+   {"id": 5, "category": "mission", "fact": "Greenwatt forecasts solar power output for grid operators.", "source": "https://greenwatt.example/"}],
+  "candidates": [
+   {"text": "Forecasting solar power output for grid operators is exactly the kind of problem I enjoy.", "fact_ids": [5], "grounded": true},
+   {"text": "Greenwatt's forecasts for grid operators caught my attention.", "fact_ids": [5], "grounded": true},
+   {"text": "As the leading solar forecaster in Europe, Greenwatt stands out.", "fact_ids": [5], "grounded": false},
+   {"text": "I read that you work with Siemens on solar forecasting.", "fact_ids": [5], "grounded": false}]},
+ {"company": "Lexify", "facts": [
+   {"id": 6, "category": "product", "fact": "Lexify offers an AI assistant that drafts contracts for small law firms.", "source": "https://lexify.example/"},
+   {"id": 7, "category": "funding", "fact": "Lexify raised a seed round in 2025.", "source": "https://lexify.example/news"}],
+  "candidates": [
+   {"text": "An AI assistant that drafts contracts for small law firms is a great use of language models.", "fact_ids": [6], "grounded": true},
+   {"text": "Congratulations on the seed round you raised in 2025.", "fact_ids": [7], "grounded": true},
+   {"text": "Congratulations on raising 5 million in your seed round.", "fact_ids": [7], "grounded": false},
+   {"text": "I saw that Lexify raised a seed round.", "fact_ids": [6], "grounded": false}]},
+ {"company": "Farmsense", "facts": [
+   {"id": 8, "category": "technology", "fact": "Farmsense combines satellite images and soil sensors to predict crop yield.", "source": "https://farmsense.example/tech"}],
+  "candidates": [
+   {"text": "Combining satellite images and soil sensors to predict crop yield is a fascinating challenge.", "fact_ids": [8], "grounded": true},
+   {"text": "Your yield predictions from satellite images and soil sensors caught my eye.", "fact_ids": [8], "grounded": true},
+   {"text": "Your predictions are used by 300 farms.", "fact_ids": [8], "grounded": false},
+   {"text": "I noticed your partnership with John Deere.", "fact_ids": [8], "grounded": false}]},
+ {"company": "Codeguard", "facts": [
+   {"id": 9, "category": "product", "fact": "Codeguard scans source code for security vulnerabilities.", "source": "https://codeguard.example/"},
+   {"id": 10, "category": "size", "fact": "Codeguard has about 25 employees.", "source": "https://codeguard.example/about"}],
+  "candidates": [
+   {"text": "Scanning source code for security vulnerabilities is work I care about.", "fact_ids": [9], "grounded": true},
+   {"text": "A team of about 25 employees is the size I enjoy working in.", "fact_ids": [10], "grounded": true},
+   {"text": "Codeguard has about 25 employees, a size I enjoy working in.", "fact_ids": [10], "grounded": true},
+   {"text": "Your scanner found vulnerabilities in Kubernetes.", "fact_ids": [9], "grounded": false}]},
+ {"company": "Voxly", "facts": [
+   {"id": 11, "category": "product", "fact": "Voxly transcribes German and English meetings in real time.", "source": "https://voxly.example/"}],
+  "candidates": [
+   {"text": "Transcribing German and English meetings in real time is a hard and useful problem.", "fact_ids": [11], "grounded": true},
+   {"text": "Voxly transcribes meetings in German and English in real time.", "fact_ids": [11], "grounded": true},
+   {"text": "Voxly transcribes meetings in 12 languages.", "fact_ids": [11], "grounded": false},
+   {"text": "Your real-time transcription is used by Zoom.", "fact_ids": [11], "grounded": false}]},
+ {"company": "Shelfy", "facts": [
+   {"id": 12, "category": "product", "fact": "Shelfy tracks supermarket shelf stock with cameras.", "source": "https://shelfy.example/"},
+   {"id": 13, "category": "news", "fact": "Shelfy launched in Austria in 2026.", "source": "https://shelfy.example/news"}],
+  "candidates": [
+   {"text": "Tracking supermarket shelf stock with cameras is a clever use of computer vision.", "fact_ids": [12], "grounded": true},
+   {"text": "Tracking supermarket shelf stock with cameras is clever.", "fact_ids": [12], "grounded": true},
+   {"text": "Congratulations on launching in Austria in 2026.", "fact_ids": [13], "grounded": true},
+   {"text": "Congratulations on launching in Switzerland.", "fact_ids": [13], "grounded": false}]},
+ {"company": "Quantix", "facts": [
+   {"id": 14, "category": "technology", "fact": "Quantix simulates molecules on quantum hardware.", "source": "https://quantix.example/"}],
+  "candidates": [
+   {"text": "Simulating molecules on quantum hardware is something I have wanted to learn more about.", "fact_ids": [14], "grounded": true},
+   {"text": "Quantix simulates molecules on quantum hardware.", "fact_ids": [], "grounded": false},
+   {"text": "Quantix simulates molecules on quantum hardware.", "fact_ids": [99], "grounded": false},
+   {"text": "Your IBM quantum partnership caught my eye.", "fact_ids": [14], "grounded": false}]},
+ {"company": "Tutorly", "facts": [
+   {"id": 15, "category": "mission", "fact": "Tutorly gives every pupil a personal AI maths tutor.", "source": "https://tutorly.example/"}],
+  "candidates": [
+   {"text": "Giving every pupil a personal AI maths tutor is a mission I share.", "fact_ids": [15], "grounded": true},
+   {"text": "Tutorly gives every pupil a personal AI maths tutor.", "fact_ids": [15], "grounded": true},
+   {"text": "Tutorly is the fastest growing edtech company in Germany.", "fact_ids": [15], "grounded": false},
+   {"text": "Your tutor helped 50,000 pupils improve their grades.", "fact_ids": [15], "grounded": false}]}
+]

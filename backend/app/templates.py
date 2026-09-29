@@ -6,7 +6,7 @@ from app.companies import conflict_as_409, fetch
 from app.deps import audit, get_db, require_owner
 from app.leads import best_recipients
 from app.profile import load_profile, resolve_variables
-from app.templating import (COMPANY_VARIABLES, CONTACT_VARIABLES, MY_VARIABLES, RenderError, problems,
+from app.templating import (COMPANY_VARIABLES, CONTACT_VARIABLES, MY_VARIABLES, PERSONAL_VARIABLES, RenderError, problems,
                             render_strict)
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -41,7 +41,7 @@ class PreviewIn(BaseModel):
 
 
 def variable_values(conn, company_id: int, contact_id: int | None = None) -> tuple[dict[str, str], dict | None]:
-    """All 26 variables for one company and recipient. Empty string = no value."""
+    """All 26 fixed variables for one company and recipient (personal_line comes from M9). Empty = no value."""
     company = fetch(conn, "companies", company_id)
     if contact_id is None:
         contact = best_recipients(conn, [company_id]).get(company_id)
@@ -73,7 +73,7 @@ def current_versions_sql(where: str) -> str:
 
 @router.get("/templates/variables")
 def list_variables():
-    return {"my": MY_VARIABLES, "company": COMPANY_VARIABLES, "contact": CONTACT_VARIABLES}
+    return {"my": MY_VARIABLES, "company": COMPANY_VARIABLES, "contact": CONTACT_VARIABLES, "personal": PERSONAL_VARIABLES}
 
 
 @router.get("/templates")

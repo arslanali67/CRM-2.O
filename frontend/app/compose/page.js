@@ -35,7 +35,7 @@ export default function ComposeList() {
 
   async function createDrafts(e) {
     e.preventDefault();
-    const body = { template_id: Number(form.template_id), attach_cv: form.attach_cv,
+    const body = { template_id: Number(form.template_id), attach_cv: form.attach_cv, personalize: !!form.personalize,
                    ...(form.attach_cv && form.cv_version_id ? { cv_version_id: Number(form.cv_version_id) } : {}) };
     const res = await fetch("/api/compose-list/drafts", {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -94,12 +94,21 @@ export default function ComposeList() {
             </select>
           ) : <p style={{ color: "crimson" }}>No CV uploaded yet. <Link href="/profile">Upload one</Link>.</p>
         )}
+        <label>
+          <input type="checkbox" checked={!!form.personalize} onChange={(e) => setForm({ ...form, personalize: e.target.checked })} />
+          {" "}Personalize from verified facts (AI)
+          <br /><small style={{ color: "gray" }}>Fills the template&apos;s <code>{"{{personal_line}}"}</code> with 1–2 sentences built only
+            from each company&apos;s verified facts (Research tab); every sentence cites its facts and anything unproven is dropped.
+            One AI request per company, at most 10 per run; others get the fallback text. This can take a minute.</small>
+        </label>
         <button type="submit" disabled={!ready}>Create {ready} draft(s)</button>
         {msg && <p role="alert" style={{ color: "crimson" }}>{msg}</p>}
       </form>
       {result && (
         <div style={{ marginTop: 12 }}>
           <p>{result.created.length} draft(s) created. <Link href="/outbox">Review them in the Outbox →</Link></p>
+          {result.personalization && <p>Personalized: {result.personalization.personalized} · fallback text: {result.personalization.fallback}
+            {result.personalization.errors.length > 0 && <small style={{ color: "crimson" }}> · {result.personalization.errors.join("; ")}</small>}</p>}
           {result.skipped.length > 0 && (
             <ul>{result.skipped.map((s) => <li key={s.company_id}>{s.name}: {s.reason}</li>)}</ul>
           )}

@@ -78,7 +78,7 @@ test("template and drafts: nothing is approved by creating drafts", async () => 
   await page.getByLabel("Body (plain text)").fill("Hi there,\nI'd like to join {{company_name}}.\nBest regards");
   await page.getByRole("button", { name: "Create template" }).click();
   await page.goto("/compose");
-  await page.getByLabel("Template").selectOption({ label: "E2E intro (v1)" });
+  await page.getByLabel("Template", { exact: true }).selectOption({ label: "E2E intro (v1)" });
   await page.getByRole("button", { name: "Create 2 draft(s)" }).click();
   await expect(page.getByText("2 draft(s) created.")).toBeVisible();
   const queued = await (await page.request.get("/api/outbox?status=queued")).json();
@@ -171,6 +171,28 @@ test("research: three separate sections; a fact added by hand reaches personaliz
   await expect(page.getByText("Fact added.")).toBeVisible();
   const facts = await (await page.request.get(`/api/companies/${beta.id}/facts`)).json();
   expect(facts.map((f) => f.fact)).toEqual(["Builds computer-vision QA for factories"]);
+});
+
+test("personalization: offered on Compose; without AI it says so, and drafts use the fallback", async () => {
+  const origin = new URL(page.url()).origin;
+  await page.request.post("/api/templates", { headers: { Origin: origin }, data: {
+    name: "Personal", subject: "Hello {{company_name}}",
+    body: "Hi there,\n{{personal_line | I have followed your work for a while.}}\nBest" } });
+  const leads = await (await page.request.get("/api/leads")).json();
+  const beta = leads.leads.find((l) => l.name === "E2E Beta Vision");
+  await page.request.post("/api/compose-list", { headers: { Origin: origin }, data: { company_ids: [beta.id] } });
+  await page.goto("/compose");
+  await page.getByLabel("Template", { exact: true }).selectOption({ label: "Personal (v1)" });
+  await page.getByLabel(/Personalize from verified facts/).check();
+  await page.getByRole("button", { name: /Create 1 draft/ }).click();
+  await expect(page.locator('p[role="alert"]')).toContainText("AI is off");
+  await page.getByLabel(/Personalize from verified facts/).uncheck();
+  await page.getByRole("button", { name: /Create 1 draft/ }).click();
+  await expect(page.getByText("1 draft(s) created.")).toBeVisible();
+  const drafts = await (await page.request.get("/api/outbox?status=draft")).json();
+  const mine = drafts.emails.find((e) => e.subject === "Hello E2E Beta Vision");
+  const full = await (await page.request.get(`/api/outbound-emails/${mine.id}`)).json();
+  expect(full.body).toContain("I have followed your work for a while.");
 });
 
 test("lockout: five wrong passwords lock logins, even the right one", async ({ browser }) => {

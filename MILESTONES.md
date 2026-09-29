@@ -46,7 +46,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [ ] M34 Final QA
 
 ## Phase 2: Assist (Mo 6–7)
-- [ ] M9 AI personalization
+- [ ] M9 AI personalization (built; own tests + E2E pass; awaiting batch verification; M16 eval exception)
 - [ ] M27 Company research (built; own tests + E2E pass; awaiting batch verification; M16 eval exception)
 - [x] M20 Interview management
 - [x] M28 Analytics

@@ -2,16 +2,20 @@
 
 There is deliberately no endpoint that approves more than one email.
 """
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
-from app import safety
+from app import ai_analysis, personalize, safety
 from app.deps import audit, get_db, require_owner
 from app.leads import get_compose_list
+from app.profile import load_profile
 from app.templates import variable_values
-from app.templating import RenderError, render_strict
+from app.templating import TOKEN_RE, RenderError, render_strict
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -22,6 +26,7 @@ class DraftsIn(BaseModel):
     template_id: int
     attach_cv: bool = False
     cv_version_id: int | None = None  # default: the default CV
+    personalize: bool = False         # M9: fill {{personal_line}} from verified facts (AI, cited)
 
 
 class DraftEdit(BaseModel):
@@ -71,6 +76,15 @@ def create_drafts(body: DraftsIn, conn=Depends(get_db)):
             raise HTTPException(422, "No default CV; upload one on the Profile page or pick a version")
         require_cv(conn, cv_id)
 
+    uses_slot = any(m.group(1) == "personal_line" for m in TOKEN_RE.finditer(version["subject"] + version["body"]))
+    ai = ai_analysis.ai_config(conn) if body.personalize else None
+    if body.personalize and not uses_slot:
+        raise HTTPException(422, "This template has no {{personal_line}}; add it where the personal sentence should go")
+    if body.personalize and not ai["enabled"]:
+        raise HTTPException(409, "AI is off (no GEMINI_API_KEY or switched off in Settings)")
+    target_role = (load_profile(conn)["target_roles"] or [""])[0]
+    personal = {"asked": 0, "personalized": 0, "fallback": 0, "errors": []}
+
     created, skipped = [], []
     for item in get_compose_list(conn):
         if item["problem"]:
@@ -78,6 +92,25 @@ def create_drafts(body: DraftsIn, conn=Depends(get_db)):
             continue
         r = item["recipient"]
         values, _ = variable_values(conn, item["company_id"], r["contact_id"])
+        p = {}
+        if body.personalize:
+            result = None
+            has_facts = conn.execute("SELECT 1 FROM personalization_facts(%s) LIMIT 1", (item["company_id"],)).fetchone()
+            if has_facts and personal["asked"] < personalize.MAX_PER_RUN:
+                if personal["asked"]:
+                    time.sleep(ai_analysis.THROTTLE_SECONDS)
+                personal["asked"] += 1
+                try:
+                    result = personalize.personalize(conn, item["company_id"], item["name"], target_role, ai["model"])
+                except ai_analysis.AIError as e:
+                    personal["errors"].append(f"{item['name']}: {e}")
+                    if "rate limited" in str(e):  # quota used up: no more requests this run
+                        personal["asked"] = personalize.MAX_PER_RUN
+            if result and result["line"]:
+                values["personal_line"], p = result["line"], result
+                personal["personalized"] += 1
+            else:
+                personal["fallback"] += 1
         try:
             content = render_strict(version["subject"], version["body"], values)
         except RenderError as e:
@@ -86,14 +119,16 @@ def create_drafts(body: DraftsIn, conn=Depends(get_db)):
             continue
         email_id = conn.execute(
             "INSERT INTO outbound_emails (to_email, subject, body, company_id, contact_id, template_version_id, "
-            "cv_version_id) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id",
-            (r["email"], content["subject"], content["body"], item["company_id"], r["contact_id"], version["id"], cv_id),
+            "cv_version_id, personalization) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id",
+            (r["email"], content["subject"], content["body"], item["company_id"], r["contact_id"], version["id"], cv_id,
+             Jsonb(p)),
         ).fetchone()["id"]
         conn.execute("DELETE FROM compose_list WHERE company_id = %s", (item["company_id"],))
         created.append({"email_id": email_id, "company_id": item["company_id"], "name": item["name"], "to": r["email"]})
     audit(conn, "compose.drafts_created", "template", body.template_id,
-          {"version": version["version"], "created": len(created), "skipped": len(skipped), "cv_version_id": cv_id})
-    return {"created": created, "skipped": skipped}
+          {"version": version["version"], "created": len(created), "skipped": len(skipped), "cv_version_id": cv_id,
+           **({"personalized": personal["personalized"], "fallback": personal["fallback"]} if body.personalize else {})})
+    return {"created": created, "skipped": skipped, **({"personalization": personal} if body.personalize else {})}
 
 
 @router.get("/outbox")

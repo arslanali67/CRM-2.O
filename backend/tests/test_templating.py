@@ -6,8 +6,8 @@ from app.templating import VARIABLES, RenderError, problems, render, render_stri
 ALL = {v: f"<{v}>" for v in VARIABLES}
 
 
-def test_exactly_26_variables():
-    assert len(VARIABLES) == 26
+def test_exactly_27_variables():  # 26 + personal_line (M9)
+    assert len(VARIABLES) == 27
 
 
 @pytest.mark.parametrize("text", [

@@ -63,7 +63,7 @@ function describeEvent(e) {
     "task.completed": `Task done: ${d.title}`,
     "task.reopened": `Task reopened: ${d.title}`,
     "task.deleted": `Task deleted: ${d.title}`,
-    "compose.drafts_created": `${d.created} draft(s) created from template v${d.version}${d.skipped ? `, ${d.skipped} skipped` : ""}`,
+    "compose.drafts_created": `${d.created} draft(s) created from template v${d.version}${d.skipped ? `, ${d.skipped} skipped` : ""}${d.personalized !== undefined ? ` (${d.personalized} AI-personalized from verified facts)` : ""}`,
     "email_account.saved": `Email account saved: ${d.email_address}`,
     "email_account.tested": `Email account test: ${d.ok ? "connected" : `failed (SMTP ${d.smtp_ok ? "ok" : "failed"}, IMAP ${d.imap_ok ? "ok" : "failed"})`}`,
     "email_account.disconnected": "Email account disconnected (app password deleted)",

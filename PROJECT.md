@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.37
+- **Spec version:** 1.38
 - **Last updated:** 2026-09-28
 
 ---
@@ -337,6 +337,12 @@ Goal: ready for daily use.
 Goal: AI that helps without inventing.
 
 - **M9 AI personalization [AI].** Company-specific drafts where every claim cites an allowed fact; human review is mandatory.
+  - **Slot only:** the AI writes 1–2 sentences into a `{{personal_line}}` variable the owner places in a template; the owner's own wording stays unchanged. Input: only the company's verified facts from `personalization_facts()` (M27), never scraped data or AI claims.
+  - **Citations and grounding (enforced in code):** each sentence lists the fact ids it relies on; a sentence is dropped if it cites nothing, cites a fact that is not one of that company's verified facts, or contains specifics (numbers, names, products, places) absent from its cited facts (and from the company name). If nothing survives or there are no verified facts, the template's fallback `{{personal_line | …}}` is used or the company is skipped as unresolved.
+  - **Human review:** personalized drafts are ordinary drafts: the same 12 checks and one-by-one approval; the preview highlights the AI sentence with each cited fact and its source; approval binds the exact final text. Citations are stored with the email.
+  - **Use:** a "Personalize from verified facts" checkbox on the Compose page; one Gemini request per draft; at most 10 personalized per run (free tier), the rest fall back.
+  - **Evaluation (Phase 2 exit):** a set of ~10 synthetic companies with facts, run through the grounding check with a hostile fake model trying to invent claims (automated) and optionally the real model; pass = 0 ungrounded sentences reach a draft.
+  - **Dependency exception (owner decision, 2026-09-30):** built while M16's sample eval is still pending; AI steps are tested with fake models.
   - Depends on: M10, M16. Done when: every company claim has a source.
 - **M27 Company research [AI].** Verified facts, scraped data and AI analysis kept strictly separate.
   - **Three strictly separate kinds of information**, each in its own table and its own labelled section of a new **Research** tab on the company page: (1) **scraped data** from the CSV import ("scraped, unverified"); (2) **AI claims** extracted by Gemini from the company's own web pages, each with a verbatim quote from the page and the page URL, claims whose quote is not on the page dropped ("AI, unverified"); (3) **verified facts**: only facts the owner confirmed (Verify on an AI claim, optionally reworded, or added manually with a source), with source and verification date. Verify / reject / add / remove are audited.
@@ -465,3 +471,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.35 | M20 detailed: interviews on opportunities, zone-safe times (DST gaps/overlaps rejected), 24 h + 1 h in-app reminders exactly once (new notify kind `interview`), .ics export with stable UID, /interviews page, dashboard tile, AI-date prefill. | Owner |
 | 2026-09-30 | 1.36 | M28 detailed: /analytics with reply rate (credited to the latest prior email to the company), bounce rate hard/soft and opportunities, by template version, country, split industry and source; few-data marking; hand-checked seeded tests; < 500 ms at 10k emails. | Owner |
 | 2026-09-30 | 1.37 | M27 detailed: scraped data / AI claims (verbatim evidence + URL) / owner-verified facts kept separate; only verified facts via one DB function for M9; manual Research fetches up to 3 pages of the company's own site with an SSRF guard (S11 extended to allow exactly this); built before M16's eval passes (owner's exception). | Owner |
+| 2026-09-30 | 1.38 | M9 detailed: AI fills only {{personal_line}} from verified facts with per-sentence citations; strict grounding check drops unproven sentences; highlighted with sources in the preview; one-by-one approval unchanged; max 10 per run; eval set with 0 ungrounded claims; built before M16's eval (owner's exception). | Owner |
