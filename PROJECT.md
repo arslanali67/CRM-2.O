@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.33
+- **Spec version:** 1.35
 - **Last updated:** 2026-09-28
 
 ---
@@ -341,6 +341,11 @@ Goal: AI that helps without inventing.
 - **M27 Company research [AI].** Verified facts, scraped data and AI analysis kept strictly separate.
   - Depends on: M23, M16. Done when: only verified facts reach personalization.
 - **M20 Interview management.** Timezone-safe records, in-app reminders, `.ics` export.
+  - **Interview:** belongs to an opportunity; title, start (local date/time + the IANA time zone it was agreed in), duration, kind (video/phone/onsite), meeting link (http/https only) or address, interviewers, notes, status scheduled/done/cancelled, outcome note. Recording one moves the opportunity to `interviewing` via M19's fact path (never backwards). Notes and tasks accept `interview`. Never sends email. All changes audited.
+  - **Time zones:** stored as a UTC instant plus the zone; shown in the interview's zone and the owner's; local times that do not exist or are ambiguous (DST changes) are rejected with a clear message.
+  - **Reminders (in-app):** notifications 24 h and 1 h before, exactly once each, deep-linked; missed ones fire on the next start if the interview is still ahead; none for cancelled/past interviews. New notification kind `interview` (on by default) added to the M29 Settings kinds.
+  - **`.ics` export:** per interview, UTC times, stable UID and SEQUENCE so re-imports update the event.
+  - **UI:** Interviews section on the opportunity page; `/interviews` page (upcoming / past); dashboard Interviews tile becomes real; company page lists its interviews; one-click prefill from an AI-found interview date (prefill only, owner confirms).
   - Depends on: M19. Done when: timezones are correct and reminders fire.
 - **M28 Analytics.** Reply rate by template version, country, industry, source; bounce rate.
   - Depends on: M18, M19. Done when: all metrics are correct on seeded data.
@@ -382,6 +387,8 @@ Sequential, single developer. Rows marked **GATE** must pass before the next row
 MVP effort estimate: 95–135 developer-days.
 
 **Gate waiver (2026-09-27, Owner):** the Wk 11–12 gate's real test send to the owner's second inbox is waived until the owner chooses to do it (the owner instructed that no email be sent). All automated gate checks pass. M13, M14 and M15 were/are built under this waiver. The test send stays pending in MILESTONES.md.
+
+**Gate waiver (2026-09-30, Owner):** Phase 2 (Assist) may start before the Wk 21–22 MVP gate passes. M34 stays open: the sample AI eval, profile/CV, the real-use-week decision and the owner's sign-off remain on `QA-CHECKLIST.md` and must still be completed before the MVP counts as released. Phase 2 starts with M20.
 
 ## 6. Out of scope
 
@@ -444,3 +451,5 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-29 | 1.31 | M34 detailed: QA checklist A–E; owner allows one test email to their own second address (owner approves and switches sending); week of real use deferred; M16 eval split over two days (eval script gets --part 1/2 with a combined score). | Owner |
 | 2026-09-29 | 1.32 | M16 eval by sample (owner's request): 12 items, one per label, pass ≥11/12 and 0 unproven fields; fits one day's free quota; replaces the two-day split. | Owner |
 | 2026-09-29 | 1.33 | M34: second test email allowed to awejutt@gmail.com (owner confirmed own/consenting address); owner approves it. | Owner |
+| 2026-09-30 | 1.34 | MVP gate waiver: Phase 2 may start while M34 stays open (its checklist items remain required for the MVP release); M20 first. | Owner |
+| 2026-09-30 | 1.35 | M20 detailed: interviews on opportunities, zone-safe times (DST gaps/overlaps rejected), 24 h + 1 h in-app reminders exactly once (new notify kind `interview`), .ics export with stable UID, /interviews page, dashboard tile, AI-date prefill. | Owner |

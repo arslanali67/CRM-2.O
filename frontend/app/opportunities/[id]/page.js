@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NotesPanel, TasksPanel } from "../../tasks/panels";
+import { InterviewsPanel } from "../interviews";
 import { STAGES, StageBadge } from "../shared";
 
 export default function Opportunity() {
@@ -58,6 +59,8 @@ export default function Opportunity() {
         <input placeholder="Reason (optional)" aria-label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} style={{ flex: 1 }} />
         <button type="submit" disabled={stage === o.stage}>Change stage</button>
       </form>
+
+      <InterviewsPanel opportunityId={o.id} onChange={load} />
 
       <h2 style={{ marginTop: 24 }}>Stage history</h2>
       <ol>

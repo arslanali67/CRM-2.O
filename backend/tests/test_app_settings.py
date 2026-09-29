@@ -11,7 +11,7 @@ from test_notifications import notes, reply
 
 DEFAULTS = {"daily_cap": 20, "min_gap_seconds": 90, "approval_max_age_days": 7, "recipient_cooldown_days": 30,
             "company_cooldown_days": 14, "ai_enabled": True, "ai_model": None,
-            "notify_kinds": ["auto_reply", "bounce", "reply", "sending", "system"]}
+            "notify_kinds": ["auto_reply", "bounce", "interview", "reply", "sending", "system"]}
 
 
 def put(client, **kw):

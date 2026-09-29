@@ -48,7 +48,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 2: Assist (Mo 6–7)
 - [ ] M9 AI personalization
 - [ ] M27 Company research
-- [ ] M20 Interview management
+- [ ] M20 Interview management (built; own tests + E2E pass; awaiting batch verification)
 - [ ] M28 Analytics
 
 ## Phase 3: Extend (Later, unnumbered)

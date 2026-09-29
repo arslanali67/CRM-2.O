@@ -13,6 +13,8 @@ celery_app.conf.beat_schedule = {
     "ai-analysis": {"task": "app.worker.ai_analysis", "schedule": 120.0, "options": {"expires": 110}},
     # Daily catch-up backup (M32): runs when the last good backup is older than 24 h.
     "backup": {"task": "app.worker.backup", "schedule": 600.0, "options": {"expires": 590}},
+    # Interview reminders 24 h and 1 h before (M20); exactly once, enforced by the database.
+    "interview-reminders": {"task": "app.worker.interview_reminders", "schedule": 60.0, "options": {"expires": 55}},
 }
 
 
@@ -52,3 +54,9 @@ def ai_analysis() -> dict:
 def backup() -> dict:
     from app.backup import create_if_due
     return create_if_due()
+
+
+@celery_app.task
+def interview_reminders() -> dict:
+    from app.interviews import reminders_tick
+    return reminders_tick()

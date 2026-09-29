@@ -12,18 +12,21 @@ from app.deps import audit, get_db, require_owner
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
-EntityType = Literal["company", "contact", "template", "opportunity"]
-TABLES = {"company": "companies", "contact": "contacts", "template": "templates", "opportunity": "opportunities"}
+EntityType = Literal["company", "contact", "template", "opportunity", "interview"]
+TABLES = {"company": "companies", "contact": "contacts", "template": "templates", "opportunity": "opportunities", "interview": "interviews"}
 DONE_LIMIT = 50
 
 # Label and page link for a task's linked entity (a contact links to its company page).
 ENTITY_SQL = """
     CASE t.entity_type WHEN 'company' THEN co.name WHEN 'contact' THEN coalesce(nullif(ct.name, ''), ct.email)
-                       WHEN 'template' THEN tp.name WHEN 'opportunity' THEN op.title END AS entity_name,
+                       WHEN 'template' THEN tp.name WHEN 'opportunity' THEN op.title
+                       WHEN 'interview' THEN iv.title END AS entity_name,
     CASE t.entity_type WHEN 'company' THEN '/companies/' || t.entity_id
                        WHEN 'contact' THEN '/companies/' || ct.company_id
                        WHEN 'template' THEN '/templates/' || t.entity_id
-                       WHEN 'opportunity' THEN '/opportunities/' || t.entity_id END AS entity_link
+                       WHEN 'opportunity' THEN '/opportunities/' || t.entity_id
+                       WHEN 'interview' THEN '/opportunities/' || iv.opportunity_id || '#interview-' || t.entity_id
+                       END AS entity_link
 """
 TASK_SELECT = f"""
     SELECT t.*, {ENTITY_SQL}
@@ -32,6 +35,7 @@ TASK_SELECT = f"""
     LEFT JOIN contacts ct ON t.entity_type = 'contact' AND ct.id = t.entity_id
     LEFT JOIN templates tp ON t.entity_type = 'template' AND tp.id = t.entity_id
     LEFT JOIN opportunities op ON t.entity_type = 'opportunity' AND op.id = t.entity_id
+    LEFT JOIN interviews iv ON t.entity_type = 'interview' AND iv.id = t.entity_id
 """
 
 

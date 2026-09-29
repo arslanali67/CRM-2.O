@@ -120,6 +120,33 @@ test("backup: back up now, then the dashboard warning is gone", async () => {
   await expect(page.getByText("No backup yet.")).toHaveCount(0);
 });
 
+test("interviews: record one with its time zone, see it on the dashboard, export .ics", async () => {
+  const companies = await (await page.request.get("/api/leads")).json();
+  const acme = companies.leads.find((l) => l.name === "E2E Alpha Robotics");
+  const opp = await (await page.request.post("/api/opportunities", {
+    data: { company_id: acme.id, title: "Robotics Engineer" }, headers: { Origin: new URL(page.url()).origin },
+  })).json();
+  await page.goto(`/opportunities/${opp.id}`);
+  await page.getByRole("button", { name: "Record an interview" }).click();
+  await page.getByLabel("Title").fill("First call");
+  await page.getByLabel("Date and time").fill("2030-10-07T15:00");
+  await page.getByLabel("Time zone it was agreed in").selectOption("America/New_York");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("Interview recorded.")).toBeVisible();
+  await expect(page.getByText("Mon 07 Oct 2030, 15:00 (America/New_York)")).toBeVisible();
+  await expect(page.getByText("interviewing").first()).toBeVisible(); // the fact moved the stage
+  const list = await (await page.request.get(`/api/opportunities/${opp.id}/interviews`)).json();
+  expect(list[0].starts_at).toContain("2030-10-07T19:00:00"); // 15:00 EDT = 19:00 UTC
+  const ics = await (await page.request.get(`/api/interviews/${list[0].id}/calendar.ics`)).text();
+  expect(ics).toContain("DTSTART:20301007T190000Z");
+  await page.goto("/");
+  await expect(page.getByText(/next: E2E Alpha Robotics/)).toBeVisible();
+  await page.goto("/interviews");
+  await expect(page.getByRole("link", { name: "First call" })).toBeVisible();
+  await page.goto("/activity");
+  await expect(page.getByText(/Interview recorded: First call/)).toBeVisible();
+});
+
 test("lockout: five wrong passwords lock logins, even the right one", async ({ browser }) => {
   const p = await browser.newPage();
   for (let i = 0; i < 5; i++) {

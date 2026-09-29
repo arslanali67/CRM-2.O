@@ -12,7 +12,8 @@ const NUMBERS = [
   ["company_cooldown_days", "Company cooldown (days)", 0, 365],
 ];
 const KINDS = [["reply", "Replies"], ["auto_reply", "Auto-replies"], ["bounce", "Bounces"],
-               ["sending", "Sending problems (failed / not sent)"], ["system", "System (sync failing, AI failed)"]];
+               ["sending", "Sending problems (failed / not sent)"], ["system", "System (sync failing, AI failed)"],
+               ["interview", "Interview reminders (24 h and 1 h before)"]];
 const FIELDS = [...NUMBERS.map(([k]) => k), "ai_enabled", "ai_model", "notify_kinds"];
 
 export default function Settings() {

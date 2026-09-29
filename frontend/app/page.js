@@ -67,7 +67,7 @@ export default function Home() {
   return (
     <main>
       <p>
-        <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
+        <Link href="/companies">Leads</Link> · <Link href="/opportunities">Opportunities</Link> · <Link href="/interviews">Interviews</Link> · <Link href="/compose">Compose list</Link> · <Link href="/outbox">Outbox</Link> · <Link href="/history">History</Link> · <Link href="/inbox">Inbox</Link> ·{" "}
         <Link href="/templates">Templates</Link> · <Link href="/import">Import CSV</Link> · <Link href="/duplicates">Duplicates</Link> ·{" "}
         <Link href="/profile">Profile & CV</Link> · <Link href="/email-account">Email account</Link> · <Link href="/do-not-contact">Do-not-contact</Link> ·{" "}
         <Link href="/tasks">Tasks</Link> · <Link href="/notifications">Notifications</Link> · <Link href="/activity">Activity</Link> · <Link href="/settings">Settings</Link> · <Link href="/backup">Backup & export</Link>
@@ -100,7 +100,8 @@ export default function Home() {
             <Tile label="Offers" value={k.offers} />
             <Tile label="Open opportunities" value={k.opportunities.open} href="/opportunities"
                   sub={Object.entries(k.opportunities.by_stage).map(([s, n]) => `${n} ${s}`).join(" · ") || "none yet"} />
-            <Tile label="Interviews" value="—" sub={`available after ${k.interviews.after}`} />
+            <Tile label="Interviews" value={k.interviews.upcoming} href="/interviews"
+                  sub={k.interviews.next ? `next: ${k.interviews.next.company_name}, ${new Date(k.interviews.next.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "none scheduled"} />
             <Tile label="Bounces" value={k.bounces} sub={`${k.auto_replies} auto-replies`} />
           </div>
 

@@ -82,7 +82,7 @@ def test_kpis_match_independent_sql(client, test_url, period, days):
     assert {k: got[k] if k != "leads" else got["leads"]["total"] for k in want} == want
     assert sum(got["leads"]["by_stage"].values()) == got["leads"]["total"]
     assert got["opportunities"] == {"available": True, "open": 0, "by_stage": {}}  # M19 (none seeded)
-    assert got["interviews"] == {"available": False, "after": "M20"}
+    assert got["interviews"] == {"available": True, "upcoming": 0, "next": None}  # M20 (none seeded)
 
 
 def test_reply_rate_ignores_replies_that_came_before_the_email(client, test_url):

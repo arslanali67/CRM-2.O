@@ -242,6 +242,13 @@ export default function Company() {
             <div key={op.id}><Link href={op.link}><b>{op.title}</b></Link> <StageBadge stage={op.stage} />
               <small style={{ color: "gray" }}> · since {new Date(op.stage_changed_at).toLocaleDateString()}</small></div>
           ))}
+          {o?.interviews?.length > 0 && <>
+            <h3>Interviews</h3>
+            {o.interviews.map((i) => (
+              <div key={i.id}><Link href={i.link}>{i.title}</Link>{" "}
+                <small style={{ color: "gray" }}>· {new Date(i.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })} · {i.status}</small></div>
+            ))}
+          </>}
           <p><CreateOpportunity companyId={company.id} label="New opportunity (manual)" /></p>
         </>
       )}

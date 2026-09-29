@@ -34,8 +34,13 @@ def company_overview(company_id: int, conn=Depends(get_db)):
     opportunities = conn.execute(
         "SELECT id, title, stage, stage_changed_at, '/opportunities/' || id AS link FROM opportunities "
         "WHERE company_id = %s ORDER BY stage_changed_at DESC, id DESC", (company_id,)).fetchall()
+    interviews = conn.execute(
+        "SELECT i.id, i.title, i.starts_at, i.time_zone, i.status, o.id AS opportunity_id, "
+        "'/opportunities/' || o.id || '#interview-' || i.id AS link FROM interviews i "
+        "JOIN opportunities o ON o.id = i.opportunity_id WHERE o.company_id = %s ORDER BY i.starts_at DESC",
+        (company_id,)).fetchall()
     return {"company": {k: c[k] for k in ("id", "name", "domain", "stage", "close_reason", "archived_at")},
-            **stats, "last_reply": last_reply, "opportunities": opportunities}
+            **stats, "last_reply": last_reply, "opportunities": opportunities, "interviews": interviews}
 
 
 @router.get("/contacts/{contact_id}")

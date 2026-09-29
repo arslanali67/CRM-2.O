@@ -10,7 +10,7 @@ from app.deps import audit, get_db, require_owner
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
-Kind = Literal["reply", "auto_reply", "bounce", "sending", "system"]
+Kind = Literal["reply", "auto_reply", "bounce", "sending", "system", "interview"]
 FIELDS = ("daily_cap", "min_gap_seconds", "approval_max_age_days", "recipient_cooldown_days",
           "company_cooldown_days", "ai_enabled", "ai_model", "notify_kinds")
 
@@ -24,7 +24,7 @@ class SettingsIn(BaseModel):
     company_cooldown_days: int = Field(ge=0, le=365)
     ai_enabled: bool
     ai_model: str | None = Field(None, pattern=r"^[a-z0-9][a-z0-9.\-]{1,80}$")  # None = .env default
-    notify_kinds: list[Kind] = Field(max_length=5)
+    notify_kinds: list[Kind] = Field(max_length=6)
 
 
 def read_settings(conn) -> dict:

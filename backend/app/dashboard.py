@@ -8,7 +8,7 @@ KPI definitions (PROJECT.md M18), for the chosen period:
   interested   replies in the period whose verified AI label is interested / interview_request / scheduling /
                needs_info / offer
   offers       replies in the period with verified AI label 'offer'
-Opportunities and interviews are placeholders until M19 / M20.
+Opportunities (M19) and interviews (M20) are live counts.
 """
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -68,8 +68,18 @@ def kpis(conn, since: datetime | None) -> dict:
         "interested": replies["interested"], "offers": replies["offers"],
         "bounces": replies["bounces"], "auto_replies": replies["auto_replies"],
         "opportunities": opportunity_counts(conn),
-        "interviews": {"available": False, "after": "M20"},
+        "interviews": interview_counts(conn),
     }
+
+
+def interview_counts(conn) -> dict:
+    """M20: scheduled interviews still ahead, and the next one."""
+    nxt = conn.execute(
+        "SELECT i.id, i.title, i.starts_at, i.time_zone, o.id AS opportunity_id, c.name AS company_name "
+        "FROM interviews i JOIN opportunities o ON o.id = i.opportunity_id JOIN companies c ON c.id = o.company_id "
+        "WHERE i.status = 'scheduled' AND i.starts_at > now() ORDER BY i.starts_at LIMIT 1").fetchone()
+    n = conn.execute("SELECT count(*) AS n FROM interviews WHERE status = 'scheduled' AND starts_at > now()").fetchone()
+    return {"available": True, "upcoming": n["n"], "next": nxt}
 
 
 def sent_series(conn, since: datetime | None) -> list[dict]:
