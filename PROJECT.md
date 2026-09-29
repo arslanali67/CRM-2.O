@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.32
+- **Spec version:** 1.33
 - **Last updated:** 2026-09-28
 
 ---
@@ -328,7 +328,7 @@ Goal: ready for daily use.
 - **M34 Final QA.** Full checklist plus one week of real use at 5 emails/day.
   - Done when: checklist 100% and owner sign-off.
   - **QA checklist** (`QA-CHECKLIST.md`, each item ticked with evidence): A automated (full suite, S1–S12, E2E, CI on the release commit; security 13/13; live restore drill; clean-clone drill); B open items (M12 real test send to the owner's own second address; M16 eval on the 12-item sample, ≥11/12); C walkthrough on real data (real CSV import, leads/duplicates, profile/CV, template → preview, the test email checked in the second inbox, a reply from it detected, pending cancelled, notified, analysed); D one week of real use at 5/day, owner approves every email, daily log check; E owner sign-off.
-  - **Owner decisions (2026-09-29):** the "send no email" instruction is lifted **only for one test email to the owner's own second address**, approved and sent by the owner (sending switched on and off by the owner; Claude never approves or enables sending). The week of real use (D) is deferred; the owner decides later, so M34 stays open until then. The M16 eval runs as a 12-item sample, one per label, in a single day (replaces the earlier two-day split, owner decision 2026-09-29).
+  - **Owner decisions (2026-09-29):** the "send no email" instruction is lifted **only for one test email to the owner's own second address**, approved and sent by the owner (sending switched on and off by the owner; Claude never approves or enables sending). A second test email to `awejutt@gmail.com` (confirmed by the owner as theirs or consenting) is also allowed (2026-09-29), prepared by Claude and approved by the owner. The week of real use (D) is deferred; the owner decides later, so M34 stays open until then. The M16 eval runs as a 12-item sample, one per label, in a single day (replaces the earlier two-day split, owner decision 2026-09-29).
 
 **Phase exit:** the QA checklist is 100% complete and signed off, and the restore drill passes.
 
@@ -443,3 +443,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-29 | 1.30 | M33 detailed: README + six guides in docs/, `make setup` helper that writes .env with generated secrets (Docker only), clean-clone drill as the done-check. | Owner |
 | 2026-09-29 | 1.31 | M34 detailed: QA checklist A–E; owner allows one test email to their own second address (owner approves and switches sending); week of real use deferred; M16 eval split over two days (eval script gets --part 1/2 with a combined score). | Owner |
 | 2026-09-29 | 1.32 | M16 eval by sample (owner's request): 12 items, one per label, pass ≥11/12 and 0 unproven fields; fits one day's free quota; replaces the two-day split. | Owner |
+| 2026-09-29 | 1.33 | M34: second test email allowed to awejutt@gmail.com (owner confirmed own/consenting address); owner approves it. | Owner |

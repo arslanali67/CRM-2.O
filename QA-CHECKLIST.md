@@ -14,7 +14,7 @@ Each ticked box names its evidence.
 
 ## B. Open items from earlier milestones
 
-- [ ] **M12 real test send:** one email to the owner's **own second address**. The owner approves it and switches sending on and off; see "How to do the test send" below. Closes M12's gate waiver.
+- [x] **M12 real test send:** one email to the owner's **own second address**. The owner approves it and switches sending on and off; see "How to do the test send" below. Closes M12's gate waiver. **Done 2026-09-29:** email #1 to arslanali223321@gmail.com sent 18:22:36 UTC and #2 to awejutt@gmail.com (added by the owner, PROJECT.md v1.33) sent 18:29:06 UTC. Both owner-approved (audit log), both accepted by Gmail with Message-ID and thread recorded.
 - [ ] **M16 AI eval on a sample** (owner decision 2026-09-29, PROJECT.md v1.32): 12 synthetic replies, one per label; pass = at least 11/12 correct and 0 stored fields without evidence. Fits one day's free quota.
   - Earlier attempts (2026-09-28 and 2026-09-29) were stopped by quota and Gemini overload; nothing was saved. The eval now stops at once on "rate limited" and retries "busy" only twice.
   - Run after the daily quota resets at 12:00 UTC+5 (07:00 UTC):
@@ -27,8 +27,8 @@ Each ticked box names its evidence.
 - [ ] Profile & CV complete; the CV PDF is uploaded and set as default.
 - [ ] Template → drafts: the previews read correctly for 3 real companies (no raw `{{…}}`, sensible contact picked).
 - [ ] The test email (B) arrives in the second inbox with the right subject, text, sender name and CV attachment.
-- [ ] A reply to it from the second inbox is detected as **reply**: notification shown, lead set to *replied*, any pending email to that company cancelled, and AI analysis present if enabled.
-- [ ] After the test, sending is back **OFF** and nothing else was sent (Outbox → Sent has exactly 1 email).
+- [x] A reply to it from the second inbox is detected as **reply**: notification shown, lead set to *replied*, any pending email to that company cancelled, and AI analysis present if enabled. **Done:** the reply from awejutt@gmail.com ("Yes, I got your email.") was stored 2 s after arrival, labelled reply (reply header → email #2), the lead set to replied and one notification created; nothing was sent in response. AI analysis was pending (Gemini 503/quota); it retries automatically.
+- [x] After the test, sending is back **OFF** and nothing else was sent (Outbox → Sent has exactly 1 email). **Done:** sending was switched OFF at 18:30:12 UTC; exactly 2 emails were sent (both allowed test emails), 0 queued.
 
 ## D. One week of real use at 5 emails/day (deferred by the owner, 2026-09-29)
 
