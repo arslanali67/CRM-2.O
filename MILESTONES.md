@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 33 / 35**
+**Progress: 33 / 44**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -50,6 +50,17 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M27 Company research (built before M16 eval passed: owner exception)
 - [x] M20 Interview management
 - [x] M28 Analytics
+
+## Phase 2b: Frontend (before M34 sign-off)
+- [ ] F1 Design system & app shell
+- [ ] F2 Dashboard
+- [ ] F3 Leads & companies
+- [ ] F4 Outreach
+- [ ] F5 Inbox & threads
+- [ ] F6 Pipeline
+- [ ] F7 Research & personalization
+- [ ] F8 Setup area
+- [ ] F9 Quality pass
 
 ## Phase 3: Extend (Later, unnumbered)
 - [ ] Kanban board and saved filters

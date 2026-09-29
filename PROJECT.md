@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.38
+- **Spec version:** 1.39
 - **Last updated:** 2026-09-28
 
 ---
@@ -368,6 +368,22 @@ Goal: AI that helps without inventing.
 
 **Phase exit:** no ungrounded AI claim ever reaches a draft, measured on the evaluation set.
 
+### Phase 2b: Frontend (owner-approved 2026-09-30)
+
+Goal: a complete, consistent frontend on top of the finished backend. **No behaviour or safety rule changes**: same API, same one-by-one approval, every existing test (including S1–S12 and the E2E suite) keeps passing. Each F-milestone gets detailed specs here and the owner's approval before it is built. Done before M34's final QA, so the owner signs off the finished UI.
+
+**Decisions (owner, 2026-09-30):** own design system in plain CSS (CSS variables + CSS modules built into Next.js; **no new dependencies**); hand-made SVG charts (no chart library); the Kanban board stays in Phase 3.
+
+- **F1 Design system & app shell.** Tokens (colour, type, spacing) with light and dark mode; reusable components (buttons, inputs, selects, tables, tabs, cards, badges, in-app confirm dialogs replacing browser pop-ups, toasts, empty/loading/error states); sidebar navigation grouped Work / Insights / Setup; top bar with search, bell and account menu; mobile drawer.
+- **F2 Dashboard.** KPI cards, sent-per-day SVG chart, latest replies, tasks due, next interview, backup warning, system status.
+- **F3 Leads & companies.** Leads table with filter panel, sorting, paging and bulk-action bar; company page header + tabs; contact page; Import as a 3-step wizard; Duplicates.
+- **F4 Outreach.** Template editor with live preview against a real lead; Compose as a stepper; Outbox list and detail (preview, safety-check panel, Approve); prominent sending switch; History.
+- **F5 Inbox & threads.** Two-pane inbox (list + reading pane) with labels and AI analysis panel; conversation view; notifications page.
+- **F6 Pipeline.** Opportunities grouped by stage (lists), opportunity page, Interviews page (upcoming/past timeline).
+- **F7 Research & personalization.** Research tab (facts / claims / scraped) and AI-sentence review in the Outbox, polished.
+- **F8 Setup area.** Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity in one layout; first-run checklist (connect Gmail, profile, CV, template, import).
+- **F9 Quality pass.** Mobile layout and accessibility (keyboard, labels, contrast) on every page; consistent states; E2E extended to every page.
+
 ### Phase 3: Extend (Later)
 
 Same safety rules apply.
@@ -398,6 +414,7 @@ Sequential, single developer. Rows marked **GATE** must pass before the next row
 | Wk 19–20 | Data safety | M7, M32, M30 |
 | Wk 21–22 | **GATE:** MVP release | M31, M33, M34 |
 | Mo 6–7 | Assist | M9, M27, M20, M28 |
+| Next | Frontend (before M34 sign-off) | F1–F9 |
 | Later | Extend | Phase 3 |
 
 MVP effort estimate: 95–135 developer-days.
@@ -472,3 +489,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.36 | M28 detailed: /analytics with reply rate (credited to the latest prior email to the company), bounce rate hard/soft and opportunities, by template version, country, split industry and source; few-data marking; hand-checked seeded tests; < 500 ms at 10k emails. | Owner |
 | 2026-09-30 | 1.37 | M27 detailed: scraped data / AI claims (verbatim evidence + URL) / owner-verified facts kept separate; only verified facts via one DB function for M9; manual Research fetches up to 3 pages of the company's own site with an SSRF guard (S11 extended to allow exactly this); built before M16's eval passes (owner's exception). | Owner |
 | 2026-09-30 | 1.38 | M9 detailed: AI fills only {{personal_line}} from verified facts with per-sentence citations; strict grounding check drops unproven sentences; highlighted with sources in the preview; one-by-one approval unchanged; max 10 per run; eval set with 0 ungrounded claims; built before M16's eval (owner's exception). | Owner |
+| 2026-09-30 | 1.39 | Phase 2b Frontend added: F1–F9 (design system & shell, dashboard, leads, outreach, inbox, pipeline, research, setup, quality), plain CSS and hand-made SVG charts with no new dependencies, Kanban stays in Phase 3, done before M34 sign-off; each F-milestone detailed and approved before building. | Owner |
