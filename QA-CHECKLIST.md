@@ -15,11 +15,10 @@ Each ticked box names its evidence.
 ## B. Open items from earlier milestones
 
 - [ ] **M12 real test send:** one email to the owner's **own second address**. The owner approves it and switches sending on and off; see "How to do the test send" below. Closes M12's gate waiver.
-- [ ] **M16 AI eval ≥ 90%** on the 40 synthetic replies, split over two days (free tier):
-  - [ ] Part 1: items 1–20. The first attempt (2026-09-29 00:57 UTC+5) hit the free tier's daily quota after item 1 and was stopped; nothing was saved. Run after the quota resets at 12:00 UTC+5 (07:00 UTC). The second attempt (2026-09-29 ~14:45 UTC) met Gemini overload (HTTP 503) and its retries used up the day's quota; it was stopped and nothing was saved. The eval now stops at once on "rate limited" and retries "busy" only twice (after 30 s and 90 s).
-  - [ ] Part 2: items 21–40, on the following day after 12:00 UTC+5, then the combined score.
-  - Command, run from the repo root (keeps the results between days):
-    `docker compose run --rm -v "${PWD}/backend/ai_eval/results:/app/ai_eval/results" api python -m scripts.run_ai_eval --part 1` (then `--part 2`)
+- [ ] **M16 AI eval on a sample** (owner decision 2026-09-29, PROJECT.md v1.32): 12 synthetic replies, one per label; pass = at least 11/12 correct and 0 stored fields without evidence. Fits one day's free quota.
+  - Earlier attempts (2026-09-28 and 2026-09-29) were stopped by quota and Gemini overload; nothing was saved. The eval now stops at once on "rate limited" and retries "busy" only twice.
+  - Run after the daily quota resets at 12:00 UTC+5 (07:00 UTC):
+    `docker compose run --rm api python -m scripts.run_ai_eval --sample`
 
 ## C. Walkthrough on real data (owner drives, Claude checks)
 

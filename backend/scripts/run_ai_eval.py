@@ -1,6 +1,7 @@
 """M16 evaluation: run the synthetic evaluation set through the real model and score it.
 
     docker compose run --rm api python -m scripts.run_ai_eval             # all 40 at once
+    docker compose run --rm api python -m scripts.run_ai_eval --sample    # 12 items, one per label (M16 check)
     docker compose run --rm api python -m scripts.run_ai_eval --part 1    # items 1-20 (free tier: one part per day)
     docker compose run --rm api python -m scripts.run_ai_eval --part 2    # items 21-40, then the combined score
 
@@ -29,6 +30,8 @@ def main(argv=sys.argv[1:]) -> int:
         print("GEMINI_API_KEY is not set in .env")
         return 2
     items = json.loads(SET.read_text(encoding="utf-8"))
+    if "--sample" in argv:  # one item per label (12): fits one day's free quota; >=90% means >=11/12
+        items = list({it["expected"]: it for it in reversed(items)}.values())[::-1]
     part = int(argv[argv.index("--part") + 1]) if "--part" in argv else None
     if part is not None:
         half = len(items) // 2

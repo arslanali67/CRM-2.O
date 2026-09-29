@@ -66,3 +66,19 @@ def test_busy_answers_get_two_spaced_retries(tmp_path, monkeypatch):
     monkeypatch.setattr(run_ai_eval.time, "sleep", waits.append)
     run_ai_eval.main(["--part", "1"])
     assert len(calls) == 20 * 3 and waits.count(30) == 20 and waits.count(90) == 20
+
+
+def test_sample_is_one_item_per_label_and_needs_11_of_12(monkeypatch, capsys):
+    seen = []
+    monkeypatch.setattr(run_ai_eval, "THROTTLE_SECONDS", 0)
+    monkeypatch.setattr(run_ai_eval.settings, "GEMINI_API_KEY", "test-key-not-real")
+    good = fake_model(wrong_ids={1})
+    monkeypatch.setattr(run_ai_eval, "analyse_text", lambda s, b, r: seen.append((s, b)) or good(s, b, r))
+    assert run_ai_eval.main(["--sample"]) == 0  # 11/12
+    assert len(seen) == 12
+    out = capsys.readouterr().out
+    assert "label accuracy: 11/12" in out and "M16 EVAL: PASS" in out
+    ids = [int(l.split("#")[1].split()[0]) for l in out.splitlines() if l[:3] in ("ok ", "XX ")]
+    assert ids == [1, 6, 9, 13, 16, 19, 22, 25, 28, 32, 35, 38]  # the first item of each label
+    monkeypatch.setattr(run_ai_eval, "analyse_text", fake_model(wrong_ids={1, 6}))
+    assert run_ai_eval.main(["--sample"]) == 1  # 10/12 fails

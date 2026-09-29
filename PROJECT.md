@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.31
+- **Spec version:** 1.32
 - **Last updated:** 2026-09-28
 
 ---
@@ -228,7 +228,8 @@ Goal: never miss a reply, never answer automatically.
   - **Runs:** background task every 2 minutes, up to 5 new replies per run, throttled; manual re-run. Results on Inbox and thread pages.
   - **Config:** `GEMINI_API_KEY` in `.env` (added by the owner), model name configurable.
   - **Evaluation:** ~40 synthetic reply emails (English/German, all labels); automated tests use a fake Gemini; the ≥90% check is one real run through the owner's key (approved).
-  - Depends on: M15. Done when: ≥90% label accuracy and 0 extracted fields without evidence.
+  - **Sample eval (owner decision 2026-09-29):** the real run uses a sample of 12 items, one per label (`run_ai_eval --sample`), which fits one day's free-tier quota; pass = at least 11/12 correct and 0 stored fields without evidence. The full 40-item run stays available.
+  - Depends on: M15. Done when: ≥90% label accuracy (sample: ≥11/12) and 0 extracted fields without evidence.
 - **M17 Notifications.** Bell icon, priority by classification, deep link to the reply.
   - **Events (owner-approved):** inbound message labelled reply / auto_reply / bounce (never unrelated); email ending `failed`, or `cancelled` by send-time safety checks or because the company replied; inbox sync failing 3 runs in a row; AI analysis failing after all retries.
   - **Exactly once, DB-enforced:** notifications are created by database triggers with a unique key per (event kind, source); a later AI analysis updates the same notification's priority/summary instead of adding one.
@@ -326,8 +327,8 @@ Goal: ready for daily use.
   - **Verification:** clean-clone drill: fresh clone from GitHub into an empty folder, docs followed word for word as a separate stack on its own port; passes when login, the dashboard and the restore drill work. Every gap found is fixed in the docs.
 - **M34 Final QA.** Full checklist plus one week of real use at 5 emails/day.
   - Done when: checklist 100% and owner sign-off.
-  - **QA checklist** (`QA-CHECKLIST.md`, each item ticked with evidence): A automated (full suite, S1–S12, E2E, CI on the release commit; security 13/13; live restore drill; clean-clone drill); B open items (M12 real test send to the owner's own second address; M16 eval ≥90% on 40 items); C walkthrough on real data (real CSV import, leads/duplicates, profile/CV, template → preview, the test email checked in the second inbox, a reply from it detected, pending cancelled, notified, analysed); D one week of real use at 5/day, owner approves every email, daily log check; E owner sign-off.
-  - **Owner decisions (2026-09-29):** the "send no email" instruction is lifted **only for one test email to the owner's own second address**, approved and sent by the owner (sending switched on and off by the owner; Claude never approves or enables sending). The week of real use (D) is deferred; the owner decides later, so M34 stays open until then. The M16 eval runs in two parts of 20 on consecutive days (free tier 20 requests/day/model); the combined 40-item score decides.
+  - **QA checklist** (`QA-CHECKLIST.md`, each item ticked with evidence): A automated (full suite, S1–S12, E2E, CI on the release commit; security 13/13; live restore drill; clean-clone drill); B open items (M12 real test send to the owner's own second address; M16 eval on the 12-item sample, ≥11/12); C walkthrough on real data (real CSV import, leads/duplicates, profile/CV, template → preview, the test email checked in the second inbox, a reply from it detected, pending cancelled, notified, analysed); D one week of real use at 5/day, owner approves every email, daily log check; E owner sign-off.
+  - **Owner decisions (2026-09-29):** the "send no email" instruction is lifted **only for one test email to the owner's own second address**, approved and sent by the owner (sending switched on and off by the owner; Claude never approves or enables sending). The week of real use (D) is deferred; the owner decides later, so M34 stays open until then. The M16 eval runs as a 12-item sample, one per label, in a single day (replaces the earlier two-day split, owner decision 2026-09-29).
 
 **Phase exit:** the QA checklist is 100% complete and signed off, and the restore drill passes.
 
@@ -441,3 +442,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-28 | 1.29 | M31 detailed: safety suite S1–S12 defined (closes the last §7 gap); Playwright browser E2E (new dev-only dependency @playwright/test) against the Docker stack in CI. | Owner |
 | 2026-09-29 | 1.30 | M33 detailed: README + six guides in docs/, `make setup` helper that writes .env with generated secrets (Docker only), clean-clone drill as the done-check. | Owner |
 | 2026-09-29 | 1.31 | M34 detailed: QA checklist A–E; owner allows one test email to their own second address (owner approves and switches sending); week of real use deferred; M16 eval split over two days (eval script gets --part 1/2 with a combined score). | Owner |
+| 2026-09-29 | 1.32 | M16 eval by sample (owner's request): 12 items, one per label, pass ≥11/12 and 0 unproven fields; fits one day's free quota; replaces the two-day split. | Owner |
