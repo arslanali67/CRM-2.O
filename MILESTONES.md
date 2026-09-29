@@ -23,7 +23,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] M26 Email safety controls (GATE)
 - [x] M10 Email composer
 - [x] M11 Email provider integration
-- [x] M12 Email sending (real test send done 2026-09-29: 2 owner-approved test emails sent, reply detected)
+- [x] M12 Email sending (GATE) (real test send done 2026-09-29: 2 owner-approved test emails sent, reply detected)
 - [x] M13 Email history
 
 ## Phase 1C: Replies (Wk 13–16)
