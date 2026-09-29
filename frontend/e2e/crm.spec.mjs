@@ -147,6 +147,16 @@ test("interviews: record one with its time zone, see it on the dashboard, export
   await expect(page.getByText(/Interview recorded: First call/)).toBeVisible();
 });
 
+test("analytics: the page loads with its breakdowns", async () => {
+  await page.goto("/analytics");
+  await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();
+  for (const t of ["By template version", "By country", "By industry", "By source"]) {
+    await expect(page.getByRole("heading", { name: t })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "All time" }).click();
+  await expect(page.getByText(/0 sent/)).toBeVisible(); // sending stays OFF in E2E
+});
+
 test("lockout: five wrong passwords lock logins, even the right one", async ({ browser }) => {
   const p = await browser.newPage();
   for (let i = 0; i < 5; i++) {

@@ -49,7 +49,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [ ] M9 AI personalization
 - [ ] M27 Company research
 - [ ] M20 Interview management (built; own tests + E2E pass; awaiting batch verification)
-- [ ] M28 Analytics
+- [ ] M28 Analytics (built; own tests + E2E pass; awaiting batch verification)
 
 ## Phase 3: Extend (Later, unnumbered)
 - [ ] Kanban board and saved filters

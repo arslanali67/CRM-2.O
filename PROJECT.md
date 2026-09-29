@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.35
+- **Spec version:** 1.36
 - **Last updated:** 2026-09-28
 
 ---
@@ -348,6 +348,11 @@ Goal: AI that helps without inventing.
   - **UI:** Interviews section on the opportunity page; `/interviews` page (upcoming / past); dashboard Interviews tile becomes real; company page lists its interviews; one-click prefill from an AI-found interview date (prefill only, owner confirms).
   - Depends on: M19. Done when: timezones are correct and reminders fire.
 - **M28 Analytics.** Reply rate by template version, country, industry, source; bounce rate.
+  - **Page `/analytics`** with the dashboard's period filter (7 / 30 / 90 days / all time).
+  - **Metrics per group:** sent (emails sent in the period); **reply rate** = sent emails with a real reply ÷ sent, where a reply is credited to the latest email sent to that company before it arrived (auto-replies and bounces never count); **bounce rate** = bounced ÷ sent, hard and soft shown separately; **opportunities** created from those replies (M19).
+  - **Breakdowns:** template version; country; industry (multi-value industries split, a company counts in each); source (manual / CSV import and which file).
+  - **Honesty:** every rate shows its counts; groups with fewer than 10 sent are marked "few data"; overall numbers match the dashboard's definitions.
+  - **Verification:** seeded dataset with hand-calculated expected values for every metric and breakdown (replies to older emails, colleague replies, bounces, multi-industry, auto-replies, emails outside the period); < 500 ms at 10k emails.
   - Depends on: M18, M19. Done when: all metrics are correct on seeded data.
 
 **Phase exit:** no ungrounded AI claim ever reaches a draft, measured on the evaluation set.
@@ -453,3 +458,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-29 | 1.33 | M34: second test email allowed to awejutt@gmail.com (owner confirmed own/consenting address); owner approves it. | Owner |
 | 2026-09-30 | 1.34 | MVP gate waiver: Phase 2 may start while M34 stays open (its checklist items remain required for the MVP release); M20 first. | Owner |
 | 2026-09-30 | 1.35 | M20 detailed: interviews on opportunities, zone-safe times (DST gaps/overlaps rejected), 24 h + 1 h in-app reminders exactly once (new notify kind `interview`), .ics export with stable UID, /interviews page, dashboard tile, AI-date prefill. | Owner |
+| 2026-09-30 | 1.36 | M28 detailed: /analytics with reply rate (credited to the latest prior email to the company), bounce rate hard/soft and opportunities, by template version, country, split industry and source; few-data marking; hand-checked seeded tests; < 500 ms at 10k emails. | Owner |
