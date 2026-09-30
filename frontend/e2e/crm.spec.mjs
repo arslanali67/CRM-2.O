@@ -147,6 +147,35 @@ test("interviews: record one with its time zone, see it on the dashboard, export
   await expect(page.getByText(/Interview recorded: First call/)).toBeVisible();
 });
 
+test("dashboard: every KPI equals the API, the chart has one bar per day, panels link out", async () => {
+  const pct = (x) => (x === null || x === undefined ? "—" : `${Math.round(x * 1000) / 10}%`);
+  for (const [button, period] of [["30 days", "30"], ["All time", "all"]]) {
+    await page.goto("/");
+    await page.getByRole("button", { name: button, exact: true }).click();
+    const api = await (await page.request.get(`/api/dashboard?period=${period}`)).json();
+    const k = api.kpis;
+    const want = { leads: k.leads.total, sent: k.sent, reply_rate: pct(k.reply_rate), interested: k.interested, offers: k.offers,
+                   opportunities: k.opportunities.open, interviews: k.interviews.upcoming, bounces: k.bounces };
+    for (const [id, value] of Object.entries(want)) {
+      await expect(page.locator(`[data-kpi="${id}"] [data-value]`)).toHaveText(String(value));
+    }
+    const chart = page.locator("svg[data-bars]");
+    if (k.sent > 0) {
+      await expect(chart).toHaveAttribute("data-bars", String(api.sent_series.length));
+      await expect(chart).toHaveAttribute("data-max", String(Math.max(...api.sent_series.map((x) => x.sent))));
+    } else {
+      await expect(page.getByText("No emails sent in this period.")).toBeVisible();
+    }
+  }
+  await expect(page.locator('[data-alert="gmail"]')).toBeVisible(); // no Gmail account in the E2E stack
+  await expect(page.locator('[data-alert="backup"]')).toHaveCount(0); // a backup was made earlier in this run
+  await page.getByRole("link", { name: /^Upcoming interviews/ }).click();
+  await expect(page).toHaveURL(/\/interviews$/);
+  await page.goto("/");
+  await page.locator("section", { hasText: "Recent activity" }).getByRole("link", { name: "View all" }).click();
+  await expect(page).toHaveURL(/\/activity$/);
+});
+
 test("analytics: the page loads with its breakdowns", async () => {
   await page.goto("/analytics");
   await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();

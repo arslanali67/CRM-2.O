@@ -161,6 +161,18 @@ tbody tr:hover td { background: var(--surface-2); }
 .field .hint { color: var(--muted); font-size: 12px; }
 .field .err { color: var(--danger); font-size: 12px; }
 
+/* ---------- page layouts (F2+) ---------- */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--s3); }
+.kpi { transition: border-color 0.12s, transform 0.12s; }
+.kpi:hover { border-color: var(--accent); text-decoration: none; }
+.panel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--s4); align-items: start; }
+.segmented { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.segmented button { border: none; border-radius: 0; min-height: 30px; }
+.segmented button + button { border-left: 1px solid var(--border); }
+.skeleton { min-height: 96px; background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+            background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
 /* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);

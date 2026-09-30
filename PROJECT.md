@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.40
+- **Spec version:** 1.41
 - **Last updated:** 2026-09-28
 
 ---
@@ -382,6 +382,12 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - Base styles make existing pages consistent now; the dashboard's link row is removed (navigation lives in the sidebar). Page redesigns follow in F2–F8.
   - Done when: every page renders in the shell and every sidebar link works; a test proves no browser confirm/prompt/alert remains; light and dark are readable; the mobile drawer works; E2E extended (sidebar links, in-app dialogs, theme persistence); all existing tests, S1–S12 and E2E pass.
 - **F2 Dashboard.** KPI cards, sent-per-day SVG chart, latest replies, tasks due, next interview, backup warning, system status.
+  - Frontend only (the M18/M19/M20 dashboard API already provides the data). Header with a segmented period selector (7 / 30 / 90 days / all time).
+  - **Needs-attention strip** (only when relevant, each linking to the fix): no backup or older than 48 h; sending ON with the queue count; Gmail not connected or test failed; inbox sync failing; AI off or no key.
+  - **KPI cards** (clickable): leads with a mini stage breakdown; sent (to N companies); reply rate with counts; interested; offers; open opportunities by stage; interviews (upcoming + next); bounces and auto-replies.
+  - **Sent-per-day SVG chart** with gridlines, date labels, per-day tooltip and a screen-reader summary; a clear message when nothing was sent.
+  - **Panels:** latest replies (sender, company, label and AI label, relative time, link to thread); tasks due (overdue in red); recent activity (last 8, link to Activity); next-interview card (its zone and yours). System status line (database, Redis, worker). Loading skeletons, error state, mobile layout.
+  - Done when: E2E checks every KPI on screen equals the API value, one chart bar per day with the right maximum, the backup alert appears and disappears correctly, panel links work; phone layout and both themes; all existing tests pass.
 - **F3 Leads & companies.** Leads table with filter panel, sorting, paging and bulk-action bar; company page header + tabs; contact page; Import as a 3-step wizard; Duplicates.
 - **F4 Outreach.** Template editor with live preview against a real lead; Compose as a stepper; Outbox list and detail (preview, safety-check panel, Approve); prominent sending switch; History.
 - **F5 Inbox & threads.** Two-pane inbox (list + reading pane) with labels and AI analysis panel; conversation view; notifications page.
@@ -497,3 +503,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.38 | M9 detailed: AI fills only {{personal_line}} from verified facts with per-sentence citations; strict grounding check drops unproven sentences; highlighted with sources in the preview; one-by-one approval unchanged; max 10 per run; eval set with 0 ungrounded claims; built before M16's eval (owner's exception). | Owner |
 | 2026-09-30 | 1.39 | Phase 2b Frontend added: F1–F9 (design system & shell, dashboard, leads, outreach, inbox, pipeline, research, setup, quality), plain CSS and hand-made SVG charts with no new dependencies, Kanban stays in Phase 3, done before M34 sign-off; each F-milestone detailed and approved before building. | Owner |
 | 2026-09-30 | 1.40 | F1 detailed: tokens with light/dark, component set, grouped sidebar with live badges, always-visible sending pill, mobile drawer, in-app dialogs replace browser pop-ups; done-when with no-pop-up test and extended E2E. | Owner |
+| 2026-09-30 | 1.41 | F2 detailed: dashboard with needs-attention strip, clickable KPI cards, SVG sent-per-day chart, replies / tasks / activity panels, next interview, system status; E2E compares every KPI with the API. | Owner |

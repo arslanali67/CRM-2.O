@@ -1,135 +1,177 @@
 "use client";
+// F2: dashboard. All numbers come from /api/dashboard (M18-M20); the attention strip from the status endpoints.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { describe } from "./activity/describe";
 import { LabelBadge } from "./inbox/label";
 import { localToday } from "./tasks/panels";
+import { Badge, ErrorState, PageHeader, ago } from "./ui";
+import { BarChart } from "./ui/chart";
 
 const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["all", "All time"]];
-const tile = { border: "1px solid var(--border)", borderRadius: 6, padding: "10px 12px", minWidth: 120, flex: "1 1 120px" };
+const pct = (x) => (x === null || x === undefined ? "—" : `${Math.round(x * 1000) / 10}%`);
+const get = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
-function Tile({ label, value, sub, href }) {
-  const body = (
-    <div style={tile}>
-      <div style={{ fontSize: 26, fontWeight: 600 }}>{value}</div>
-      <div>{label}</div>
+function Kpi({ id, label, value, sub, href }) {
+  return (
+    <Link href={href} className="stat kpi" data-kpi={id} style={{ color: "inherit", textDecoration: "none", display: "block" }}>
+      <div className="stat-label">{label}</div>
+      <div className="stat-value" data-value>{value}</div>
       {sub && <small style={{ color: "var(--muted)" }}>{sub}</small>}
-    </div>
+    </Link>
   );
-  return href ? <Link href={href} style={{ color: "inherit", textDecoration: "none", display: "contents" }}>{body}</Link> : body;
 }
 
-function Series({ data }) {
-  const max = Math.max(1, ...data.map((d) => d.sent));
+function Attention({ items }) {
+  if (!items.length) return null;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 60, borderBottom: "1px solid var(--border)" }}
-         aria-label="Emails sent per day">
-      {data.map((d) => (
-        <div key={d.day} title={`${d.day}: ${d.sent} sent`}
-             style={{ flex: 1, height: `${(d.sent / max) * 100}%`, minHeight: d.sent ? 2 : 0, background: "var(--accent)" }} />
+    <div style={{ display: "grid", gap: 8, marginBottom: 16 }} aria-label="Needs attention">
+      {items.map((a) => (
+        <Link key={a.id} href={a.href} data-alert={a.id} className="card" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px",
+          textDecoration: "none", color: "var(--text)", borderColor: `var(--${a.tone})`, background: `var(--${a.tone}-bg)` }}>
+          <b style={{ color: `var(--${a.tone})` }}>{a.title}</b><span style={{ color: "var(--muted)" }}>{a.text}</span>
+          <span style={{ marginLeft: "auto", color: `var(--${a.tone})` }}>{a.action} →</span>
+        </Link>
       ))}
     </div>
   );
 }
 
+function Panel({ title, href, children }) {
+  return (
+    <section className="card" style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+        <h3 style={{ margin: 0 }}>{title}</h3>{href && <Link href={href}><small>View all</small></Link>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const Row = ({ children }) => <div style={{ padding: "8px 0", borderTop: "1px solid var(--border)" }}>{children}</div>;
+
+function zoned(ts, zone) {
+  return new Date(ts).toLocaleString(undefined, { timeZone: zone, weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
 export default function Home() {
   const router = useRouter();
-  const [email, setEmail] = useState(null);
-  const [health, setHealth] = useState(null);
   const [period, setPeriod] = useState("30");
   const [d, setD] = useState(null);
-  const [bk, setBk] = useState(null);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState({});
 
   useEffect(() => {
-    fetch("/api/auth/me").then(async (res) => {
-      if (res.status === 401) return router.replace("/login");
-      setEmail((await res.json()).email);
-      setHealth(await fetch("/api/health").then((r) => r.json()));
-      setBk(await fetch("/api/backups").then((r) => (r.ok ? r.json() : null)));
-    });
-  }, [router]);
+    fetch(`/api/dashboard?period=${period}&today=${localToday()}`).then(async (r) => {
+      if (r.status === 401) return router.replace("/login");
+      if (!r.ok) return setError("The dashboard couldn't load. Check that the app is running (System status below).");
+      setError("");
+      setD(await r.json());
+    }).catch(() => setError("The dashboard couldn't load."));
+  }, [period, router]);
 
   useEffect(() => {
-    if (!email) return;
-    fetch(`/api/dashboard?period=${period}&today=${localToday()}`).then((r) => r.ok && r.json()).then((x) => x && setD(x));
-  }, [email, period]);
+    Promise.all(["/api/health", "/api/backups", "/api/sending", "/api/email-account", "/api/inbox-sync", "/api/ai/status"].map(get))
+      .then(([health, backups, sending, account, sync, ai]) => setStatus({ health, backups, sending, account, sync, ai }));
+  }, []);
 
+  const alerts = [];
+  const { backups, sending, account, sync, ai, health } = status;
+  if (backups?.warn) alerts.push({ id: "backup", tone: "warning", title: backups.backups.length ? "Backup is old." : "No backup yet.",
+    text: backups.backups.length ? `The last one is ${Math.round(backups.age_hours)} h old.` : "Make one so your data is safe.", action: "Back up", href: "/backup" });
+  if (sending?.enabled) alerts.push({ id: "sending", tone: "danger", title: "Sending is ON.",
+    text: `${sending.queued} queued email(s) will go out, one at a time.`, action: "Outbox", href: "/outbox" });
+  if (account && !account.connected) alerts.push({ id: "gmail", tone: "warning", title: "Gmail isn't connected.",
+    text: account.configured ? "The last connection test failed." : "Replies can't be read and nothing can be sent.", action: "Connect", href: "/email-account" });
+  if (sync?.mailboxes?.some((m) => m.failing_since)) alerts.push({ id: "sync", tone: "danger", title: "Inbox sync is failing.",
+    text: "New replies aren't being read.", action: "Details", href: "/email-account" });
+  if (ai && !ai.enabled) alerts.push({ id: "ai", tone: "accent", title: "AI analysis is off.",
+    text: ai.key_present ? "It's switched off in Settings." : "No Gemini key in .env; replies aren't analysed.", action: "Settings", href: "/settings" });
 
-  if (!email) return <p>Loading…</p>;
   const k = d?.kpis;
-  const pct = (x) => (x === null || x === undefined ? "—" : `${Math.round(x * 1000) / 10}%`);
-
+  const next = k?.interviews?.next;
   return (
     <main>
-
-      {bk?.warn && (
-        <p style={{ color: "var(--danger)" }}>
-          {bk.backups.length ? `Last backup was ${Math.round(bk.age_hours)} h ago.` : "No backup yet."}{" "}
-          <Link href="/backup">Back up now</Link>
-        </p>
-      )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0 }}>Dashboard</h1>
-        <span>
+      <PageHeader title="Dashboard" sub={d ? (period === "all" ? "All time" : `Last ${period} days`) : ""}
+        actions={<div className="segmented" role="group" aria-label="Period">
           {PERIODS.map(([v, label]) => (
-            <button key={v} onClick={() => setPeriod(v)} style={{ fontWeight: v === period ? "bold" : "normal", marginLeft: 4 }}>{label}</button>
+            <button key={v} onClick={() => setPeriod(v)} aria-pressed={v === period} className={v === period ? "btn-primary" : ""}>{label}</button>
           ))}
-        </span>
-      </div>
+        </div>} />
 
-      {!k ? <p>Loading dashboard…</p> : (
+      <Attention items={alerts} />
+      {error && <ErrorState>{error}</ErrorState>}
+
+      {!k ? !error && <div className="kpi-grid">{Array.from({ length: 8 }, (_, i) => <div key={i} className="stat skeleton" />)}</div> : (
         <>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "12px 0" }}>
-            <Tile label="Leads" value={k.leads.total} href="/companies"
-                  sub={Object.entries(k.leads.by_stage).map(([s, n]) => `${n} ${s.replace("_", " ")}`).join(" · ")} />
-            <Tile label="Sent" value={k.sent} sub={`to ${k.companies_emailed} companies`} href="/history" />
-            <Tile label="Replies" value={k.replies} sub={`from ${k.companies_replied} companies`} href="/inbox" />
-            <Tile label="Reply rate" value={pct(k.reply_rate)} sub="companies that replied after being emailed" />
-            <Tile label="Interested" value={k.interested} sub="AI: interested, interview, scheduling, questions, offer" />
-            <Tile label="Offers" value={k.offers} />
-            <Tile label="Open opportunities" value={k.opportunities.open} href="/opportunities"
-                  sub={Object.entries(k.opportunities.by_stage).map(([s, n]) => `${n} ${s}`).join(" · ") || "none yet"} />
-            <Tile label="Interviews" value={k.interviews.upcoming} href="/interviews"
-                  sub={k.interviews.next ? `next: ${k.interviews.next.company_name}, ${new Date(k.interviews.next.starts_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}` : "none scheduled"} />
-            <Tile label="Bounces" value={k.bounces} sub={`${k.auto_replies} auto-replies`} />
+          <div className="kpi-grid">
+            <Kpi id="leads" label="Leads" value={k.leads.total} href="/companies"
+                 sub={Object.entries(k.leads.by_stage).map(([s, n]) => `${n} ${s.replace("_", " ")}`).join(" · ") || "none yet"} />
+            <Kpi id="sent" label="Sent" value={k.sent} sub={`to ${k.companies_emailed} companies`} href="/history" />
+            <Kpi id="reply_rate" label="Reply rate" value={pct(k.reply_rate)} href="/analytics"
+                 sub={`${k.companies_replied} of ${k.companies_emailed} companies replied`} />
+            <Kpi id="interested" label="Interested" value={k.interested} sub="AI: interested, interview, scheduling…" href="/inbox" />
+            <Kpi id="offers" label="Offers" value={k.offers} sub="AI-labelled offers" href="/inbox" />
+            <Kpi id="opportunities" label="Open opportunities" value={k.opportunities.open} href="/opportunities"
+                 sub={Object.entries(k.opportunities.by_stage).map(([s, n]) => `${n} ${s}`).join(" · ") || "none yet"} />
+            <Kpi id="interviews" label="Upcoming interviews" value={k.interviews.upcoming} href="/interviews"
+                 sub={next ? `next: ${next.company_name}` : "none scheduled"} />
+            <Kpi id="bounces" label="Bounces" value={k.bounces} sub={`${k.auto_replies} auto-replies`} href="/inbox" />
           </div>
 
-          <h3>Emails sent per day</h3>
-          <Series data={d.sent_series} />
+          <section className="card" style={{ marginTop: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Emails sent per day</h3>
+            <BarChart label="Emails sent per day" unit="sent" empty="No emails sent in this period."
+                      data={d.sent_series.map((x) => ({ key: x.day, value: x.sent,
+                        label: new Date(`${x.day}T00:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" }) }))} />
+          </section>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginTop: 24 }}>
-            <section style={{ flex: "1 1 300px" }}>
-              <h3>Latest replies</h3>
-              {d.latest_replies.length === 0 && <p>None yet.</p>}
+          <div className="panel-grid" style={{ marginTop: 16 }}>
+            <Panel title="Latest replies" href="/inbox">
+              {d.latest_replies.length === 0 && <p style={{ color: "var(--muted)", margin: 0 }}>No replies yet.</p>}
               {d.latest_replies.map((m) => (
-                <div key={m.id} style={{ marginBottom: 6 }}>
-                  <Link href={`/threads/${m.thread_key}#in-${m.id}`}>{m.from_name || m.from_email}</Link> <LabelBadge m={m} />
-                  {m.ai_label && <small> · AI: {m.ai_label.replaceAll("_", " ")}</small>}
-                  <div><small style={{ color: "var(--muted)" }}>{m.company_name} · {m.subject}</small></div>
-                </div>
+                <Row key={m.id}>
+                  <Link href={`/threads/${m.thread_key}#in-${m.id}`}><b>{m.from_name || m.from_email}</b></Link>{" "}
+                  <LabelBadge m={m} />{m.ai_label && <> <Badge tone="accent">AI: {m.ai_label.replaceAll("_", " ")}</Badge></>}
+                  <div><small style={{ color: "var(--muted)" }}>{m.company_name || "unknown company"} · {m.subject} · {ago(m.received_at)}</small></div>
+                </Row>
               ))}
-            </section>
-            <section style={{ flex: "1 1 220px" }}>
-              <h3><Link href="/tasks">Tasks due</Link></h3>
-              {d.tasks.length === 0 && <p>Nothing due this week.</p>}
-              {d.tasks.map((t) => (
-                <div key={t.id} style={{ color: t.overdue ? "var(--danger)" : undefined }}>{t.due_date} · {t.title}</div>
+            </Panel>
+            <div style={{ display: "grid", gap: 16, alignContent: "start" }}>
+              {next && (
+                <Panel title="Next interview" href="/interviews">
+                  <Link href={`/opportunities/${next.opportunity_id}#interview-${next.id}`}><b>{next.title}</b></Link>
+                  <div>{next.company_name}</div>
+                  <small style={{ color: "var(--muted)" }}>{zoned(next.starts_at, next.time_zone)} ({next.time_zone})
+                    {next.time_zone !== Intl.DateTimeFormat().resolvedOptions().timeZone && <> · your time {new Date(next.starts_at).toLocaleString()}</>}</small>
+                </Panel>
+              )}
+              <Panel title="Tasks due" href="/tasks">
+                {d.tasks.length === 0 && <p style={{ color: "var(--muted)", margin: 0 }}>Nothing due this week.</p>}
+                {d.tasks.map((t) => (
+                  <Row key={t.id}><span style={{ color: t.overdue ? "var(--danger)" : undefined }}>{t.title}</span>
+                    <div><small style={{ color: t.overdue ? "var(--danger)" : "var(--muted)" }}>{t.overdue ? "overdue · " : "due "}{t.due_date}</small></div></Row>
+                ))}
+              </Panel>
+            </div>
+            <Panel title="Recent activity" href="/activity">
+              {d.activity.slice(0, 8).map((e) => (
+                <Row key={e.id}><div style={{ overflowWrap: "anywhere" }}>{describe(e)}</div>
+                  <small style={{ color: "var(--muted)" }}>{ago(e.at)} · {e.actor}</small></Row>
               ))}
-            </section>
-            <section style={{ flex: "1 1 300px" }}>
-              <h3><Link href="/activity">Recent activity</Link></h3>
-              {d.activity.map((e) => (
-                <div key={e.id}><small style={{ color: "var(--muted)" }}>{new Date(e.at).toLocaleString()}</small> {describe(e)}</div>
-              ))}
-            </section>
+            </Panel>
           </div>
-          <p style={{ color: "var(--muted)" }}><small>Computed in {d.query_ms} ms.</small></p>
         </>
       )}
 
-      <h3>System status</h3>
-      <p>{health ? Object.entries(health).map(([key, v]) => `${key}: ${v}`).join(" · ") : "Checking…"}</p>
+      <p style={{ color: "var(--muted)", marginTop: 20, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }} aria-label="System status">
+        <small>System status:</small>
+        {health ? Object.entries(health).map(([key, v]) => (
+          <small key={key}><span style={{ color: v === "ok" ? "var(--success)" : "var(--danger)" }}>●</span> {key} {v === "ok" ? "ok" : v}</small>
+        )) : <small>checking…</small>}
+        {d && <small style={{ marginLeft: "auto" }}>computed in {d.query_ms} ms</small>}
+      </p>
     </main>
   );
 }
