@@ -50,7 +50,7 @@ Open **http://localhost:3000** and sign in. The first build takes a few minutes.
 
 ```powershell
 docker compose run --rm api python -m pytest -q      # backend + safety suite (uses a throwaway crm_test database)
-make e2e                                             # browser tests on an isolated copy (port 3100)
+make e2e                                             # browser tests on an isolated copy (port 3190)
 ```
 
 Tests never contact Gmail or Gemini.

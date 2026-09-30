@@ -32,8 +32,8 @@ restore-drill:  ## Restore the newest backup (or FILE=...) into a throwaway data
 
 E2E = docker compose -p crm-e2e --env-file frontend/e2e/.env.e2e
 
-e2e:       ## Browser E2E on an isolated stack (port 3100, test-only owner, sending OFF, no Gmail); your data is untouched
+e2e:       ## Browser E2E on an isolated stack (port 3190, test-only owner, sending OFF, no Gmail); your data is untouched
 	node frontend/e2e/setup-env.mjs
 	$(E2E) up -d --build --wait
-	for i in $$(seq 90); do curl -sf http://127.0.0.1:3100/api/health >/dev/null && break; sleep 2; done
+	for i in $$(seq 90); do curl -sf http://127.0.0.1:3190/api/health >/dev/null && break; sleep 2; done
 	cd frontend && npx playwright test; status=$$?; cd .. && $(E2E) down -v; exit $$status

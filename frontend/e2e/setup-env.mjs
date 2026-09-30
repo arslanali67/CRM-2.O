@@ -13,7 +13,7 @@ const hash = scryptSync(password, salt, 32, { N: 2 ** 14, r: 8, p: 1 }); // same
 
 const env = {
   ENV_FILE: "frontend/e2e/.env.e2e", // compose paths are relative to the repo root
-  WEB_PORT: "3100",
+  WEB_PORT: "3190",
   BACKUP_HOST_DIR: `./e2e-backups/run-${Date.now()}`, // fresh per run: the first test expects "No backup yet."
   OWNER_EMAIL: "e2e-owner@example.com",
   OWNER_PASSWORD_HASH: `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`,

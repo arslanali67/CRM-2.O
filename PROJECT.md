@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.41
+- **Spec version:** 1.42
 - **Last updated:** 2026-09-28
 
 ---
@@ -389,6 +389,13 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **Panels:** latest replies (sender, company, label and AI label, relative time, link to thread); tasks due (overdue in red); recent activity (last 8, link to Activity); next-interview card (its zone and yours). System status line (database, Redis, worker). Loading skeletons, error state, mobile layout.
   - Done when: E2E checks every KPI on screen equals the API value, one chart bar per day with the right maximum, the backup alert appears and disappears correctly, panel links work; phone layout and both themes; all existing tests pass.
 - **F3 Leads & companies.** Leads table with filter panel, sorting, paging and bulk-action bar; company page header + tabs; contact page; Import as a 3-step wizard; Duplicates.
+  - Frontend only (the leads API returns up to 500 matching rows with a truncated flag; sorting and paging happen in the browser).
+  - **Leads:** header with count, Add company (dialog) and Import; filter panel (common filters + "More filters"), active filters as removable chips and kept in the URL; table (select, name + domain, stage badge, city/country, industry, usable emails + careers badge, last emailed, last reply) with click-to-sort columns, 50 per page, a notice when over 500 match; bulk-action bar on selection (Set stage…, Add to compose list, Clear selection).
+  - **Company page:** header card (name, domain link, stage badge + stage menu, blocked badge, quick stats, Add to compose list / Block / Archive); tabs with counts (Overview, Contacts, Emails & replies, Notes, Tasks, Timeline, Opportunities, Research); contacts as a table with add/edit dialogs.
+  - **Contact page:** header (name, email, class badge, blocked, company link) and sections for emails sent, replies, notes, tasks, timeline.
+  - **Import wizard:** 1 Upload (drag-and-drop, city, country) → 2 Preview (summary cards, row table filterable by status, rejected-rows download) → 3 Import (result, link to the imported leads).
+  - **Duplicates:** pairs side by side with match reasons, Keep left / Keep right / Not a duplicate; merge history table with Undo.
+  - Done when: E2E proves filters survive a reload, sorting and paging, the bulk bar (stage + compose list), company header actions and tabs, the import wizard end to end, a merge and its undo through the UI; phone layout and both themes; all existing tests pass.
 - **F4 Outreach.** Template editor with live preview against a real lead; Compose as a stepper; Outbox list and detail (preview, safety-check panel, Approve); prominent sending switch; History.
 - **F5 Inbox & threads.** Two-pane inbox (list + reading pane) with labels and AI analysis panel; conversation view; notifications page.
 - **F6 Pipeline.** Opportunities grouped by stage (lists), opportunity page, Interviews page (upcoming/past timeline).
@@ -504,3 +511,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.39 | Phase 2b Frontend added: F1–F9 (design system & shell, dashboard, leads, outreach, inbox, pipeline, research, setup, quality), plain CSS and hand-made SVG charts with no new dependencies, Kanban stays in Phase 3, done before M34 sign-off; each F-milestone detailed and approved before building. | Owner |
 | 2026-09-30 | 1.40 | F1 detailed: tokens with light/dark, component set, grouped sidebar with live badges, always-visible sending pill, mobile drawer, in-app dialogs replace browser pop-ups; done-when with no-pop-up test and extended E2E. | Owner |
 | 2026-09-30 | 1.41 | F2 detailed: dashboard with needs-attention strip, clickable KPI cards, SVG sent-per-day chart, replies / tasks / activity panels, next interview, system status; E2E compares every KPI with the API. | Owner |
+| 2026-09-30 | 1.42 | F3 detailed: leads filter panel with URL-kept chips, sortable paged table, bulk bar; company header + counted tabs; contact page; 3-step import wizard; side-by-side duplicates; E2E for each. | Owner |

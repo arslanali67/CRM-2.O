@@ -54,7 +54,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 2b: Frontend (before M34 sign-off)
 - [x] F1 Design system & app shell
 - [x] F2 Dashboard
-- [ ] F3 Leads & companies
+- [ ] F3 Leads & companies (built; E2E 21/21 pass; awaiting batch verification)
 - [ ] F4 Outreach
 - [ ] F5 Inbox & threads
 - [ ] F6 Pipeline

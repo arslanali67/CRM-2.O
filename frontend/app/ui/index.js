@@ -72,6 +72,27 @@ export function ago(ts) {
 
 export const TableWrap = ({ children }) => <div className="table-wrap">{children}</div>;
 
+// A modal for forms (Add company, Edit contact…). Closes on Escape or a click outside.
+export function Modal({ title, onClose, children, wide }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-label={title} style={{ width: wide ? "min(680px, 100%)" : undefined,
+        maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h2 style={{ margin: 0 }}>{title}</h2>
+          <button className="btn-ghost" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ---------- dialogs: in-app confirm / prompt / alert (no browser pop-ups) ----------
 
 const DialogCtx = createContext(null);

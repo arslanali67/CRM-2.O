@@ -59,6 +59,8 @@ test("CSV import: preview first, then import", async () => {
   await page.getByRole("button", { name: "Preview (nothing is saved)" }).click();
   await page.getByRole("button", { name: "Import 2 new companies" }).click();
   await expect(page.getByText("Imported 2 companies")).toBeVisible();
+  await expect(page.locator('.step[aria-current="step"]')).toContainText("Import"); // wizard step 3
+  await expect(page.getByRole("link", { name: "View imported leads" })).toBeVisible();
 });
 
 test("leads: both companies listed and handed to the compose list", async () => {
@@ -190,7 +192,7 @@ test("research: three separate sections; a fact added by hand reaches personaliz
   const leads = await (await page.request.get("/api/leads")).json();
   const beta = leads.leads.find((l) => l.name === "E2E Beta Vision");
   await page.goto(`/companies/${beta.id}`);
-  await page.getByRole("button", { name: "Research", exact: true }).click();
+  await page.getByRole("tab", { name: "Research" }).click();
   await expect(page.getByRole("heading", { name: /Verified facts/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /AI claims/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Scraped data/ })).toBeVisible();
@@ -222,6 +224,72 @@ test("personalization: offered on Compose; without AI it says so, and drafts use
   const mine = drafts.emails.find((e) => e.subject === "Hello E2E Beta Vision");
   const full = await (await page.request.get(`/api/outbound-emails/${mine.id}`)).json();
   expect(full.body).toContain("I have followed your work for a while.");
+});
+
+test("leads: filters live in the URL, sorting and paging work, the bulk bar acts on the selection", async () => {
+  const origin = new URL(page.url()).origin;
+  for (let i = 1; i <= 55; i++) {
+    const n = String(i).padStart(2, "0");
+    await page.request.post("/api/companies", { headers: { Origin: origin }, data: { name: `Bulk Co ${n}`, domain: `bulk-co-${n}.de`, country: "Austria" } });
+  }
+  await page.goto("/companies?q=bulk");
+  await expect(page.locator(".chip", { hasText: "Name/domain: bulk" })).toBeVisible();
+  await expect(page.getByText("1–50 of 55")).toBeVisible();
+  await page.getByRole("button", { name: "Next page" }).click();
+  await expect(page.getByText("51–55 of 55")).toBeVisible();
+  await page.getByRole("button", { name: "Previous page" }).click();
+  await page.getByRole("button", { name: /^Name/ }).click(); // sort descending
+  await expect(page.locator("tbody tr").first()).toContainText("Bulk Co 55");
+  await page.reload();
+  await expect(page.locator(".chip", { hasText: "Name/domain: bulk" })).toBeVisible(); // survived the reload
+  await expect(page.getByText("1–50 of 55")).toBeVisible();
+  await page.getByRole("checkbox", { name: "Select Bulk Co 01" }).check();
+  await page.getByRole("checkbox", { name: "Select Bulk Co 02" }).check();
+  const bar = page.getByRole("region", { name: "Bulk actions" });
+  await expect(bar).toContainText("2 selected");
+  await bar.getByLabel("New stage").selectOption("qualified");
+  await expect(page.getByText("2 lead(s) moved to qualified.")).toBeVisible();
+  const q = await (await page.request.get("/api/leads?q=bulk&stage=qualified")).json();
+  expect(q.leads.map((l) => l.name).sort()).toEqual(["Bulk Co 01", "Bulk Co 02"]);
+  await page.getByRole("button", { name: "Remove filter Name/domain" }).click();
+  await expect(page).toHaveURL(/\/companies$/);
+});
+
+test("company page: header, counted tabs, contact dialogs, add to compose list", async () => {
+  const leads = await (await page.request.get("/api/leads?q=alpha")).json();
+  await page.goto(`/companies/${leads.leads[0].id}`);
+  await expect(page.getByRole("heading", { name: "E2E Alpha Robotics" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^Contacts \(1\)$/ })).toBeVisible();
+  await page.getByRole("tab", { name: /^Contacts/ }).click();
+  await page.getByRole("button", { name: "Add contact" }).click();
+  const d = page.getByRole("dialog", { name: "Add contact" });
+  await d.getByLabel("Name").fill("Hanna Recruiter");
+  await d.getByLabel("Email", { exact: true }).fill("hanna@e2e-alpha-robotics.de");
+  await d.getByRole("button", { name: "Save contact" }).click();
+  await expect(page.getByRole("tab", { name: /^Contacts \(2\)$/ })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "hanna@e2e-alpha-robotics.de" })).toBeVisible();
+  await page.getByRole("row", { name: /Hanna Recruiter/ }).getByRole("button", { name: "Edit" }).click();
+  await page.getByRole("dialog").getByLabel("Role").fill("Talent lead");
+  await page.getByRole("dialog").getByRole("button", { name: "Save contact" }).click();
+  await expect(page.getByRole("cell", { name: "Talent lead" })).toBeVisible();
+  await page.getByRole("button", { name: "Add to compose list" }).click();
+  await expect(page.locator(".toast", { hasText: "compose list" })).toBeVisible();
+});
+
+test("duplicates: pair side by side, merge through the UI, then undo", async () => {
+  const origin = new URL(page.url()).origin;
+  await page.request.post("/api/companies", { headers: { Origin: origin }, data: { name: "Dupe Labs", domain: "dupe-labs.de" } });
+  await page.request.post("/api/companies", { headers: { Origin: origin }, data: { name: "Dupe Labs Careers", domain: "jobs.dupe-labs.de" } });
+  await page.goto("/duplicates");
+  const pair = page.locator("[data-pair]", { hasText: "Dupe Labs Careers" });
+  await expect(pair).toContainText("same domain");
+  await pair.getByRole("button", { name: "Keep left" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Merge" }).click();
+  await expect(page.getByText(/^Merged/)).toBeVisible();
+  const row = page.getByRole("row", { name: /Dupe Labs/ }).first();
+  await row.getByRole("button", { name: "Undo" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Undo merge" }).click();
+  await expect(page.getByRole("row", { name: /Dupe Labs/ }).first()).toContainText("undone");
 });
 
 test("shell: every sidebar link opens its page inside the app shell", async () => {
