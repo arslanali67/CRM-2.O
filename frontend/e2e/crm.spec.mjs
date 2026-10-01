@@ -1,5 +1,6 @@
 // M31 browser E2E against the isolated stack (`make e2e`): sending OFF, no Gmail account, test-only owner.
 // Runs in order; each step builds on the previous one (import -> compose -> approve).
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { sql } from "./seed.mjs";
@@ -606,4 +607,77 @@ test("F8 setup: one sub-nav for the six pages, the checklist ticks itself and ca
   await expect(p.getByRole("navigation", { name: "Setup" })).toBeVisible();
   expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await ctx.close();
+});
+
+// F9: every page at phone and desktop width, light and dark: no crash, no console error, no horizontal scroll,
+// no serious or critical axe violation. Reports every problem in one failure so they can be fixed together.
+async function routes() {
+  const j = async (u) => { const r = await page.request.get(u); return r.ok() ? r.json() : null; };
+  const first = (x, ...keys) => { for (const k of keys) if (Array.isArray(x?.[k])) return x[k][0]; return Array.isArray(x) ? x[0] : undefined; };
+  const company = first(await j("/api/leads"), "leads");
+  const detail = company && await j(`/api/companies/${company.id}`);
+  const contact = first(detail, "contacts");
+  const tpl = first(await j("/api/templates"), "templates");
+  const opp = first(await j("/api/opportunities"), "opportunities");
+  const mail = first(await j("/api/outbox"), "emails");
+  const msg = first(await j("/api/inbox"), "messages", "items");
+  return ["/", "/companies", "/compose", "/outbox", "/inbox", "/opportunities", "/interviews", "/tasks", "/analytics", "/history",
+    "/templates", "/import", "/duplicates", "/settings", "/email-account", "/profile", "/do-not-contact", "/backup", "/activity", "/notifications",
+    company && `/companies/${company.id}`, contact && `/contacts/${contact.id}`, tpl && `/templates/${tpl.id}`,
+    opp && `/opportunities/${opp.id}`, mail && `/outbox/${mail.id}`, msg?.thread_key && `/threads/${encodeURIComponent(msg.thread_key)}`].filter(Boolean);
+}
+
+test("F9 sweep: every page, phone and desktop, light and dark", async ({ browser }) => {
+  test.setTimeout(600_000);
+  const list = await routes();
+  expect(list.length).toBeGreaterThanOrEqual(20);
+  const problems = [];
+  for (const [w, h, theme] of [[390, 800, "light"], [1280, 800, "dark"]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, storageState: await page.context().storageState() });
+    await ctx.addInitScript((t) => { try { localStorage.setItem("theme", t); } catch {} }, theme);
+    const p = await ctx.newPage();
+    const errors = [];
+    p.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+    p.on("pageerror", (e) => errors.push(String(e)));
+    for (const route of list) {
+      errors.length = 0;
+      await p.goto(route);
+      await p.locator(".content h1, .content h2").first().waitFor({ timeout: 15000 }).catch(() => problems.push(`${route} [${w}/${theme}]: no heading`));
+      await p.waitForTimeout(400);
+      const body = await p.textContent("body");
+      if (body.includes("This page couldn’t load")) problems.push(`${route} [${w}/${theme}]: crashed`);
+      if (errors.length) problems.push(`${route} [${w}/${theme}]: console ${errors.join(" | ").slice(0, 160)}`);
+      if (await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) problems.push(`${route} [${w}/${theme}]: horizontal scroll`);
+      const res = await new AxeBuilder({ page: p }).analyze();
+      for (const v of res.violations.filter((x) => ["serious", "critical"].includes(x.impact)))
+        problems.push(`${route} [${w}/${theme}]: axe ${v.id} (${v.impact}) x${v.nodes.length}: ${v.nodes[0].target.join(" ")}`);
+    }
+    await ctx.close();
+  }
+  expect(problems, problems.join("\n")).toEqual([]);
+});
+
+test("F9 keyboard: skip link, Tab reaches the sidebar, dialogs trap focus, close on Escape and return focus", async () => {
+  await page.goto("/tasks");
+  await page.keyboard.press("Tab");
+  const skip = page.getByRole("link", { name: "Skip to content" });
+  await expect(skip).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#content$/);
+  await expect.poll(() => page.evaluate(() => document.activeElement.id)).toBe("content");   // focus moves to the page
+
+  await page.request.post("/api/tasks", { headers: { Origin: new URL(page.url()).origin }, data: { title: "E2E keyboard task" } });
+  await page.goto("/tasks");
+  const trigger = page.getByRole("button", { name: "Delete task E2E keyboard task" });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  for (let i = 0; i < 6; i++) {                                           // Tab never leaves the dialog
+    await page.keyboard.press("Tab");
+    expect(await page.evaluate(() => !!document.activeElement.closest(".dialog"))).toBe(true);
+  }
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
 });

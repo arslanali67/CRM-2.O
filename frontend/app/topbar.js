@@ -231,6 +231,7 @@ export default function Shell({ children }) {
 
   return (
     <div className={`shell${navOpen ? " nav-open" : ""}`}>
+      <a href="#content" className="skip-link">Skip to content</a>
       <nav className="sidebar" aria-label="Main">
         <Link href="/" className="brand"><span className="brand-mark">JO</span>Job Outreach</Link>
         {NAV.map(([group, links]) => (
@@ -261,7 +262,7 @@ export default function Shell({ children }) {
           <ThemeToggle />
           <Account />
         </header>
-        <div className="content">
+        <div className="content" id="content" tabIndex={-1}>
           {inSetup(path) ? (
             <div className="setup-layout">
               <nav className="setup-nav" aria-label="Setup">

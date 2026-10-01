@@ -122,7 +122,7 @@ export default function Profile() {
         <h2 style={{ marginTop: 0 }}>CV versions</h2>
         <form onSubmit={upload} style={{ display: "grid", gap: 8 }}>
           <input name="label" placeholder="Label, e.g. Backend CV 2026" required />
-          <input name="file" type="file" accept="application/pdf" required />
+          <input name="file" aria-label="CV PDF file" type="file" accept="application/pdf" required />
           <button type="submit">Upload PDF (max 5 MB)</button>
           {cvMsg && <p role="status">{cvMsg}</p>}
         </form>

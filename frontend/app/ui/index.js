@@ -73,7 +73,27 @@ export function ago(ts) {
 export const TableWrap = ({ children }) => <div className="table-wrap">{children}</div>;
 
 // A modal for forms (Add company, Edit contact…). Closes on Escape or a click outside.
+// F9: while a dialog is open Tab cycles inside it, and closing it returns focus to what opened it.
+function useFocusTrap(active) {
+  useEffect(() => {
+    if (!active) return;
+    const opener = document.activeElement;
+    const onKey = (e) => {
+      if (e.key !== "Tab") return;
+      const f = [...document.querySelectorAll(".dialog button, .dialog input, .dialog select, .dialog textarea, .dialog a[href]")].filter((x) => !x.disabled && x.offsetParent);
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (!document.querySelector(".dialog")?.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+      else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); if (opener?.isConnected) opener.focus(); };
+  }, [active]);
+}
+
 export function Modal({ title, onClose, children, wide }) {
+  useFocusTrap(true);
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
@@ -107,6 +127,7 @@ export function DialogProvider({ children }) {
     setD({ ...opts, resolve });
   }), []);
   const close = (result) => { d?.resolve(result); setD(null); };
+  useFocusTrap(!!d);
 
   useEffect(() => {
     if (!d) return;

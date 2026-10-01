@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.47
+- **Spec version:** 1.48
 - **Last updated:** 2026-09-28
 
 ---
@@ -429,6 +429,11 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **First-run checklist** on the dashboard until all steps are done: connect Gmail, fill in the profile, upload a CV, create a template, import companies; each step links to its page, ticks itself from existing API data, and can be dismissed.
   - Done when: E2E proves the sub-nav switches pages, the checklist ticks as steps are completed and can be dismissed, and the layout works at phone width; all existing tests pass.
 - **F9 Quality pass.** Mobile layout and accessibility (keyboard, labels, contrast) on every page; consistent states; E2E extended to every page.
+  - Frontend and tests only; no backend change. One new dev-only dependency, `@axe-core/playwright`, used in E2E tests and never shipped in the app (approved by the owner, so the F1 "no new dependencies" decision gets this one test-only exception).
+  - **Sweep test:** one E2E test visits every page (about 30 routes, with seeded detail pages) at phone and desktop width, in light and dark; it fails on a crashed page, a console error, or horizontal scroll.
+  - **Accessibility:** the same sweep runs axe-core (labels, accessible names, contrast, landmarks); I fix what it finds: unlabeled inputs, missing button names, low contrast, a visible focus ring, a skip-to-content link, consistent loading / empty / error states.
+  - **Keyboard tests:** Tab reaches the sidebar and main content; a dialog opens, traps focus, closes on Escape and returns focus to its trigger.
+  - Done when: the sweep and keyboard tests pass in CI with no axe violations of serious or critical impact (anything lower is listed in the change log), and all existing tests pass.
 
 ### Phase 3: Extend (Later)
 
@@ -544,3 +549,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-10-01 | 1.45 | F6 detailed: stage chip strip, By-stage and Table views, open/closed switch, AI-suggestion accept; opportunity page with stepper and history timeline; Interviews grouped by day with both time zones. | Owner |
 | 2026-10-01 | 1.46 | F7 detailed: Research tab status header, grouped claim cards with inline reword, facts table with Add dialog, pages-read table; Compose coverage line for personalization. | Owner |
 | 2026-10-01 | 1.47 | F8 detailed: shared Setup layout and sub-nav, six restyled pages, dismissible first-run checklist on the dashboard; frontend only. | Owner |
+| 2026-10-01 | 1.48 | F9 detailed: every-page sweep (phone/desktop, light/dark), axe-core accessibility checks (new dev-only dependency @axe-core/playwright), fixes, keyboard tests. | Owner |
