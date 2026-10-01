@@ -52,6 +52,7 @@ const DOT = { high: "var(--danger)", normal: "var(--accent)", low: "var(--muted)
 
 export async function openNotification(n, router) {
   await fetch(`/api/notifications/${n.id}/read`, { method: "POST" });
+  announceChange();
   router.push(n.link);
 }
 
@@ -118,13 +119,17 @@ function useClickAway(ref, onAway) {
   }, [ref, onAway]);
 }
 
+// Counts refresh on a timer, and at once when a page announces a change (e.g. "Mark all read").
+export const announceChange = () => window.dispatchEvent(new Event("crm:changed"));
+
 function usePoll(url, ms, path) {
   const [data, setData] = useState(null);
   useEffect(() => {
     const load = () => fetch(url).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => {});
     load();
     const t = setInterval(load, ms);
-    return () => clearInterval(t);
+    window.addEventListener("crm:changed", load);
+    return () => { clearInterval(t); window.removeEventListener("crm:changed", load); };
   }, [url, ms, path]);
   return data;
 }

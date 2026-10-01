@@ -2,6 +2,7 @@
 // Runs in order; each step builds on the previous one (import -> compose -> approve).
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { sql } from "./seed.mjs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -213,6 +214,72 @@ test("template page: live preview follows typing and flags an unresolved variabl
   await page.goto("/history");
   await expect(page.getByRole("heading", { name: "Email history" })).toBeVisible();
   await expect(page.getByRole("tab", { name: /^all \(\d+\)$/ })).toBeVisible();
+});
+
+test("inbox: counted label tabs, two panes, selection kept in the URL, links from emails stay plain text", async () => {
+  const company = sql("SELECT id FROM companies WHERE name = 'E2E Alpha Robotics'");
+  const body = "Hello, we would love to talk. Please book a slot at https://cal.example.com/alpha/intro and send your CV.";
+  const mid = sql(`INSERT INTO inbound_messages (gmail_msgid, mailbox, from_email, from_name, subject, body_text, relevance, label, company_id, received_at)
+    VALUES ('e2e-reply-1', 'all', 'anna@e2e-alpha-robotics.de', 'Anna Schmidt', 'Re: Hello E2E Alpha', '${body}', 'reply_header', 'reply', ${company}, now())
+    RETURNING id`).split("\n")[0];
+  sql(`INSERT INTO ai_analyses (inbound_message_id, status, model, prompt_version, label, label_evidence, summary, extracted)
+    VALUES (${mid}, 'ok', 'fake', 1, 'interview_request', 'We would love to talk.', 'Alpha invites you to book an intro call.',
+    '{"links": [{"url": "https://cal.example.com/alpha/intro", "purpose": "booking", "evidence": "book a slot at https://cal.example.com/alpha/intro"}], "dates": [], "documents": [{"document": "cv", "evidence": "send your CV"}], "contacts": []}')`);
+  const list = await (await page.request.get("/api/inbox")).json();
+  const replies = list.filter((m) => m.label === "reply").length;
+  await page.goto("/inbox");
+  await expect(page.getByRole("tab", { name: new RegExp(`^all \\(${list.length}\\)$`) })).toBeVisible();
+  await expect(page.getByRole("tab", { name: new RegExp(`^replies \\(${replies}\\)$`) })).toBeVisible();
+  await page.getByRole("tab", { name: /^replies/ }).click();
+  await expect(page).toHaveURL(/label=reply/);
+  await page.getByRole("button", { name: /Anna Schmidt/ }).click();
+  await expect(page).toHaveURL(new RegExp(`m=${mid}`));
+  const pane = page.getByRole("region", { name: "Message" });
+  await expect(pane.getByRole("heading", { name: "Re: Hello E2E Alpha" })).toBeVisible();
+  await expect(pane.locator("[data-ai-label]")).toHaveText("interview request");
+  await expect(pane.getByText("Alpha invites you to book an intro call.")).toBeVisible();
+  // untrusted-link rule: the URL is shown as plain text, never as a link
+  await expect(pane.locator("code", { hasText: "https://cal.example.com/alpha/intro" })).toBeVisible();
+  await expect(page.locator('a[href*="cal.example.com"]')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Message" }).getByRole("heading", { name: "Re: Hello E2E Alpha" })).toBeVisible(); // survived the reload
+  await page.getByRole("link", { name: "Open conversation" }).click();
+  await expect(page).toHaveURL(new RegExp(`/threads/.*#in-${mid}`));
+  await expect(page.locator(`#in-${mid}.target`)).toBeVisible(); // deep link highlights the message
+  await expect(page.getByText("The system never replies on its own.")).toBeVisible();
+});
+
+test("notifications: grouped by day, mark one read, then all, and the bell follows", async () => {
+  const company = sql("SELECT id FROM companies WHERE name = 'E2E Alpha Robotics'");
+  sql(`INSERT INTO notifications (kind, source_type, source_id, priority, title, body, link, company_id)
+    VALUES ('reply', 'inbound_message', 'e2e-n1', 'normal', 'Reply from Anna E2E', 'Re: Hello', '/inbox', ${company}),
+           ('reply', 'inbound_message', 'e2e-n2', 'high', 'Second E2E reply', 'Re: Again', '/inbox', ${company})`);
+  await page.goto("/notifications");
+  await expect(page.getByRole("heading", { name: "Today" })).toBeVisible();
+  const bell = page.getByRole("button", { name: /^Notifications: \d+ unread$/ });
+  const before = Number((await bell.getAttribute("aria-label")).match(/\d+/)[0]);
+  expect(before).toBeGreaterThanOrEqual(2);
+  await page.getByRole("tab", { name: "unread" }).click();
+  await page.getByRole("button", { name: /Reply from Anna E2E/ }).click(); // marks it read and opens its link
+  await expect(page).toHaveURL(/\/inbox/);
+  await page.goto("/notifications");
+  await expect(page.getByRole("button", { name: /^Notifications: \d+ unread$/ })).toHaveAttribute("aria-label", `Notifications: ${before - 1} unread`);
+  await page.getByRole("button", { name: "Mark all read" }).click();
+  await expect(page.getByRole("button", { name: "Notifications: 0 unread" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark all read" })).toBeDisabled();
+});
+
+test("inbox on a phone: the list first, then the message with a Back button", async ({ browser }) => {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, storageState: await page.context().storageState() });
+  const p = await ctx.newPage();
+  await p.goto("/inbox");
+  await expect(p.getByRole("region", { name: "Message" })).toBeHidden();
+  await p.getByRole("button", { name: /Anna Schmidt/ }).first().click();
+  await expect(p.getByRole("region", { name: "Message" })).toBeVisible();
+  await expect(p.getByRole("region", { name: "Messages" })).toBeHidden();
+  await p.getByRole("button", { name: "← Back to list" }).click();
+  await expect(p.getByRole("region", { name: "Messages" })).toBeVisible();
+  await ctx.close();
 });
 
 test("analytics: the page loads with its breakdowns", async () => {

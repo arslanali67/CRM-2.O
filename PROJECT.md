@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.43
+- **Spec version:** 1.44
 - **Last updated:** 2026-09-28
 
 ---
@@ -405,6 +405,12 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **History:** sent emails table with status and bounce badges, search, links to the email and the conversation.
   - Done when: E2E proves the live preview updates while typing and flags an unresolved variable, the Compose stepper creates drafts end to end, Outbox tab counts equal the API, the email page shows all 12 checks and approving there queues exactly that email, the sending dialog appears, History lists sent emails; phone layout and both themes; all existing tests including S1–S12 pass.
 - **F5 Inbox & threads.** Two-pane inbox (list + reading pane) with labels and AI analysis panel; conversation view; notifications page.
+  - Frontend only (existing Inbox, thread, analysis and notification APIs).
+  - **Inbox, two panes:** left list with search and label tabs with counts (all, replies, auto-replies, bounces, unrelated); rows show sender, subject, snippet, label and AI-label badges, attachment and spam marks, relative time; selected row highlighted, replies emphasised; arrow keys move through the list; right reading pane with header (subject, from → to, time, company link, open conversation, Create opportunity for replies), the AI analysis panel (label + evidence quote, summary, dates / links / documents / contacts each with its quote) and the body. Phone: list first, then the pane with a Back button. The selected message is kept in the URL. Sync status as a compact strip (last sync, examined / stored counts, Sync now, red errors) and an AI status line linking to Settings.
+  - **Conversation page:** chat-style timeline (own emails one side, replies the other) with who/when/status/label headers; a notification deep link `#in-<id>` still scrolls to and clearly highlights that message (readable in both themes); side card with company, contact and opportunity (or Create opportunity); the text "The system never replies on its own" stays.
+  - **Notifications:** grouped by day, unread/all switch, priority dot and kind icon, Mark all read, empty state; clicking one still marks it read and opens its link.
+  - **Untrusted-link rule unchanged:** links found by the AI in emails are plain text, never clickable.
+  - Done when: E2E (with a reply and its analysis inserted into the test database) proves label tabs and counts equal the API, selecting a message shows body and analysis and the selection survives a reload, the thread deep link highlights its message, notifications mark one read then all read with the bell badge updating, an email-derived link is never an `<a>`; phone layout and both themes; all existing tests pass.
 - **F6 Pipeline.** Opportunities grouped by stage (lists), opportunity page, Interviews page (upcoming/past timeline).
 - **F7 Research & personalization.** Research tab (facts / claims / scraped) and AI-sentence review in the Outbox, polished.
 - **F8 Setup area.** Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity in one layout; first-run checklist (connect Gmail, profile, CV, template, import).
@@ -520,3 +526,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.41 | F2 detailed: dashboard with needs-attention strip, clickable KPI cards, SVG sent-per-day chart, replies / tasks / activity panels, next interview, system status; E2E compares every KPI with the API. | Owner |
 | 2026-09-30 | 1.42 | F3 detailed: leads filter panel with URL-kept chips, sortable paged table, bulk bar; company header + counted tabs; contact page; 3-step import wizard; side-by-side duplicates; E2E for each. | Owner |
 | 2026-10-01 | 1.43 | F4 detailed: read-only POST /templates/preview for unsaved text; two-column template editor with live preview and version reuse; Compose stepper; Outbox sending card, counted tabs, email page with 12-check panel; History table. | Owner |
+| 2026-10-01 | 1.44 | F5 detailed: two-pane inbox with counted label tabs, keyboard navigation and URL-kept selection; analysis panel; chat-style conversation page with deep-link highlight; day-grouped notifications; links from emails stay plain text. | Owner |
