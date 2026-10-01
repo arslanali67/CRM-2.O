@@ -95,7 +95,7 @@ def load(conn, opportunity_id: int) -> dict:
 
 
 @router.post("/opportunities", status_code=201)
-def create(body: OpportunityIn, conn=Depends(get_db)):
+def create(body: OpportunityIn, conn=Depends(get_db, scope="function")):
     if body.inbound_message_id is not None:
         m = conn.execute("SELECT id, label, company_id, contact_id FROM inbound_messages WHERE id = %s",
                          (body.inbound_message_id,)).fetchone()
@@ -124,7 +124,7 @@ def create(body: OpportunityIn, conn=Depends(get_db)):
 
 
 @router.get("/opportunities")
-def list_opportunities(stage: Stage | None = None, company_id: int | None = None, conn=Depends(get_db)):
+def list_opportunities(stage: Stage | None = None, company_id: int | None = None, conn=Depends(get_db, scope="function")):
     rows = conn.execute(OPP_SELECT + "WHERE (%(s)s::text IS NULL OR o.stage = %(s)s) "
                         "AND (%(c)s::bigint IS NULL OR o.company_id = %(c)s) ORDER BY o.stage_changed_at DESC, o.id DESC",
                         {"s": stage, "c": company_id}).fetchall()
@@ -136,7 +136,7 @@ def list_opportunities(stage: Stage | None = None, company_id: int | None = None
 
 
 @router.get("/opportunities/{opportunity_id}")
-def get_opportunity(opportunity_id: int, conn=Depends(get_db)):
+def get_opportunity(opportunity_id: int, conn=Depends(get_db, scope="function")):
     o = load(conn, opportunity_id)
     o["history"] = conn.execute("SELECT * FROM opportunity_stage_history WHERE opportunity_id = %s ORDER BY id",
                                 (opportunity_id,)).fetchall()
@@ -145,7 +145,7 @@ def get_opportunity(opportunity_id: int, conn=Depends(get_db)):
 
 
 @router.post("/opportunities/{opportunity_id}/stage")
-def change_stage(opportunity_id: int, body: StageIn, conn=Depends(get_db)):
+def change_stage(opportunity_id: int, body: StageIn, conn=Depends(get_db, scope="function")):
     o = load(conn, opportunity_id)
     if set_stage(conn, opportunity_id, body.stage, body.reason or "changed by owner"):
         audit(conn, "opportunity.stage_changed", "company", o["company_id"],
@@ -154,7 +154,7 @@ def change_stage(opportunity_id: int, body: StageIn, conn=Depends(get_db)):
 
 
 @router.put("/opportunities/{opportunity_id}")
-def edit(opportunity_id: int, body: EditIn, conn=Depends(get_db)):
+def edit(opportunity_id: int, body: EditIn, conn=Depends(get_db, scope="function")):
     o = load(conn, opportunity_id)
     if body.contact_id and not conn.execute("SELECT 1 FROM contacts WHERE id = %s AND company_id = %s",
                                             (body.contact_id, o["company_id"])).fetchone():

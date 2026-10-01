@@ -172,7 +172,7 @@ def company_or_404(conn, company_id: int) -> dict:
 
 
 @router.get("/companies/{company_id}/research")
-def research(company_id: int, conn=Depends(get_db)):
+def research(company_id: int, conn=Depends(get_db, scope="function")):
     c = company_or_404(conn, company_id)
     scraped = {k: c[k] for k in ("website", "industry", "linkedin_url", "description") if c[k]}
     scraped.update((c["source_detail"] or {}).get("scraped", {}))
@@ -189,7 +189,7 @@ def research(company_id: int, conn=Depends(get_db)):
 
 
 @router.post("/companies/{company_id}/research")
-def run(company_id: int, conn=Depends(get_db)):
+def run(company_id: int, conn=Depends(get_db, scope="function")):
     c = company_or_404(conn, company_id)
     if not c["domain"]:
         raise HTTPException(422, "This company has no domain; add its website first")
@@ -230,7 +230,7 @@ def run(company_id: int, conn=Depends(get_db)):
 
 
 @router.post("/claims/{claim_id}/reject")
-def reject(claim_id: int, conn=Depends(get_db)):
+def reject(claim_id: int, conn=Depends(get_db, scope="function")):
     c = conn.execute("UPDATE ai_claims SET status = 'rejected', decided_at = now() WHERE id = %s AND status = 'open' "
                      "RETURNING company_id, claim", (claim_id,)).fetchone()
     if not c:

@@ -47,7 +47,7 @@ def target(body: SuppressionIn, conn) -> dict:
 
 
 @router.get("/suppressions")
-def list_suppressions(conn=Depends(get_db)):
+def list_suppressions(conn=Depends(get_db, scope="function")):
     return conn.execute(
         "SELECT s.*, c.name AS company_name FROM suppressions s LEFT JOIN companies c ON c.id = s.company_id "
         "ORDER BY s.lifted_at IS NOT NULL, s.created_at DESC, s.id DESC"
@@ -55,7 +55,7 @@ def list_suppressions(conn=Depends(get_db)):
 
 
 @router.post("/suppressions", status_code=201)
-def add_suppression(body: SuppressionIn, conn=Depends(get_db)):
+def add_suppression(body: SuppressionIn, conn=Depends(get_db, scope="function")):
     t = target(body, conn)
     with conflict_as_409("This is already blocked"):
         row = conn.execute(
@@ -75,7 +75,7 @@ def add_suppression(body: SuppressionIn, conn=Depends(get_db)):
 
 
 @router.post("/suppressions/{suppression_id}/lift")
-def lift_suppression(suppression_id: int, body: LiftIn, conn=Depends(get_db)):
+def lift_suppression(suppression_id: int, body: LiftIn, conn=Depends(get_db, scope="function")):
     s = conn.execute("SELECT * FROM suppressions WHERE id = %s", (suppression_id,)).fetchone()
     if not s:
         raise HTTPException(404, "Block not found")
@@ -90,5 +90,5 @@ def lift_suppression(suppression_id: int, body: LiftIn, conn=Depends(get_db)):
 
 
 @router.get("/suppressions/check")
-def check(email: str, conn=Depends(get_db)):
+def check(email: str, conn=Depends(get_db, scope="function")):
     return {"email": email, "suppressed": conn.execute("SELECT is_suppressed(%s)", (email,)).fetchone()["is_suppressed"]}

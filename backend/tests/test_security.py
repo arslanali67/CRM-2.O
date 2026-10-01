@@ -212,3 +212,46 @@ def test_uvicorn_access_log_still_formats_after_redaction():
         logger.level = level
     text = stream.getvalue()
     assert "a***@acme.de" in text and "anna@" not in text and "200" in text and "Arguments" not in text
+
+
+# ---------- F5: data is committed before the response reaches the browser ----------
+
+def test_changes_are_committed_before_the_response_is_sent(client, monkeypatch):
+    """Regression: with a request-scoped yield dependency FastAPI commits AFTER sending the response, so a browser that
+    reloads on 'success' could read stale data (found by the E2E bulk-stage test in CI)."""
+    import psycopg
+    from psycopg.rows import dict_row
+
+    from app import deps
+    events = []
+
+    class Spy(psycopg.Connection):
+        def commit(self):
+            events.append("commit")
+            super().commit()
+
+    class SpyPsycopg:  # only .connect is used by deps.get_db
+        @staticmethod
+        def connect(url, **kw):
+            return Spy.connect(url, **kw)
+    monkeypatch.setattr(deps, "psycopg", SpyPsycopg)
+
+    async def watcher(scope, receive, send):
+        async def spy_send(message):
+            if message["type"] == "http.response.start":
+                events.append("response-start")
+            await send(message)
+        await app(scope, receive, spy_send)
+
+    session = {"cookie": client.cookies.get("crm_session")}
+    c = TestClient(watcher, cookies={"crm_session": session["cookie"]})
+    assert c.post("/companies", json={"name": "Commit First"}).status_code == 201
+    assert "commit" in events and events.index("commit") < events.index("response-start"), events
+
+
+def test_every_route_uses_the_function_scoped_database_dependency():
+    import re
+    from pathlib import Path
+    for path in (Path(__file__).resolve().parent.parent / "app").glob("*.py"):
+        assert not re.search(r"Depends\(get_db\)", path.read_text(encoding="utf-8")), \
+            f'{path.name}: use Depends(get_db, scope="function") so data is committed before the response is sent'

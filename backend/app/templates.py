@@ -77,13 +77,13 @@ def list_variables():
 
 
 @router.get("/templates")
-def list_templates(archived: bool = False, conn=Depends(get_db)):
+def list_templates(archived: bool = False, conn=Depends(get_db, scope="function")):
     return conn.execute(current_versions_sql("(t.archived_at IS NOT NULL) = %s") + " ORDER BY lower(t.name), t.id",
                         (archived,)).fetchall()
 
 
 @router.post("/templates", status_code=201)
-def create_template(body: TemplateIn, conn=Depends(get_db)):
+def create_template(body: TemplateIn, conn=Depends(get_db, scope="function")):
     with conflict_as_409(f"An active template is already named {body.name!r}"):
         t = conn.execute("INSERT INTO templates (name) VALUES (%s) RETURNING *", (body.name,)).fetchone()
     conn.execute("INSERT INTO template_versions (template_id, version, subject, body) VALUES (%s, 1, %s, %s)",
@@ -93,7 +93,7 @@ def create_template(body: TemplateIn, conn=Depends(get_db)):
 
 
 @router.get("/templates/{template_id}")
-def get_template(template_id: int, conn=Depends(get_db)):
+def get_template(template_id: int, conn=Depends(get_db, scope="function")):
     t = conn.execute("SELECT * FROM templates WHERE id = %s", (template_id,)).fetchone()
     if not t:
         raise HTTPException(404, "Template not found")
@@ -103,7 +103,7 @@ def get_template(template_id: int, conn=Depends(get_db)):
 
 
 @router.post("/templates/{template_id}/versions")
-def save_version(template_id: int, body: VersionIn, conn=Depends(get_db)):
+def save_version(template_id: int, body: VersionIn, conn=Depends(get_db, scope="function")):
     """Editing = a new immutable version. Saving identical content creates nothing."""
     current = get_template(template_id, conn)["versions"][0]
     if (current["subject"], current["body"]) == (body.subject, body.body):
@@ -116,7 +116,7 @@ def save_version(template_id: int, body: VersionIn, conn=Depends(get_db)):
 
 
 @router.put("/templates/{template_id}")
-def rename_template(template_id: int, body: RenameIn, conn=Depends(get_db)):
+def rename_template(template_id: int, body: RenameIn, conn=Depends(get_db, scope="function")):
     get_template(template_id, conn)
     with conflict_as_409(f"An active template is already named {body.name!r}"):
         conn.execute("UPDATE templates SET name = %s WHERE id = %s", (body.name, template_id))
@@ -125,7 +125,7 @@ def rename_template(template_id: int, body: RenameIn, conn=Depends(get_db)):
 
 
 @router.post("/templates/{template_id}/archive")
-def archive_template(template_id: int, conn=Depends(get_db)):
+def archive_template(template_id: int, conn=Depends(get_db, scope="function")):
     get_template(template_id, conn)
     conn.execute("UPDATE templates SET archived_at = now() WHERE id = %s", (template_id,))
     audit(conn, "template.archived", "template", template_id)
@@ -133,7 +133,7 @@ def archive_template(template_id: int, conn=Depends(get_db)):
 
 
 @router.post("/templates/{template_id}/restore")
-def restore_template(template_id: int, conn=Depends(get_db)):
+def restore_template(template_id: int, conn=Depends(get_db, scope="function")):
     get_template(template_id, conn)
     with conflict_as_409("Another active template now uses this name; rename it first"):
         conn.execute("UPDATE templates SET archived_at = NULL WHERE id = %s", (template_id,))
@@ -149,7 +149,7 @@ class DraftPreviewIn(BaseModel):
 
 
 @router.post("/templates/preview")
-def preview_unsaved(body: DraftPreviewIn, conn=Depends(get_db)):
+def preview_unsaved(body: DraftPreviewIn, conn=Depends(get_db, scope="function")):
     """F4: live preview of text that is not saved yet. Same strict rules as saved versions; writes nothing."""
     values, contact = variable_values(conn, body.company_id, body.contact_id)
     recipient = {k: contact[k] for k in ("id", "name", "email", "email_class")} if contact else None
@@ -165,7 +165,7 @@ def preview_unsaved(body: DraftPreviewIn, conn=Depends(get_db)):
 
 
 @router.post("/templates/{template_id}/preview")
-def preview(template_id: int, body: PreviewIn, conn=Depends(get_db)):
+def preview(template_id: int, body: PreviewIn, conn=Depends(get_db, scope="function")):
     """Render against a real lead. ok=False lists every unresolved variable; nothing is blank."""
     versions = get_template(template_id, conn)["versions"]
     v = versions[0] if body.version is None else next((x for x in versions if x["version"] == body.version), None)

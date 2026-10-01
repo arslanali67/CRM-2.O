@@ -61,7 +61,7 @@ def list_leads(
     replied_to: date | None = None,
     added_from: date | None = None,
     added_to: date | None = None,
-    conn=Depends(get_db),
+    conn=Depends(get_db, scope="function"),
 ):
     blank = lambda v: v.strip() if v and v.strip() else None  # noqa: E731
     rows = conn.execute(
@@ -155,7 +155,7 @@ def require_companies(conn, ids: list[int]) -> None:
 
 
 @router.post("/leads/stage")
-def set_stage(body: StageIn, conn=Depends(get_db)):
+def set_stage(body: StageIn, conn=Depends(get_db, scope="function")):
     """Bulk stage change. Each actual change is logged by the DB trigger."""
     require_companies(conn, body.company_ids)
     reason = body.close_reason if body.stage == "closed" else None
@@ -172,7 +172,7 @@ class ComposeIn(BaseModel):
 
 
 @router.get("/compose-list")
-def get_compose_list(conn=Depends(get_db)):
+def get_compose_list(conn=Depends(get_db, scope="function")):
     items = conn.execute(
         f"SELECT c.id AS company_id, c.name, c.domain, c.stage, cl.added_at, {BLOCKED_SQL} AS blocked "
         "FROM compose_list cl JOIN companies c ON c.id = cl.company_id ORDER BY cl.added_at, c.id"
@@ -186,7 +186,7 @@ def get_compose_list(conn=Depends(get_db)):
 
 
 @router.post("/compose-list")
-def add_to_compose_list(body: ComposeIn, conn=Depends(get_db)):
+def add_to_compose_list(body: ComposeIn, conn=Depends(get_db, scope="function")):
     ids = sorted(set(body.company_ids))
     require_companies(conn, ids)
     companies = {r["id"]: r for r in conn.execute(
@@ -211,7 +211,7 @@ def add_to_compose_list(body: ComposeIn, conn=Depends(get_db)):
 
 
 @router.delete("/compose-list/{company_id}")
-def remove_from_compose_list(company_id: int, conn=Depends(get_db)):
+def remove_from_compose_list(company_id: int, conn=Depends(get_db, scope="function")):
     if not conn.execute("DELETE FROM compose_list WHERE company_id = %s RETURNING company_id", (company_id,)).fetchone():
         raise HTTPException(404, "Not in the compose list")
     audit(conn, "compose_list.removed", "compose_list", None, {"company_ids": [company_id]})

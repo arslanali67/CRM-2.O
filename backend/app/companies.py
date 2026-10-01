@@ -124,7 +124,7 @@ def assignments(data: dict) -> str:
 # ---- companies ----
 
 @router.get("/companies")
-def list_companies(archived: bool = False, conn=Depends(get_db)):
+def list_companies(archived: bool = False, conn=Depends(get_db, scope="function")):
     return conn.execute(
         "SELECT c.*, count(ct.id) FILTER (WHERE ct.archived_at IS NULL) AS contact_count "
         "FROM companies c LEFT JOIN contacts ct ON ct.company_id = c.id "
@@ -134,7 +134,7 @@ def list_companies(archived: bool = False, conn=Depends(get_db)):
 
 
 @router.post("/companies", status_code=201)
-def create_company(body: CompanyIn, conn=Depends(get_db)):
+def create_company(body: CompanyIn, conn=Depends(get_db, scope="function")):
     data = body.model_dump()
     with conflict_as_409(f"An active company already uses the domain {data['domain']}"):
         row = conn.execute(
@@ -146,7 +146,7 @@ def create_company(body: CompanyIn, conn=Depends(get_db)):
 
 
 @router.get("/companies/{company_id}")
-def get_company(company_id: int, conn=Depends(get_db)):
+def get_company(company_id: int, conn=Depends(get_db, scope="function")):
     company = fetch(conn, "companies", company_id)
     block = conn.execute(
         "SELECT id, reason FROM suppressions WHERE kind = 'company' AND company_id = %s AND lifted_at IS NULL",
@@ -162,7 +162,7 @@ def get_company(company_id: int, conn=Depends(get_db)):
 
 
 @router.put("/companies/{company_id}")
-def update_company(company_id: int, body: CompanyIn, conn=Depends(get_db)):
+def update_company(company_id: int, body: CompanyIn, conn=Depends(get_db, scope="function")):
     fetch(conn, "companies", company_id)
     data = body.model_dump()
     with conflict_as_409(f"An active company already uses the domain {data['domain']}"):
@@ -175,12 +175,12 @@ def update_company(company_id: int, body: CompanyIn, conn=Depends(get_db)):
 
 
 @router.post("/companies/{company_id}/archive")
-def archive_company(company_id: int, conn=Depends(get_db)):
+def archive_company(company_id: int, conn=Depends(get_db, scope="function")):
     return set_archived(conn, "companies", company_id, True, "")
 
 
 @router.post("/companies/{company_id}/restore")
-def restore_company(company_id: int, conn=Depends(get_db)):
+def restore_company(company_id: int, conn=Depends(get_db, scope="function")):
     return set_archived(conn, "companies", company_id, False,
                         "Another active company now uses this domain; archive or change it first")
 
@@ -188,7 +188,7 @@ def restore_company(company_id: int, conn=Depends(get_db)):
 # ---- contacts ----
 
 @router.post("/companies/{company_id}/contacts", status_code=201)
-def create_contact(company_id: int, body: ContactIn, conn=Depends(get_db)):
+def create_contact(company_id: int, body: ContactIn, conn=Depends(get_db, scope="function")):
     fetch(conn, "companies", company_id)
     data = {**contact_row(body), "company_id": company_id}
     with conflict_as_409(f"An active contact already uses {data['email']}"):
@@ -201,7 +201,7 @@ def create_contact(company_id: int, body: ContactIn, conn=Depends(get_db)):
 
 
 @router.put("/contacts/{contact_id}")
-def update_contact(contact_id: int, body: ContactIn, conn=Depends(get_db)):
+def update_contact(contact_id: int, body: ContactIn, conn=Depends(get_db, scope="function")):
     fetch(conn, "contacts", contact_id)
     data = contact_row(body)
     with conflict_as_409(f"An active contact already uses {data['email']}"):
@@ -215,11 +215,11 @@ def update_contact(contact_id: int, body: ContactIn, conn=Depends(get_db)):
 
 
 @router.post("/contacts/{contact_id}/archive")
-def archive_contact(contact_id: int, conn=Depends(get_db)):
+def archive_contact(contact_id: int, conn=Depends(get_db, scope="function")):
     return set_archived(conn, "contacts", contact_id, True, "")
 
 
 @router.post("/contacts/{contact_id}/restore")
-def restore_contact(contact_id: int, conn=Depends(get_db)):
+def restore_contact(contact_id: int, conn=Depends(get_db, scope="function")):
     return set_archived(conn, "contacts", contact_id, False,
                         "Another active contact now uses this email; archive or change it first")

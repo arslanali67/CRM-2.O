@@ -63,7 +63,7 @@ def load_email(conn, email_id: int) -> dict:
 
 
 @router.post("/compose-list/drafts", status_code=201)
-def create_drafts(body: DraftsIn, conn=Depends(get_db)):
+def create_drafts(body: DraftsIn, conn=Depends(get_db, scope="function")):
     version = conn.execute(
         "SELECT tv.* FROM template_versions tv JOIN templates t ON t.id = tv.template_id "
         "WHERE t.id = %s AND t.archived_at IS NULL ORDER BY tv.version DESC LIMIT 1", (body.template_id,)).fetchone()
@@ -132,7 +132,7 @@ def create_drafts(body: DraftsIn, conn=Depends(get_db)):
 
 
 @router.get("/outbox")
-def outbox(status: str = "draft", conn=Depends(get_db)):
+def outbox(status: str = "draft", conn=Depends(get_db, scope="function")):
     if status not in OUTBOX_STATUSES:
         raise HTTPException(422, f"status must be one of {', '.join(OUTBOX_STATUSES)}")
     counts = {r["status"]: r["count"] for r in
@@ -148,7 +148,7 @@ def outbox(status: str = "draft", conn=Depends(get_db)):
 
 
 @router.get("/outbound-emails/{email_id}")
-def get_email(email_id: int, conn=Depends(get_db)):
+def get_email(email_id: int, conn=Depends(get_db, scope="function")):
     """The exact email as it will be sent, plus the safety check results for its next step."""
     e = load_email(conn, email_id)
     profile = conn.execute("SELECT full_name, email FROM profile WHERE id = 1").fetchone()
@@ -165,7 +165,7 @@ def get_email(email_id: int, conn=Depends(get_db)):
 
 
 @router.put("/outbound-emails/{email_id}")
-def edit_draft(email_id: int, body: DraftEdit, conn=Depends(get_db)):
+def edit_draft(email_id: int, body: DraftEdit, conn=Depends(get_db, scope="function")):
     e = load_email(conn, email_id)
     if e["status"] != "draft":
         raise HTTPException(409, "Only drafts can be edited; pull it back to draft first")
@@ -178,7 +178,7 @@ def edit_draft(email_id: int, body: DraftEdit, conn=Depends(get_db)):
 
 
 @router.post("/outbound-emails/{email_id}/approve")
-def approve_and_queue(email_id: int, body: ApproveIn, conn=Depends(get_db)):
+def approve_and_queue(email_id: int, body: ApproveIn, conn=Depends(get_db, scope="function")):
     """Approve exactly one email, exactly as displayed, and queue it. Failed checks are refused (422)."""
     current = conn.execute("SELECT encode(content_hash, 'hex') AS h, status FROM outbound_emails WHERE id = %s FOR UPDATE",
                            (email_id,)).fetchone()
@@ -195,7 +195,7 @@ def approve_and_queue(email_id: int, body: ApproveIn, conn=Depends(get_db)):
 
 
 @router.post("/outbound-emails/{email_id}/unqueue")
-def back_to_draft(email_id: int, conn=Depends(get_db)):
+def back_to_draft(email_id: int, conn=Depends(get_db, scope="function")):
     e = load_email(conn, email_id)
     if e["status"] not in ("approved", "queued"):
         raise HTTPException(409, f"Only approved or queued emails can go back to draft (this one is {e['status']})")
@@ -205,7 +205,7 @@ def back_to_draft(email_id: int, conn=Depends(get_db)):
 
 
 @router.post("/outbound-emails/{email_id}/discard")
-def discard(email_id: int, conn=Depends(get_db)):
+def discard(email_id: int, conn=Depends(get_db, scope="function")):
     e = load_email(conn, email_id)
     if e["status"] != "draft":
         raise HTTPException(409, "Only drafts can be discarded")

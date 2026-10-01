@@ -290,7 +290,7 @@ def analyse_pending() -> dict:
 # ---------- API ----------
 
 @router.get("/inbox/{message_id}/analysis")
-def read_analysis(message_id: int, conn=Depends(get_db)):
+def read_analysis(message_id: int, conn=Depends(get_db, scope="function")):
     a = get_analysis(conn, message_id)
     if not a:
         raise HTTPException(404, "Not analysed yet")
@@ -298,14 +298,14 @@ def read_analysis(message_id: int, conn=Depends(get_db)):
 
 
 @router.post("/inbox/{message_id}/analyse")
-def reanalyse(message_id: int, conn=Depends(get_db)):
+def reanalyse(message_id: int, conn=Depends(get_db, scope="function")):
     if not ai_config(conn)["enabled"]:
         raise HTTPException(409, "AI analysis is off: add GEMINI_API_KEY to .env or switch it on in Settings")
     return analyse_message(conn, message_id)
 
 
 @router.get("/ai/status")
-def ai_status(conn=Depends(get_db)):
+def ai_status(conn=Depends(get_db, scope="function")):
     counts = {r["status"]: r["count"] for r in conn.execute(
         "SELECT status, count(*) FROM ai_analyses GROUP BY status").fetchall()}
     pending = conn.execute("SELECT count(*) FROM inbound_messages m LEFT JOIN ai_analyses a "

@@ -43,7 +43,7 @@ def stamp() -> str:
 
 
 @router.get("/export/{kind}.csv")
-def export_csv(kind: str, conn=Depends(get_db)):
+def export_csv(kind: str, conn=Depends(get_db, scope="function")):
     if kind not in CSV_QUERIES:
         raise HTTPException(404, "Unknown export")
     cur = conn.execute(CSV_QUERIES[kind])
@@ -62,7 +62,7 @@ def jsonable(v):
 
 
 @router.get("/export/full.zip")
-def export_full(conn=Depends(get_db)):
+def export_full(conn=Depends(get_db, scope="function")):
     tables = [r["tablename"] for r in conn.execute(
         "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename").fetchall()]
     buf = io.BytesIO()

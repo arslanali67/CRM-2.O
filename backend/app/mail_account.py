@@ -79,12 +79,12 @@ def load(conn) -> dict | None:
 
 
 @router.get("/email-account")
-def get_account(conn=Depends(get_db)):
+def get_account(conn=Depends(get_db, scope="function")):
     return public(load(conn))
 
 
 @router.put("/email-account")
-def save_account(body: AccountIn, conn=Depends(get_db)):
+def save_account(body: AccountIn, conn=Depends(get_db, scope="function")):
     address = body.email_address.lower()
     if not EMAIL_RE.match(address):
         raise HTTPException(422, "Not a valid email address")
@@ -107,7 +107,7 @@ def save_account(body: AccountIn, conn=Depends(get_db)):
 
 
 @router.post("/email-account/test")
-def test_account(conn=Depends(get_db)):
+def test_account(conn=Depends(get_db, scope="function")):
     row = load(conn)
     if not row or row["password_encrypted"] is None:
         raise HTTPException(409, "No email account connected")
@@ -128,7 +128,7 @@ def test_account(conn=Depends(get_db)):
 
 
 @router.delete("/email-account")
-def disconnect(conn=Depends(get_db)):
+def disconnect(conn=Depends(get_db, scope="function")):
     if not load(conn):
         raise HTTPException(404, "No email account")
     conn.execute("UPDATE email_account SET password_encrypted = NULL, connected_at = NULL, last_test_ok = NULL "

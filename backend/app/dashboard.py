@@ -113,7 +113,7 @@ def feeds(conn, today: date) -> dict:
 
 
 @router.get("/dashboard")
-def dashboard(period: Literal["7", "30", "90", "all"] = "30", today: date | None = None, conn=Depends(get_db)):
+def dashboard(period: Literal["7", "30", "90", "all"] = "30", today: date | None = None, conn=Depends(get_db, scope="function")):
     started = time.perf_counter()
     since = since_for(period)
     out = {"period": period, "since": since, "kpis": kpis(conn, since), "sent_series": sent_series(conn, since),

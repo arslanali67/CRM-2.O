@@ -97,13 +97,13 @@ def zones():
 
 
 @router.get("/opportunities/{opportunity_id}/interviews")
-def for_opportunity(opportunity_id: int, conn=Depends(get_db)):
+def for_opportunity(opportunity_id: int, conn=Depends(get_db, scope="function")):
     return [shape(r) for r in conn.execute(SELECT + "WHERE i.opportunity_id = %s ORDER BY i.starts_at",
                                            (opportunity_id,)).fetchall()]
 
 
 @router.post("/opportunities/{opportunity_id}/interviews", status_code=201)
-def create(opportunity_id: int, body: InterviewIn, conn=Depends(get_db)):
+def create(opportunity_id: int, body: InterviewIn, conn=Depends(get_db, scope="function")):
     if not conn.execute("SELECT 1 FROM opportunities WHERE id = %s", (opportunity_id,)).fetchone():
         raise HTTPException(404, "Opportunity not found")
     check_location(body.location)
@@ -122,7 +122,7 @@ def create(opportunity_id: int, body: InterviewIn, conn=Depends(get_db)):
 
 
 @router.get("/interviews")
-def listing(when: Literal["upcoming", "past", "all"] = "upcoming", conn=Depends(get_db)):
+def listing(when: Literal["upcoming", "past", "all"] = "upcoming", conn=Depends(get_db, scope="function")):
     where = {"upcoming": "i.status = 'scheduled' AND i.starts_at > now() ORDER BY i.starts_at",
              "past": "NOT (i.status = 'scheduled' AND i.starts_at > now()) ORDER BY i.starts_at DESC",
              "all": "TRUE ORDER BY i.starts_at DESC"}[when]
@@ -130,12 +130,12 @@ def listing(when: Literal["upcoming", "past", "all"] = "upcoming", conn=Depends(
 
 
 @router.get("/interviews/{interview_id}")
-def detail(interview_id: int, conn=Depends(get_db)):
+def detail(interview_id: int, conn=Depends(get_db, scope="function")):
     return shape(load(conn, interview_id))
 
 
 @router.put("/interviews/{interview_id}")
-def edit(interview_id: int, body: InterviewIn, conn=Depends(get_db)):
+def edit(interview_id: int, body: InterviewIn, conn=Depends(get_db, scope="function")):
     old = load(conn, interview_id)
     check_location(body.location)
     starts = to_utc(body.local_start, body.time_zone)
@@ -150,7 +150,7 @@ def edit(interview_id: int, body: InterviewIn, conn=Depends(get_db)):
 
 
 @router.post("/interviews/{interview_id}/status")
-def set_status(interview_id: int, body: StatusIn, conn=Depends(get_db)):
+def set_status(interview_id: int, body: StatusIn, conn=Depends(get_db, scope="function")):
     old = load(conn, interview_id)
     conn.execute("UPDATE interviews SET status = %s, outcome = %s, sequence = sequence + 1, updated_at = now() "
                  "WHERE id = %s", (body.status, body.outcome, interview_id))
@@ -160,7 +160,7 @@ def set_status(interview_id: int, body: StatusIn, conn=Depends(get_db)):
 
 
 @router.get("/opportunities/{opportunity_id}/interview-suggestion")
-def suggestion(opportunity_id: int, conn=Depends(get_db)):
+def suggestion(opportunity_id: int, conn=Depends(get_db, scope="function")):
     """An interview date the AI found (with verified evidence) in this opportunity's replies. Prefill only."""
     o = conn.execute("SELECT * FROM opportunities WHERE id = %s", (opportunity_id,)).fetchone()
     if not o:
@@ -225,7 +225,7 @@ def ics(row: dict) -> str:
 
 
 @router.get("/interviews/{interview_id}/calendar.ics")
-def download_ics(interview_id: int, conn=Depends(get_db)):
+def download_ics(interview_id: int, conn=Depends(get_db, scope="function")):
     row = load(conn, interview_id)
     return Response(ics(row), media_type="text/calendar; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="interview-{interview_id}.ics"'})

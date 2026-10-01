@@ -75,14 +75,14 @@ def load_profile(conn) -> dict:
 
 
 @router.get("/profile")
-def get_profile(conn=Depends(get_db)):
+def get_profile(conn=Depends(get_db, scope="function")):
     p = load_profile(conn)
     p.pop("id")
     return p
 
 
 @router.put("/profile")
-def update_profile(body: ProfileIn, conn=Depends(get_db)):
+def update_profile(body: ProfileIn, conn=Depends(get_db, scope="function")):
     data = body.model_dump()
     for f in LIST_FIELDS:
         data[f] = [s for s in data[f] if s]
@@ -94,7 +94,7 @@ def update_profile(body: ProfileIn, conn=Depends(get_db)):
 
 
 @router.get("/profile/variables")
-def get_variables(conn=Depends(get_db)):
+def get_variables(conn=Depends(get_db, scope="function")):
     variables = resolve_variables(load_profile(conn))
     has_default_cv = conn.execute("SELECT EXISTS (SELECT 1 FROM cv_versions WHERE is_default)").fetchone()["exists"]
     return {
@@ -105,7 +105,7 @@ def get_variables(conn=Depends(get_db)):
 
 
 @router.get("/cv")
-def list_cvs(conn=Depends(get_db)):
+def list_cvs(conn=Depends(get_db, scope="function")):
     return conn.execute(
         "SELECT id, label, filename, octet_length(content) AS size_bytes, is_default, uploaded_at "
         "FROM cv_versions ORDER BY id DESC"
@@ -113,7 +113,7 @@ def list_cvs(conn=Depends(get_db)):
 
 
 @router.post("/cv", status_code=201)
-async def upload_cv(request: Request, label: str, filename: str = "cv.pdf", conn=Depends(get_db)):
+async def upload_cv(request: Request, label: str, filename: str = "cv.pdf", conn=Depends(get_db, scope="function")):
     """Raw PDF bytes in the body; label and filename as query parameters."""
     label = label.strip()
     if not 1 <= len(label) <= 100:
@@ -139,7 +139,7 @@ async def upload_cv(request: Request, label: str, filename: str = "cv.pdf", conn
 
 
 @router.post("/cv/{cv_id}/default")
-def set_default_cv(cv_id: int, conn=Depends(get_db)):
+def set_default_cv(cv_id: int, conn=Depends(get_db, scope="function")):
     if not conn.execute("SELECT 1 FROM cv_versions WHERE id = %s", (cv_id,)).fetchone():
         raise HTTPException(404, "CV version not found")
     conn.execute("UPDATE cv_versions SET is_default = false WHERE is_default AND id <> %s", (cv_id,))
@@ -149,7 +149,7 @@ def set_default_cv(cv_id: int, conn=Depends(get_db)):
 
 
 @router.get("/cv/{cv_id}/file")
-def download_cv(cv_id: int, conn=Depends(get_db)):
+def download_cv(cv_id: int, conn=Depends(get_db, scope="function")):
     row = conn.execute("SELECT filename, content FROM cv_versions WHERE id = %s", (cv_id,)).fetchone()
     if not row:
         raise HTTPException(404, "CV version not found")

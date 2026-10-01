@@ -14,6 +14,9 @@ def require_owner(request: Request) -> str:
 
 
 def get_db():
+    # Always used as Depends(get_db, scope="function"): the exit (commit or rollback) must run BEFORE the response is
+    # sent. With the default request scope FastAPI commits after sending, so a browser that reloads on "success"
+    # could briefly read stale data.
     # One connection per request; commits on success, rolls back on error.
     with psycopg.connect(settings.DATABASE_URL, row_factory=dict_row) as conn:
         conn.execute("SELECT set_config('app.actor', 'owner', false)")  # read by DB audit triggers

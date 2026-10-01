@@ -27,7 +27,7 @@ LIMIT = 500
 
 @router.get("/history")
 def history(status: HistoryStatus | None = None, company_id: int | None = None, since: date | None = None,
-            until: date | None = None, q: str | None = None, conn=Depends(get_db)):
+            until: date | None = None, q: str | None = None, conn=Depends(get_db, scope="function")):
     """Every email past draft, newest activity first. Dates filter on the last activity (inclusive)."""
     q = q.strip() if q and q.strip() else None
     rows = conn.execute(
@@ -48,7 +48,7 @@ def history(status: HistoryStatus | None = None, company_id: int | None = None, 
 
 
 @router.get("/outbound-emails/{email_id}/timeline")
-def timeline(email_id: int, conn=Depends(get_db)):
+def timeline(email_id: int, conn=Depends(get_db, scope="function")):
     """Every recorded event for one email, oldest first: status changes, check failures, recovery."""
     if not conn.execute("SELECT 1 FROM outbound_emails WHERE id = %s", (email_id,)).fetchone():
         raise HTTPException(404, "Email not found")
@@ -64,7 +64,7 @@ INBOUND_COLUMNS = (f"m.id, m.from_email, m.from_name, m.subject, m.received_at, 
 
 
 @router.get("/threads/{thread_key}")
-def thread(thread_key: str, conn=Depends(get_db)):
+def thread(thread_key: str, conn=Depends(get_db, scope="function")):
     """A conversation: our emails plus inbound messages (M14) in the same Gmail thread."""
     emails = conn.execute(
         f"SELECT {EMAIL_COLUMNS}, e.body {FROM} WHERE {THREAD_KEY} = %s "
@@ -79,7 +79,7 @@ def thread(thread_key: str, conn=Depends(get_db)):
 
 
 @router.get("/companies/{company_id}/emails")
-def company_emails(company_id: int, conn=Depends(get_db)):
+def company_emails(company_id: int, conn=Depends(get_db, scope="function")):
     """The company's emails (drafts included) and inbound messages, grouped by thread, newest thread first."""
     fetch(conn, "companies", company_id)
     rows = conn.execute(f"SELECT {EMAIL_COLUMNS} {FROM} WHERE e.company_id = %s "

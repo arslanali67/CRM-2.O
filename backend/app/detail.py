@@ -15,7 +15,7 @@ INBOUND = ("SELECT m.id, m.from_email, m.from_name, m.subject, m.received_at, m.
 
 
 @router.get("/companies/{company_id}/overview")
-def company_overview(company_id: int, conn=Depends(get_db)):
+def company_overview(company_id: int, conn=Depends(get_db, scope="function")):
     c = fetch(conn, "companies", company_id)
     stats = conn.execute(
         "SELECT (SELECT count(*) FROM contacts WHERE company_id = %(id)s AND archived_at IS NULL) AS contacts, "
@@ -44,7 +44,7 @@ def company_overview(company_id: int, conn=Depends(get_db)):
 
 
 @router.get("/contacts/{contact_id}")
-def contact_detail(contact_id: int, conn=Depends(get_db)):
+def contact_detail(contact_id: int, conn=Depends(get_db, scope="function")):
     ct = fetch(conn, "contacts", contact_id)
     company = conn.execute("SELECT id, name, domain, stage FROM companies WHERE id = %s", (ct["company_id"],)).fetchone()
     email = ct["email"] or None  # '' must never match other records

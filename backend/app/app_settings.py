@@ -38,12 +38,12 @@ def read_settings(conn) -> dict:
 
 
 @router.get("/settings")
-def get_settings(conn=Depends(get_db)):
+def get_settings(conn=Depends(get_db, scope="function")):
     return read_settings(conn)
 
 
 @router.get("/settings/ai-models")
-def ai_models(conn=Depends(get_db)):
+def ai_models(conn=Depends(get_db, scope="function")):
     if not ai_analysis.settings.GEMINI_API_KEY:
         raise HTTPException(409, "No GEMINI_API_KEY in .env")
     try:
@@ -53,7 +53,7 @@ def ai_models(conn=Depends(get_db)):
 
 
 @router.put("/settings")
-def put_settings(body: SettingsIn, conn=Depends(get_db)):
+def put_settings(body: SettingsIn, conn=Depends(get_db, scope="function")):
     old = conn.execute("SELECT * FROM app_settings WHERE id = 1 FOR UPDATE").fetchone()
     new = body.model_dump()
     new["notify_kinds"] = sorted(set(new["notify_kinds"]))

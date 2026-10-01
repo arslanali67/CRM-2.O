@@ -316,7 +316,7 @@ INBOX_FROM = ("FROM inbound_messages m LEFT JOIN companies c ON c.id = m.company
 
 @router.get("/inbox")
 def inbox(company_id: int | None = None, q: str | None = None,
-          label: Literal["bounce", "auto_reply", "reply", "unrelated"] | None = None, conn=Depends(get_db)):
+          label: Literal["bounce", "auto_reply", "reply", "unrelated"] | None = None, conn=Depends(get_db, scope="function")):
     q = q.strip() if q and q.strip() else None
     return conn.execute(
         f"SELECT {INBOX_COLUMNS} {INBOX_FROM} "
@@ -328,7 +328,7 @@ def inbox(company_id: int | None = None, q: str | None = None,
 
 
 @router.post("/inbox/relabel")
-def relabel(conn=Depends(get_db)):
+def relabel(conn=Depends(get_db, scope="function")):
     """Re-run the rules over every stored message; effects apply only where a label changed."""
     changed = 0
     for row in conn.execute("SELECT id FROM inbound_messages ORDER BY id").fetchall():
@@ -338,7 +338,7 @@ def relabel(conn=Depends(get_db)):
 
 
 @router.get("/inbox/{message_id}")
-def inbox_message(message_id: int, conn=Depends(get_db)):
+def inbox_message(message_id: int, conn=Depends(get_db, scope="function")):
     m = conn.execute("SELECT m.*, coalesce(m.gmail_thrid, 'in-' || m.id) AS thread_key, c.name AS company_name "
                      "FROM inbound_messages m LEFT JOIN companies c ON c.id = m.company_id WHERE m.id = %s",
                      (message_id,)).fetchone()
@@ -349,7 +349,7 @@ def inbox_message(message_id: int, conn=Depends(get_db)):
 
 
 @router.get("/inbox-sync")
-def sync_status(conn=Depends(get_db)):
+def sync_status(conn=Depends(get_db, scope="function")):
     return {"mailboxes": conn.execute("SELECT * FROM mailbox_sync ORDER BY mailbox").fetchall(),
             "account_ready": active_account(conn) is not None,
             "stored_total": conn.execute("SELECT count(*) FROM inbound_messages").fetchone()["count"]}

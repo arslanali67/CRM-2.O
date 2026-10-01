@@ -71,7 +71,7 @@ def breakdown(rows: list[dict], key) -> list[dict]:
 
 
 @router.get("/analytics")
-def analytics(period: str = "30", conn=Depends(get_db)):
+def analytics(period: str = "30", conn=Depends(get_db, scope="function")):
     if period not in PERIODS:
         period = "30"
     started = time.perf_counter()

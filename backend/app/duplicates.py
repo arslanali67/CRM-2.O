@@ -59,12 +59,12 @@ class DismissIn(BaseModel):
 
 
 @router.get("/duplicates")
-def suggestions(conn=Depends(get_db)):
+def suggestions(conn=Depends(get_db, scope="function")):
     return conn.execute(SUGGESTIONS, {"sim": NAME_SIMILARITY}).fetchall()
 
 
 @router.post("/duplicates/dismiss")
-def dismiss(body: DismissIn, conn=Depends(get_db)):
+def dismiss(body: DismissIn, conn=Depends(get_db, scope="function")):
     a, b = sorted((body.company_a, body.company_b))
     if a == b:
         raise HTTPException(422, "Pick two different companies")
@@ -89,7 +89,7 @@ def active_block(conn, company_id: int):
 
 
 @router.post("/duplicates/merge")
-def merge(body: MergeIn, conn=Depends(get_db)):
+def merge(body: MergeIn, conn=Depends(get_db, scope="function")):
     s_id, m_id = body.survivor_id, body.merged_id
     if s_id == m_id:
         raise HTTPException(422, "Pick two different companies")
@@ -137,7 +137,7 @@ def merge(body: MergeIn, conn=Depends(get_db)):
 
 
 @router.get("/duplicates/merges")
-def merges(conn=Depends(get_db)):
+def merges(conn=Depends(get_db, scope="function")):
     return conn.execute(
         "SELECT g.*, s.name AS survivor_name, m.name AS merged_name FROM company_merges g "
         "JOIN companies s ON s.id = g.survivor_id JOIN companies m ON m.id = g.merged_id "
@@ -145,7 +145,7 @@ def merges(conn=Depends(get_db)):
 
 
 @router.post("/duplicates/merges/{merge_id}/undo")
-def undo(merge_id: int, conn=Depends(get_db)):
+def undo(merge_id: int, conn=Depends(get_db, scope="function")):
     g = conn.execute("SELECT * FROM company_merges WHERE id = %s FOR UPDATE", (merge_id,)).fetchone()
     if not g:
         raise HTTPException(404, "Merge not found")

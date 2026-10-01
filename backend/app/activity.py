@@ -10,7 +10,7 @@ TIMELINE_LIMIT = 500
 
 
 @router.get("/activity")
-def feed(limit: int = Query(50, ge=1, le=200), before_id: int | None = None, conn=Depends(get_db)):
+def feed(limit: int = Query(50, ge=1, le=200), before_id: int | None = None, conn=Depends(get_db, scope="function")):
     """Global feed, newest first. Pass the last id as before_id to load more."""
     return conn.execute(
         "SELECT * FROM audit_log WHERE (%(before)s::bigint IS NULL OR id < %(before)s) ORDER BY id DESC LIMIT %(limit)s",
@@ -19,7 +19,7 @@ def feed(limit: int = Query(50, ge=1, le=200), before_id: int | None = None, con
 
 
 @router.get("/activity/{entity_type}/{entity_id}")
-def entity_timeline(entity_type: str, entity_id: int, conn=Depends(get_db)):
+def entity_timeline(entity_type: str, entity_id: int, conn=Depends(get_db, scope="function")):
     return conn.execute(
         "SELECT * FROM audit_log WHERE entity_type = %s AND entity_id = %s ORDER BY id DESC LIMIT %s",
         (entity_type, entity_id, TIMELINE_LIMIT),
@@ -27,7 +27,7 @@ def entity_timeline(entity_type: str, entity_id: int, conn=Depends(get_db)):
 
 
 @router.get("/companies/{company_id}/activity")
-def company_timeline(company_id: int, conn=Depends(get_db)):
+def company_timeline(company_id: int, conn=Depends(get_db, scope="function")):
     """The company, its contacts, its company blocks, and emails to its contacts or domain."""
     fetch(conn, "companies", company_id)
     return conn.execute(

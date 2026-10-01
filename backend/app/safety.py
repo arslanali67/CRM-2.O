@@ -200,7 +200,7 @@ def claim_for_send(conn, email_id: int) -> dict:
 
 
 @router.get("/outbound-emails/{email_id}/checks")
-def dry_run(email_id: int, stage: Stage = "approval", conn=Depends(get_db)):
+def dry_run(email_id: int, stage: Stage = "approval", conn=Depends(get_db, scope="function")):
     """Run the checks without changing anything (for the composer UI)."""
     e = conn.execute("SELECT * FROM outbound_emails WHERE id = %s", (email_id,)).fetchone()
     if not e:

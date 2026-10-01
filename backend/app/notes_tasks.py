@@ -70,7 +70,7 @@ def get_note(conn, note_id: int) -> dict:
 
 
 @router.get("/notes")
-def list_notes(entity_type: EntityType, entity_id: list[int] = Query(), conn=Depends(get_db)):
+def list_notes(entity_type: EntityType, entity_id: list[int] = Query(), conn=Depends(get_db, scope="function")):
     """Notes for one or more entities of one type (e.g. all contacts on a company page), newest first."""
     return conn.execute(
         "SELECT * FROM notes WHERE entity_type = %s AND entity_id = ANY(%s) AND deleted_at IS NULL "
@@ -80,7 +80,7 @@ def list_notes(entity_type: EntityType, entity_id: list[int] = Query(), conn=Dep
 
 
 @router.post("/notes", status_code=201)
-def create_note(body: NoteIn, conn=Depends(get_db)):
+def create_note(body: NoteIn, conn=Depends(get_db, scope="function")):
     require_entity(conn, body.entity_type, body.entity_id)
     n = conn.execute("INSERT INTO notes (entity_type, entity_id, body) VALUES (%s, %s, %s) RETURNING *",
                      (body.entity_type, body.entity_id, body.body)).fetchone()
@@ -89,7 +89,7 @@ def create_note(body: NoteIn, conn=Depends(get_db)):
 
 
 @router.put("/notes/{note_id}")
-def edit_note(note_id: int, body: NoteEdit, conn=Depends(get_db)):
+def edit_note(note_id: int, body: NoteEdit, conn=Depends(get_db, scope="function")):
     n = get_note(conn, note_id)
     n = conn.execute("UPDATE notes SET body = %s, edited_at = now() WHERE id = %s RETURNING *",
                      (body.body, note_id)).fetchone()
@@ -98,7 +98,7 @@ def edit_note(note_id: int, body: NoteEdit, conn=Depends(get_db)):
 
 
 @router.delete("/notes/{note_id}")
-def delete_note(note_id: int, conn=Depends(get_db)):
+def delete_note(note_id: int, conn=Depends(get_db, scope="function")):
     n = get_note(conn, note_id)
     conn.execute("UPDATE notes SET deleted_at = now() WHERE id = %s", (note_id,))
     audit(conn, "note.deleted", n["entity_type"], n["entity_id"], {"note_id": note_id})
@@ -143,7 +143,7 @@ def task_audit(conn, action: str, t: dict, **data):
 
 @router.get("/tasks")
 def list_tasks(today: date | None = None, entity_type: EntityType | None = None, entity_id: int | None = None,
-               conn=Depends(get_db)):
+               conn=Depends(get_db, scope="function")):
     """Grouped due list relative to `today` (the owner's browser date; defaults to the UTC date).
     With entity_type + entity_id, only that entity's tasks."""
     today = today or utc_today()
@@ -168,7 +168,7 @@ def list_tasks(today: date | None = None, entity_type: EntityType | None = None,
 
 
 @router.get("/tasks/counts")
-def task_counts(today: date | None = None, conn=Depends(get_db)):
+def task_counts(today: date | None = None, conn=Depends(get_db, scope="function")):
     today = today or utc_today()
     return conn.execute(
         "SELECT count(*) FILTER (WHERE due_date < %(t)s) AS overdue, count(*) FILTER (WHERE due_date = %(t)s) AS due_today "
@@ -177,7 +177,7 @@ def task_counts(today: date | None = None, conn=Depends(get_db)):
 
 
 @router.post("/tasks", status_code=201)
-def create_task(body: TaskIn, conn=Depends(get_db)):
+def create_task(body: TaskIn, conn=Depends(get_db, scope="function")):
     if body.entity_type:
         require_entity(conn, body.entity_type, body.entity_id)
     tid = conn.execute(
@@ -190,7 +190,7 @@ def create_task(body: TaskIn, conn=Depends(get_db)):
 
 
 @router.put("/tasks/{task_id}")
-def edit_task(task_id: int, body: TaskEdit, conn=Depends(get_db)):
+def edit_task(task_id: int, body: TaskEdit, conn=Depends(get_db, scope="function")):
     get_task(conn, task_id)
     conn.execute("UPDATE tasks SET title = %s, details = %s, due_date = %s, updated_at = now() WHERE id = %s",
                  (body.title, body.details, body.due_date, task_id))
@@ -200,7 +200,7 @@ def edit_task(task_id: int, body: TaskEdit, conn=Depends(get_db)):
 
 
 @router.post("/tasks/{task_id}/done")
-def complete_task(task_id: int, conn=Depends(get_db)):
+def complete_task(task_id: int, conn=Depends(get_db, scope="function")):
     get_task(conn, task_id)
     conn.execute("UPDATE tasks SET done_at = coalesce(done_at, now()), updated_at = now() WHERE id = %s", (task_id,))
     t = get_task(conn, task_id)
@@ -209,7 +209,7 @@ def complete_task(task_id: int, conn=Depends(get_db)):
 
 
 @router.post("/tasks/{task_id}/reopen")
-def reopen_task(task_id: int, conn=Depends(get_db)):
+def reopen_task(task_id: int, conn=Depends(get_db, scope="function")):
     get_task(conn, task_id)
     conn.execute("UPDATE tasks SET done_at = NULL, updated_at = now() WHERE id = %s", (task_id,))
     t = get_task(conn, task_id)
@@ -218,7 +218,7 @@ def reopen_task(task_id: int, conn=Depends(get_db)):
 
 
 @router.delete("/tasks/{task_id}")
-def delete_task(task_id: int, conn=Depends(get_db)):
+def delete_task(task_id: int, conn=Depends(get_db, scope="function")):
     t = get_task(conn, task_id)
     conn.execute("UPDATE tasks SET deleted_at = now() WHERE id = %s", (task_id,))
     task_audit(conn, "task.deleted", t)

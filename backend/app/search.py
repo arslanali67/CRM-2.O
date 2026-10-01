@@ -40,7 +40,7 @@ QUERIES = {
 
 
 @router.get("/search")
-def search(q: str, conn=Depends(get_db)):
+def search(q: str, conn=Depends(get_db, scope="function")):
     q = q.strip()
     if len(q) < 2:
         raise HTTPException(422, "Type at least 2 characters")

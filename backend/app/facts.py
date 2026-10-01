@@ -27,13 +27,13 @@ class FactIn(BaseModel):
 
 
 @router.get("/companies/{company_id}/facts")
-def facts(company_id: int, conn=Depends(get_db)):
+def facts(company_id: int, conn=Depends(get_db, scope="function")):
     company_or_404(conn, company_id)
     return conn.execute("SELECT * FROM personalization_facts(%s)", (company_id,)).fetchall()
 
 
 @router.post("/claims/{claim_id}/verify", status_code=201)
-def verify(claim_id: int, body: VerifyIn, conn=Depends(get_db)):
+def verify(claim_id: int, body: VerifyIn, conn=Depends(get_db, scope="function")):
     c = conn.execute("UPDATE ai_claims SET status = 'verified', decided_at = now() WHERE id = %s AND status = 'open' "
                      "RETURNING *", (claim_id,)).fetchone()
     if not c:
@@ -48,7 +48,7 @@ def verify(claim_id: int, body: VerifyIn, conn=Depends(get_db)):
 
 
 @router.post("/companies/{company_id}/facts", status_code=201)
-def add(company_id: int, body: FactIn, conn=Depends(get_db)):
+def add(company_id: int, body: FactIn, conn=Depends(get_db, scope="function")):
     company_or_404(conn, company_id)
     f = conn.execute("INSERT INTO verified_facts (company_id, category, fact, source) VALUES (%s, %s, %s, %s) "
                      "RETURNING *", (company_id, body.category, body.fact, body.source)).fetchone()
@@ -57,7 +57,7 @@ def add(company_id: int, body: FactIn, conn=Depends(get_db)):
 
 
 @router.post("/facts/{fact_id}/remove")
-def remove(fact_id: int, conn=Depends(get_db)):
+def remove(fact_id: int, conn=Depends(get_db, scope="function")):
     f = conn.execute("UPDATE verified_facts SET removed_at = now() WHERE id = %s AND removed_at IS NULL "
                      "RETURNING company_id, fact", (fact_id,)).fetchone()
     if not f:

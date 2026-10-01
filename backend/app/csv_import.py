@@ -189,13 +189,13 @@ def public(result: dict) -> dict:
 
 
 @router.post("/imports/preview")
-async def preview(request: Request, filename: str, city: str = "", country: str = "", conn=Depends(get_db)):
+async def preview(request: Request, filename: str, city: str = "", country: str = "", conn=Depends(get_db, scope="function")):
     """Analyse the CSV (raw body) without writing anything."""
     return public(analyze(conn, await read_csv(request), city.strip()[:200], country.strip()[:200]))
 
 
 @router.post("/imports", status_code=201)
-async def run_import(request: Request, filename: str, city: str = "", country: str = "", conn=Depends(get_db)):
+async def run_import(request: Request, filename: str, city: str = "", country: str = "", conn=Depends(get_db, scope="function")):
     """Re-analyse the same CSV against the current data and import the new rows."""
     filename = filename.strip()[:200] or "import.csv"
     result = analyze(conn, await read_csv(request), city.strip()[:200], country.strip()[:200])

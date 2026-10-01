@@ -292,7 +292,7 @@ class EnableIn(BaseModel):
 
 
 @router.get("/sending")
-def sending_status(conn=Depends(get_db)):
+def sending_status(conn=Depends(get_db, scope="function")):
     s = safety.get_settings(conn)
     acc = conn.execute("SELECT email_address, last_test_ok, password_encrypted IS NOT NULL AS has_password "
                        "FROM email_account WHERE id = 1").fetchone()
@@ -306,7 +306,7 @@ def sending_status(conn=Depends(get_db)):
 
 
 @router.post("/sending/enable")
-def enable_sending(body: EnableIn, conn=Depends(get_db)):
+def enable_sending(body: EnableIn, conn=Depends(get_db, scope="function")):
     if not body.confirm:
         raise HTTPException(422, "Enabling sending needs explicit confirmation")
     if not active_account(conn):
@@ -317,7 +317,7 @@ def enable_sending(body: EnableIn, conn=Depends(get_db)):
 
 
 @router.post("/sending/disable")
-def disable_sending(conn=Depends(get_db)):
+def disable_sending(conn=Depends(get_db, scope="function")):
     conn.execute("UPDATE app_settings SET sending_enabled = false, updated_at = now()")
     audit(conn, "sending.disabled", "settings", 1)
     return sending_status(conn)
