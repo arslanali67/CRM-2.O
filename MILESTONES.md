@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 37 / 44**
+**Progress: 38 / 44**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -56,7 +56,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] F2 Dashboard
 - [x] F3 Leads & companies
 - [x] F4 Outreach
-- [ ] F5 Inbox & threads (built; E2E 25/25 pass; awaiting batch verification)
+- [x] F5 Inbox & threads
 - [ ] F6 Pipeline
 - [ ] F7 Research & personalization
 - [ ] F8 Setup area
