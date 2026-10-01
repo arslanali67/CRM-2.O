@@ -159,6 +159,70 @@ test("interviews: record one with its time zone, see it on the dashboard, export
   await expect(page.getByText(/Interview recorded: First call/)).toBeVisible();
 });
 
+test("pipeline: stage chips equal the API, closed ones hide, accepting an AI suggestion moves exactly that one", async () => {
+  const origin = new URL(page.url()).origin;
+  const beta = sql("SELECT id FROM companies WHERE name = 'E2E Beta Vision'");
+  const mid = sql(`INSERT INTO inbound_messages (gmail_msgid, mailbox, from_email, from_name, subject, body_text, relevance, label, company_id, received_at)
+    VALUES ('e2e-reply-beta', 'all', 'ben@e2e-beta-vision.de', 'Ben Weber', 'Re: Hello Beta', 'We would like an interview.', 'reply_header', 'reply', ${beta}, now())
+    RETURNING id`).split("\n")[0];
+  sql(`INSERT INTO ai_analyses (inbound_message_id, status, model, prompt_version, label, label_evidence, summary)
+    VALUES (${mid}, 'ok', 'fake', 1, 'interview_request', 'We would like an interview.', 'Beta wants an interview.')`);
+  const opp = await (await page.request.post("/api/opportunities", { headers: { Origin: origin }, data: { inbound_message_id: Number(mid), title: "Vision Engineer" } })).json();
+  const closed = await (await page.request.post("/api/opportunities", { headers: { Origin: origin }, data: { company_id: Number(beta), title: "Closed role" } })).json();
+  await page.request.post(`/api/opportunities/${closed.id}/stage`, { headers: { Origin: origin }, data: { stage: "rejected", reason: "position filled" } });
+  const other = (await (await page.request.get("/api/opportunities")).json()).opportunities.find((o) => o.title === "Robotics Engineer");
+
+  await page.goto("/opportunities");
+  const api = await (await page.request.get("/api/opportunities")).json();
+  for (const s of api.stages) {
+    await expect(page.locator(`[data-stage-chip="${s}"] [data-count]`)).toHaveText(String(api.counts[s] || 0));
+  }
+  await expect(page.locator(`[data-opp="${closed.id}"]`)).toHaveCount(0); // closed stages are hidden by default
+  await page.getByLabel(/Show closed/).check();
+  await expect(page.locator(`[data-opp="${closed.id}"]`)).toBeVisible();
+  await page.getByLabel(/Show closed/).uncheck();
+  await page.getByRole("tab", { name: "Table" }).click();
+  await expect(page.getByRole("row", { name: /Vision Engineer/ })).toContainText("AI: interviewing");
+  await page.getByRole("tab", { name: "By stage" }).click();
+  const card = page.locator(`[data-opp="${opp.id}"]`);
+  await expect(card).toContainText("AI suggests interviewing");
+  await card.getByRole("button", { name: "Accept" }).click();
+  await expect(page.locator(".toast", { hasText: "Vision Engineer moved to interviewing." })).toBeVisible();
+  const after = (await (await page.request.get("/api/opportunities")).json()).opportunities;
+  expect(after.find((o) => o.id === opp.id).stage).toBe("interviewing");
+  expect(after.find((o) => o.id === other.id).stage).toBe(other.stage); // nothing else moved
+  expect(after.find((o) => o.id === closed.id).stage).toBe("rejected");
+
+  await page.goto(`/opportunities/${opp.id}`);
+  await expect(page.locator(".stepper-item.current")).toContainText("interviewing");
+  await expect(page.locator("[data-history]").first()).toContainText("accepted AI suggestion (interview_request)");
+  await page.getByRole("button", { name: "Move to offer" }).click();
+  const d = page.getByRole("dialog");
+  await d.getByLabel("Reason (optional)").fill("Verbal offer received");
+  await d.getByRole("button", { name: "Move to offer" }).click();
+  await expect(page.locator(".stepper-item.current")).toContainText("offer");
+  await expect(page.locator("[data-history]").first()).toContainText("Verbal offer received");
+  await expect(page.locator(".stepper-item.done")).toHaveCount(4); // new, applied, screening, interviewing
+});
+
+test("interviews page: upcoming grouped by day with both time zones, past with outcome", async () => {
+  const opp = (await (await page.request.get("/api/opportunities")).json()).opportunities.find((o) => o.title === "Robotics Engineer");
+  sql(`INSERT INTO interviews (opportunity_id, title, starts_at, time_zone, duration_minutes, kind, location)
+       VALUES (${opp.id}, 'Tomorrow chat', now() + interval '1 day', 'America/New_York', 45, 'video', 'https://meet.example/tomorrow')`);
+  sql(`INSERT INTO interviews (opportunity_id, title, starts_at, time_zone, status, outcome)
+       VALUES (${opp.id}, 'Earlier screen', now() - interval '3 days', 'Europe/Berlin', 'done', 'went well')`);
+  await page.goto("/interviews");
+  const tomorrow = page.locator('[data-day="Tomorrow"]');
+  await expect(tomorrow.locator("[data-interview]")).toHaveCount(1);
+  await expect(tomorrow).toContainText("America/New_York");
+  await expect(tomorrow.locator("[data-your-time]")).toBeVisible(); // the owner's own time is shown too
+  await expect(tomorrow).toContainText("45 min");
+  await expect(page.locator('a[href*="meet.example"]')).toHaveCount(0); // meeting links stay plain text
+  await expect(page.locator("[data-day]").nth(1)).toContainText("First call"); // the 2030 interview is a later day group
+  await page.getByRole("tab", { name: "Past" }).click();
+  await expect(page.getByText("Outcome: went well")).toBeVisible();
+});
+
 test("dashboard: every KPI equals the API, the chart has one bar per day, panels link out", async () => {
   const pct = (x) => (x === null || x === undefined ? "—" : `${Math.round(x * 1000) / 10}%`);
   for (const [button, period] of [["30 days", "30"], ["All time", "all"]]) {

@@ -268,6 +268,29 @@ tr.selected td { background: var(--accent-bg); }
 .notif-row[data-unread] { background: var(--accent-bg); }
 .notif-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
+/* ---------- pipeline (F6) ---------- */
+.chip-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px; border-radius: 999px; background: var(--surface); }
+.chip-btn.on { border-color: var(--accent); background: var(--accent-bg); }
+.stage-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); gap: var(--s3); overflow-x: auto; padding-bottom: var(--s2); margin-top: var(--s3); }
+.stage-col { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--s3); min-width: 0; align-self: start; }
+.opp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; margin-bottom: 8px; display: grid; gap: 4px; }
+.opp-card select { width: 100%; min-height: 30px; margin-top: 4px; }
+.opp-suggest { background: var(--accent-bg); border-radius: 6px; padding: 4px 6px; }
+.stepper { display: flex; gap: 4px; flex-wrap: wrap; }
+.stepper-item { flex: 1 1 110px; min-width: 0; }
+.stepper-btn { width: 100%; justify-content: flex-start; gap: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); }
+.stepper-btn .n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; border: 1px solid var(--border-strong); flex: none; }
+.stepper-item.done .stepper-btn { color: var(--text); }
+.stepper-item.done .n { background: var(--success); border-color: var(--success); color: var(--surface); }
+.stepper-item.current .stepper-btn { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); font-weight: 700; opacity: 1; }
+.stepper-item.current .n { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.history-line li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; padding-bottom: 12px; position: relative; }
+.history-line li:not(:last-child)::before { content: ""; position: absolute; left: 6px; top: 14px; bottom: 0; width: 2px; background: var(--border); }
+.hl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 6px; }
+.interview-card { display: grid; grid-template-columns: 110px 1fr; gap: 12px; }
+.iv-time { display: grid; gap: 2px; align-content: start; }
+@media (max-width: 600px) { .interview-card { grid-template-columns: 1fr; } }
+
 /* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);

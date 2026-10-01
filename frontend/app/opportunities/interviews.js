@@ -62,8 +62,8 @@ export function InterviewsPanel({ opportunityId, onChange }) {
   }
 
   return (
-    <section style={{ marginTop: 24 }}>
-      <h2>Interviews</h2>
+    <section className="card">
+      <h3 style={{ marginTop: 0 }}>Interviews</h3>
       {list.length === 0 && <p>No interviews yet.</p>}
       {list.map((i) => (
         <div key={i.id} id={`interview-${i.id}`} style={{ borderTop: "1px solid var(--border)", padding: "8px 0" }}>

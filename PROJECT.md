@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.44
+- **Spec version:** 1.45
 - **Last updated:** 2026-09-28
 
 ---
@@ -412,6 +412,11 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **Untrusted-link rule unchanged:** links found by the AI in emails are plain text, never clickable.
   - Done when: E2E (with a reply and its analysis inserted into the test database) proves label tabs and counts equal the API, selecting a message shows body and analysis and the selection survives a reload, the thread deep link highlights its message, notifications mark one read then all read with the bell badge updating, an email-derived link is never an `<a>`; phone layout and both themes; all existing tests pass.
 - **F6 Pipeline.** Opportunities grouped by stage (lists), opportunity page, Interviews page (upcoming/past timeline).
+  - Frontend only (existing opportunity and interview APIs).
+  - **Opportunities:** stage summary strip (one chip per stage with its count, click to filter); two views, By stage (grouped columns, read-only layout; drag-and-drop stays in Phase 3) and Table (sortable: title, company, contact, stage, time in stage, next interview); each item shows title, company, contact, time in stage, next interview and an "AI suggests …" chip with Accept; a stage menu moves it with an optional reason; open / closed switch (rejected, withdrawn, hired hidden by default); empty state explaining how to create one.
+  - **Opportunity page:** header card (title, stage badge, company and contact links, source reply, since date) with a stage stepper new → applied → screening → interviewing → offer → hired (rejected / withdrawn as separate actions); AI suggestion banner (AI never moves a stage by itself); change stage with optional reason in an in-app dialog; two columns: Interviews panel and stage history as a timeline (who, when, why) beside Tasks and Notes.
+  - **Interviews page:** upcoming grouped by day (Today, Tomorrow, weekday date), each card with time in the interview's zone and the owner's, duration, type, company, opportunity, meeting link as plain text and the .ics download; a Past tab with outcome notes. Recording stays on the opportunity page.
+  - Done when: E2E (AI suggestion and an interview inserted into the test database) proves stage chip counts equal the API, open/closed and both views work, accepting a suggestion moves exactly that one opportunity, the stepper and history show a stage change with its reason, the Interviews page groups by day and shows both zones; phone layout and both themes; all existing tests pass.
 - **F7 Research & personalization.** Research tab (facts / claims / scraped) and AI-sentence review in the Outbox, polished.
 - **F8 Setup area.** Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity in one layout; first-run checklist (connect Gmail, profile, CV, template, import).
 - **F9 Quality pass.** Mobile layout and accessibility (keyboard, labels, contrast) on every page; consistent states; E2E extended to every page.
@@ -527,3 +532,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.42 | F3 detailed: leads filter panel with URL-kept chips, sortable paged table, bulk bar; company header + counted tabs; contact page; 3-step import wizard; side-by-side duplicates; E2E for each. | Owner |
 | 2026-10-01 | 1.43 | F4 detailed: read-only POST /templates/preview for unsaved text; two-column template editor with live preview and version reuse; Compose stepper; Outbox sending card, counted tabs, email page with 12-check panel; History table. | Owner |
 | 2026-10-01 | 1.44 | F5 detailed: two-pane inbox with counted label tabs, keyboard navigation and URL-kept selection; analysis panel; chat-style conversation page with deep-link highlight; day-grouped notifications; links from emails stay plain text. | Owner |
+| 2026-10-01 | 1.45 | F6 detailed: stage chip strip, By-stage and Table views, open/closed switch, AI-suggestion accept; opportunity page with stepper and history timeline; Interviews grouped by day with both time zones. | Owner |

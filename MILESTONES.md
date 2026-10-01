@@ -57,7 +57,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] F3 Leads & companies
 - [x] F4 Outreach
 - [x] F5 Inbox & threads
-- [ ] F6 Pipeline
+- [ ] F6 Pipeline (built; E2E 27/27 pass; awaiting batch verification)
 - [ ] F7 Research & personalization
 - [ ] F8 Setup area
 - [ ] F9 Quality pass
