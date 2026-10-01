@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.45
+- **Spec version:** 1.46
 - **Last updated:** 2026-09-28
 
 ---
@@ -418,6 +418,10 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **Interviews page:** upcoming grouped by day (Today, Tomorrow, weekday date), each card with time in the interview's zone and the owner's, duration, type, company, opportunity, meeting link as plain text and the .ics download; a Past tab with outcome notes. Recording stays on the opportunity page.
   - Done when: E2E (AI suggestion and an interview inserted into the test database) proves stage chip counts equal the API, open/closed and both views work, accepting a suggestion moves exactly that one opportunity, the stepper and history show a stage change with its reason, the Interviews page groups by day and shows both zones; phone layout and both themes; all existing tests pass.
 - **F7 Research & personalization.** Research tab (facts / claims / scraped) and AI-sentence review in the Outbox, polished.
+  - Frontend only (existing research, facts and compose APIs); the AI-sentence review in the Outbox was delivered in F4.
+  - **Research tab:** status header with the Research button and its state ("Not researched yet", "Researched 2 days ago: 3 pages, 12 claims", or the last error); the three colour-coded sections keep their counts and a one-line statement of who may use them; AI claims grouped by category as cards with the quote, the source page, an inline reword box and Verify / Reject; verified facts as a table (category, fact, source link, verified date, Remove with an in-app confirm), with an "Add a fact" dialog; pages read as a table (URL, status, size, date).
+  - **Compose step 2:** when Personalize is ticked, a coverage line ("N of M leads have verified facts; the others get your fallback sentence") computed in the browser from the facts endpoint, with links to research the missing ones.
+  - Done when: E2E proves the status header changes after a research run (fake fetcher in the test stack), claims are grouped and one can be reworded and verified into a fact with its source, Remove asks in-app, the Compose coverage line counts correctly; phone layout and both themes; all existing tests pass.
 - **F8 Setup area.** Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity in one layout; first-run checklist (connect Gmail, profile, CV, template, import).
 - **F9 Quality pass.** Mobile layout and accessibility (keyboard, labels, contrast) on every page; consistent states; E2E extended to every page.
 
@@ -533,3 +537,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-10-01 | 1.43 | F4 detailed: read-only POST /templates/preview for unsaved text; two-column template editor with live preview and version reuse; Compose stepper; Outbox sending card, counted tabs, email page with 12-check panel; History table. | Owner |
 | 2026-10-01 | 1.44 | F5 detailed: two-pane inbox with counted label tabs, keyboard navigation and URL-kept selection; analysis panel; chat-style conversation page with deep-link highlight; day-grouped notifications; links from emails stay plain text. | Owner |
 | 2026-10-01 | 1.45 | F6 detailed: stage chip strip, By-stage and Table views, open/closed switch, AI-suggestion accept; opportunity page with stepper and history timeline; Interviews grouped by day with both time zones. | Owner |
+| 2026-10-01 | 1.46 | F7 detailed: Research tab status header, grouped claim cards with inline reword, facts table with Add dialog, pages-read table; Compose coverage line for personalization. | Owner |

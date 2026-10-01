@@ -50,6 +50,13 @@ export default function Compose() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [coverage, setCoverage] = useState(null);   // F7: which leads have verified facts
+  useEffect(() => {
+    if (!form.personalize || !items) return setCoverage(null);
+    Promise.all(items.map((i) => fetch(`/api/companies/${i.company_id}/facts`).then((r) => (r.ok ? r.json() : [])).catch(() => [])))
+      .then((all) => setCoverage({ with: all.filter((f) => f.length).length, missing: items.filter((_, n) => !all[n].length) }));
+  }, [form.personalize, items]);
+
   async function remove(id) {
     await fetch(`/api/compose-list/${id}`, { method: "DELETE" });
     load();
@@ -148,6 +155,12 @@ export default function Compose() {
               built only from each company&apos;s verified facts (Research tab); every sentence cites its facts and anything unproven is dropped.
               One AI request per company, at most 10 per run; the others get the fallback text.</small></span>
           </label>
+          {coverage && (
+            <p data-coverage style={{ margin: "8px 0 0" }}>
+              <b>{coverage.with} of {items.length}</b> leads have verified facts; the others get your fallback sentence.
+              {coverage.missing.length > 0 && <small style={{ display: "block", color: "var(--muted)" }}>Research: {coverage.missing.slice(0, 8).map((m, n) => (
+                <span key={m.company_id}>{n ? ", " : ""}<Link href={`/companies/${m.company_id}`}>{m.name}</Link></span>))}{coverage.missing.length > 8 && ` and ${coverage.missing.length - 8} more`}</small>}
+            </p>)}
           <div className="dialog-actions">
             <button onClick={() => setStep(0)}>Back</button>
             <button className="btn-primary" disabled={!form.template_id || (form.attach_cv && !cvs.length)} onClick={() => setStep(2)}>Next: review</button>

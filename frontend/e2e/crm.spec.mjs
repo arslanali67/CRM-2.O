@@ -364,9 +364,10 @@ test("research: three separate sections; a fact added by hand reaches personaliz
   await expect(page.getByRole("heading", { name: /Verified facts/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /AI claims/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: /Scraped data/ })).toBeVisible();
+  await page.getByRole("button", { name: "Add a fact" }).click();
   await page.getByLabel("Fact", { exact: true }).fill("Builds computer-vision QA for factories");
   await page.getByLabel("Source", { exact: true }).fill("CEO interview, Tagesspiegel 2026");
-  await page.getByRole("button", { name: "Add fact" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Add fact" }).click();
   await expect(page.getByText("Fact added.")).toBeVisible();
   const facts = await (await page.request.get(`/api/companies/${beta.id}/facts`)).json();
   expect(facts.map((f) => f.fact)).toEqual(["Builds computer-vision QA for factories"]);
@@ -525,4 +526,46 @@ test("lockout: five wrong passwords lock logins, even the right one", async ({ b
   await login(p);
   await expect(p.locator('p[role="alert"]')).toContainText("Too many failed logins");
   await p.close();
+});
+
+test("F7 research: status header, claims by category, reword and verify, in-app remove, Compose coverage", async () => {
+  const leads = await (await page.request.get("/api/leads")).json();
+  const alpha = leads.leads.find((l) => l.name === "E2E Alpha Robotics");
+  await page.goto(`/companies/${alpha.id}`);
+  await page.getByRole("tab", { name: "Research" }).click();
+  await expect(page.locator("[data-research-status]")).toHaveText("Not researched yet.");
+  const snap = sql(`INSERT INTO page_snapshots (company_id, url, status_code, text) VALUES (${alpha.id}, 'https://e2e-alpha-robotics.de/about', 200, 'We build warehouse robots.') RETURNING id`).split(/\s/)[0];
+  sql(`INSERT INTO ai_claims (company_id, snapshot_id, category, claim, evidence, source_url, model) VALUES
+    (${alpha.id}, ${snap}, 'product', 'Builds warehouse robots', 'We build warehouse robots.', 'https://e2e-alpha-robotics.de/about', 'test'),
+    (${alpha.id}, ${snap}, 'hiring', 'Is hiring engineers', 'We build warehouse robots.', 'https://e2e-alpha-robotics.de/about', 'test')`);
+  await page.reload();
+  await page.getByRole("tab", { name: "Research" }).click();
+  await expect(page.locator("[data-research-status]")).toContainText("Researched");
+  const claims = page.locator("[data-claim]");
+  await expect(claims).toHaveCount(2);
+  await expect(page.getByRole("heading", { name: /AI claims/ })).toContainText("2");
+  const card = claims.filter({ has: page.locator("textarea") }).first();
+  await card.getByRole("textbox").fill("Builds autonomous warehouse robots");
+  await card.getByRole("button", { name: "Verify" }).click();
+  await expect(page.getByText("Verified.")).toBeVisible();
+  const row = page.locator("[data-fact]");
+  await expect(row).toContainText("Builds autonomous warehouse robots");
+  await expect(row).toContainText("e2e-alpha-robotics.de/about");
+  await expect(page.locator("[data-claim]")).toHaveCount(1);
+  await expect(page.getByRole("cell", { name: /about/ }).first()).toBeVisible(); // pages-read table
+
+  // Compose coverage: Alpha has a fact, Beta (facts added earlier) too, so queue both and check the count, then remove.
+  const origin = new URL(page.url()).origin;
+  await page.request.post("/api/compose-list", { headers: { Origin: origin }, data: { company_ids: [alpha.id] } });
+  await page.goto("/compose");
+  await page.getByRole("button", { name: "Next: template" }).click();
+  await page.getByLabel(/Personalize from verified facts/).check();
+  await expect(page.locator("[data-coverage]")).toContainText(/\d+ of \d+ leads have verified facts/);
+  await page.goto(`/companies/${alpha.id}`);
+  await page.getByRole("tab", { name: "Research" }).click();
+  await page.getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Remove this fact?");
+  await page.getByRole("dialog").getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByText("Fact removed.")).toBeVisible();
+  await expect(page.locator("[data-fact]")).toHaveCount(0);
 });

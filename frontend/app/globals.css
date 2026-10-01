@@ -291,6 +291,9 @@ tr.selected td { background: var(--accent-bg); }
 .iv-time { display: grid; gap: 2px; align-content: start; }
 @media (max-width: 600px) { .interview-card { grid-template-columns: 1fr; } }
 
+.claim-card { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface-2); }
+.claim-card textarea { width: 100%; min-height: 56px; }
+
 /* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);
