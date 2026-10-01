@@ -13,6 +13,31 @@ const PERIODS = [["7", "7 days"], ["30", "30 days"], ["90", "90 days"], ["all", 
 const pct = (x) => (x === null || x === undefined ? "—" : `${Math.round(x * 1000) / 10}%`);
 const get = (url) => fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
 
+// F8: first-run checklist; each step ticks itself from existing API data. Dismissal is remembered in this browser only.
+function FirstRun() {
+  const [steps, setSteps] = useState(null);
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => {
+    try { setHidden(localStorage.getItem("firstRunDismissed") === "1"); } catch { setHidden(false); }
+    Promise.all(["/api/email-account", "/api/profile", "/api/cv", "/api/templates", "/api/leads?limit=1"].map(get)).then(([acc, prof, cvs, tpls, leads]) =>
+      setSteps([["gmail", "Connect Gmail", "/email-account", !!acc?.connected], ["profile", "Fill in your profile", "/profile", !!prof?.full_name],
+                ["cv", "Upload a CV", "/profile", !!cvs?.length], ["template", "Create a template", "/templates", !!tpls?.length],
+                ["import", "Import companies", "/import", (leads?.total ?? leads?.leads?.length ?? 0) > 0]]));
+  }, []);
+  if (hidden || !steps || steps.every((x) => x[3])) return null;
+  return (
+    <section className="card" data-first-run style={{ marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <b>Getting started · {steps.filter((x) => x[3]).length} of {steps.length} done</b>
+        <button className="btn-sm btn-ghost" onClick={() => { try { localStorage.setItem("firstRunDismissed", "1"); } catch {} setHidden(true); }}>Dismiss</button>
+      </div>
+      <ul className="checklist">{steps.map(([id, label, href, done]) => (
+        <li key={id} data-step={id} className={done ? "done" : ""}><span className="tick" aria-hidden="true">{done ? "✓" : ""}</span>
+          <Link href={href}>{label}</Link>{done && <span className="sr-only"> (done)</span>}</li>))}</ul>
+    </section>
+  );
+}
+
 function Kpi({ id, label, value, sub, href }) {
   return (
     <Link href={href} className="stat kpi" data-kpi={id} style={{ color: "inherit", textDecoration: "none", display: "block" }}>
@@ -100,6 +125,7 @@ export default function Home() {
           ))}
         </div>} />
 
+      <FirstRun />
       <Attention items={alerts} />
       {error && <ErrorState>{error}</ErrorState>}
 

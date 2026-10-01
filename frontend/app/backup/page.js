@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PageHeader, Loading } from "../ui";
 import { errorText } from "../companies/shared";
 
 const CSVS = [["companies", "Companies"], ["contacts", "Contacts"], ["sent_emails", "Sent emails"], ["replies", "Replies"]];
@@ -30,14 +31,14 @@ export default function Backup() {
     load();
   }
 
-  if (!s) return <p>Loading…</p>;
+  if (!s) return <Loading what="backups" />;
   const last = s.backups[0];
   return (
     <main>
-      <p><Link href="/">← Dashboard</Link></p>
-      <h1>Backup & export</h1>
+      <PageHeader title="Backup & export" />
 
-      <h3>Backups</h3>
+      <section className="card">
+      <h3 style={{ marginTop: 0 }}>Backups</h3>
       <p style={{ color: s.warn ? "var(--danger)" : undefined }}>
         {last ? `Last backup ${new Date(last.created_at).toLocaleString()} (${Math.round(s.age_hours)} h ago).` : "No backup yet."}
         {s.warn && ` Older than ${s.warn_hours} h: make one now.`}
@@ -48,7 +49,7 @@ export default function Backup() {
         of the project. <code>.env</code> is not included: keep your own copy of it.
       </small></p>
       {s.backups.length > 0 && (
-        <table cellPadding={4}>
+        <div className="table-wrap"><table>
           <thead><tr><th align="left">File</th><th align="left">Made</th><th align="right">Size</th><th align="right">Rows</th></tr></thead>
           <tbody>
             {s.backups.map((b) => (
@@ -56,7 +57,7 @@ export default function Backup() {
                 <td align="right">{size(b.size)}</td><td align="right">{b.rows}</td></tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
       <p><small>
         Restoring replaces <b>all</b> data, so it is only possible from a terminal: <code>make restore FILE=…</code>.
@@ -64,12 +65,16 @@ export default function Backup() {
         Check a backup safely with <code>make restore-drill</code>.
       </small></p>
 
-      <h3>Export</h3>
+      </section>
+
+      <section className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginTop: 0 }}>Export</h3>
       <p>
         {CSVS.map(([k, label]) => <span key={k}><a href={`/api/export/${k}.csv`}>{label} (CSV)</a> · </span>)}
         <a href="/api/export/full.zip">Full export (ZIP: every table as JSON + CV PDFs)</a>
       </p>
       <p><small style={{ color: "var(--muted)" }}>The stored Gmail app password is never exported.</small></p>
+      </section>
     </main>
   );
 }

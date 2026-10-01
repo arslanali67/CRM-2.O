@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
-import { useDialog } from "../ui";
+import { useDialog, PageHeader, Loading, EmptyState } from "../ui";
 
 const target = (s) => s.email || s.domain || `${s.company_name} (company)`;
 
@@ -47,15 +47,14 @@ export default function DoNotContact() {
     load();
   }
 
-  if (!list) return <p>Loading…</p>;
+  if (!list) return <Loading what="blocks" />;
 
   return (
     <main>
-      <p><Link href="/">← Home</Link></p>
-      <h1>Do-not-contact</h1>
+      <PageHeader title="Do-not-contact" />
       <p>Blocked recipients can never be approved, queued or sent to. Company blocks are added from the company page.</p>
 
-      <form onSubmit={add} style={{ display: "grid", gap: 8 }}>
+      <form onSubmit={add} className="card" style={{ display: "grid", gap: 8 }}>
         <label>Block
           <select value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })} style={{ marginLeft: 8 }}>
             <option value="email">email address</option>
@@ -70,7 +69,7 @@ export default function DoNotContact() {
         {msg && <p role="status">{msg}</p>}
       </form>
 
-      <table style={{ width: "100%", marginTop: 24 }}>
+      <div className="table-wrap" style={{ marginTop: 16 }}><table style={{ width: "100%" }}>
         <thead><tr><th align="left">Blocked</th><th align="left">Reason</th><th align="left">Status</th><th /></tr></thead>
         <tbody>
           {list.map((s) => (
@@ -86,8 +85,8 @@ export default function DoNotContact() {
             </tr>
           ))}
         </tbody>
-      </table>
-      {list.length === 0 && <p>Nothing blocked.</p>}
+      </table></div>
+      {list.length === 0 && <EmptyState title="Nothing blocked">Blocked emails and domains appear here.</EmptyState>}
     </main>
   );
 }

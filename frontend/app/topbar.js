@@ -38,14 +38,17 @@ const NAV = [
             ["/outbox", "Outbox", "send", "queued"], ["/inbox", "Inbox", "inbox", "unread"],
             ["/opportunities", "Opportunities", "target"], ["/interviews", "Interviews", "calendar"],
             ["/tasks", "Tasks", "check", "tasks"]]],
-  ["Insights", [["/analytics", "Analytics", "chart"], ["/history", "History", "history"], ["/activity", "Activity", "activity"]]],
+  ["Insights", [["/analytics", "Analytics", "chart"], ["/history", "History", "history"]]],
   ["Setup", [["/templates", "Templates", "template"], ["/import", "Import", "upload"], ["/duplicates", "Duplicates", "copy"],
-             ["/do-not-contact", "Do-not-contact", "ban"], ["/profile", "Profile & CV", "user"],
-             ["/email-account", "Email account", "mail"], ["/settings", "Settings", "settings"],
-             ["/backup", "Backup & export", "archive"]]],
+             ["/settings", "Setup", "settings"]]],
 ];
 
+// F8: the six Setup pages share one layout with a sub-nav; the sidebar has a single "Setup" entry for all of them.
+export const SETUP = [["/settings", "Settings"], ["/email-account", "Email account"], ["/profile", "Profile & CV"],
+                      ["/do-not-contact", "Do-not-contact"], ["/backup", "Backup & export"], ["/activity", "Activity"]];
+const inSetup = (path) => SETUP.some(([h]) => active(path, h));
 const active = (path, href) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
+const isActive = (path, href) => (href === "/settings" ? inSetup(path) : active(path, href));
 
 // ---------- notifications (also used by the Notifications page) ----------
 const DOT = { high: "var(--danger)", normal: "var(--accent)", low: "var(--muted)" };
@@ -234,7 +237,7 @@ export default function Shell({ children }) {
           <div key={group}>
             <div className="nav-group">{group}</div>
             {links.map(([href, label, icon, count]) => (
-              <Link key={href} href={href} className="nav-link" aria-current={active(path, href) ? "page" : undefined}>
+              <Link key={href} href={href} className="nav-link" aria-current={isActive(path, href) ? "page" : undefined}>
                 <Icon name={icon} />{label}
                 {count && counts[count] > 0 && <span className={`badge ${tone[count]} count`}>{counts[count]}</span>}
               </Link>
@@ -258,7 +261,16 @@ export default function Shell({ children }) {
           <ThemeToggle />
           <Account />
         </header>
-        <div className="content">{children}</div>
+        <div className="content">
+          {inSetup(path) ? (
+            <div className="setup-layout">
+              <nav className="setup-nav" aria-label="Setup">
+                {SETUP.map(([h, l]) => <Link key={h} href={h} aria-current={active(path, h) ? "page" : undefined}>{l}</Link>)}
+              </nav>
+              <div className="setup-body">{children}</div>
+            </div>
+          ) : children}
+        </div>
       </div>
     </div>
   );

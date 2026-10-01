@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PageHeader, Loading } from "../ui";
 import { errorText } from "../companies/shared";
 
 const NUMBERS = [
@@ -50,15 +51,14 @@ export default function Settings() {
     setMsg(data.changed.length ? `Saved: ${data.changed.join(", ").replaceAll("_", " ")}. Applies immediately.` : "Nothing changed.");
   }
 
-  if (!form) return <p>Loading…</p>;
+  if (!form) return <Loading what="settings" />;
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const acc = s.email_account;
 
   return (
     <main>
-      <p><Link href="/">← Dashboard</Link></p>
-      <h1>Settings</h1>
-      <form onSubmit={save}>
+      <PageHeader title="Settings" sub="Limits, AI and notifications. Changes apply immediately and are recorded in Activity." />
+      <form onSubmit={save} className="card">
         <h3>Sending limits and cooldowns</h3>
         <p><small>Sending is currently <b>{s.sending_enabled ? "ON" : "OFF"}</b>. Switch it on or off on the <Link href="/outbox">Outbox</Link>.</small></p>
         {NUMBERS.map(([k, label, min, max]) => (
@@ -91,12 +91,14 @@ export default function Settings() {
         <p><button type="submit">Save settings</button> {msg && <span>{msg}</span>}</p>
       </form>
 
-      <h3>Email account</h3>
+      <section className="card" style={{ marginTop: 16 }}>
+      <h3 style={{ marginTop: 0 }}>Email account</h3>
       {acc
         ? <p>{acc.display_name ? `${acc.display_name} <${acc.email_address}>` : acc.email_address} · {acc.connected ? (acc.last_test_ok ? "connected" : "test failed") : "disconnected"}</p>
         : <p>Not configured.</p>}
       <p><Link href="/email-account">Manage email account</Link></p>
       <p><small style={{ color: "var(--muted)" }}>Last changed {new Date(s.updated_at).toLocaleString()}. Every change is recorded in <Link href="/activity">Activity</Link>.</small></p>
+      </section>
     </main>
   );
 }

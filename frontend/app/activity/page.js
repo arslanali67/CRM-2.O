@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PageHeader, Loading } from "../ui";
 import { EventList } from "./describe";
 
 const PAGE = 50;
@@ -21,12 +22,11 @@ export default function Activity() {
   }
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!events) return <p>Loading…</p>;
+  if (!events) return <Loading what="activity" />;
 
   return (
     <main>
-      <p><Link href="/">← Home</Link></p>
-      <h1>Activity</h1>
+      <PageHeader title="Activity" sub="Everything that changed, newest first." />
       <EventList events={events} />
       {more && <button onClick={() => load(events[events.length - 1].id)}>Load more</button>}
     </main>

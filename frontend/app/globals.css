@@ -294,6 +294,23 @@ tr.selected td { background: var(--accent-bg); }
 .claim-card { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; background: var(--surface-2); }
 .claim-card textarea { width: 100%; min-height: 56px; }
 
+.setup-layout { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: var(--s5, 24px); align-items: start; }
+.setup-nav { display: grid; gap: 2px; position: sticky; top: 8px; }
+.setup-nav a { padding: 7px 10px; border-radius: var(--radius); color: var(--text); text-decoration: none; }
+.setup-nav a:hover { background: var(--surface-2); }
+.setup-nav a[aria-current="page"] { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.setup-body > main { max-width: 760px; }
+.checklist { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.checklist li { display: flex; gap: 8px; align-items: center; }
+.checklist .tick { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-strong); display: inline-grid; place-items: center; font-size: 11px; flex: none; }
+.checklist li.done .tick { background: var(--success); border-color: var(--success); color: #fff; }
+.checklist li.done a { color: var(--muted); text-decoration: line-through; }
+@media (max-width: 760px) {
+  .setup-layout { grid-template-columns: minmax(0, 1fr); }
+  .setup-nav { display: flex; overflow-x: auto; position: static; border-bottom: 1px solid var(--border); }
+  .setup-nav a { white-space: nowrap; }
+}
+
 /* ---------- app shell ---------- */
 .shell { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; overflow-y: auto; background: var(--surface); border-right: 1px solid var(--border);

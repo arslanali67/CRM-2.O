@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { PageHeader, Loading } from "../ui";
 
 const TEXT = [["full_name", "Full name"], ["email", "Email"], ["phone", "Phone"], ["location", "Location"], ["headline", "Headline"]];
 const LINKS = [["linkedin_url", "LinkedIn URL"], ["github_url", "GitHub URL"], ["portfolio_url", "Portfolio URL"]];
@@ -72,14 +73,13 @@ export default function Profile() {
     refreshCvs();
   }
 
-  if (!p) return <p>Loading…</p>;
+  if (!p) return <Loading what="profile" />;
 
   return (
     <main>
-      <p><Link href="/">← Home</Link></p>
-      <h1>Profile & CV</h1>
+      <PageHeader title="Profile & CV" sub="Used to fill template variables. Nothing here is sent anywhere by itself." />
 
-      <form onSubmit={save} style={{ display: "grid", gap: 12 }}>
+      <form onSubmit={save} className="card" style={{ display: "grid", gap: 12 }}>
         {TEXT.map(([k, label]) => (
           <label key={k}>{label}<input value={p[k]} onChange={(e) => set(k, e.target.value)} style={full} /></label>
         ))}
@@ -118,8 +118,8 @@ export default function Profile() {
         {msg && <p role="status">{msg}</p>}
       </form>
 
-      <section style={section}>
-        <h2>CV versions</h2>
+      <section className="card" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>CV versions</h2>
         <form onSubmit={upload} style={{ display: "grid", gap: 8 }}>
           <input name="label" placeholder="Label, e.g. Backend CV 2026" required />
           <input name="file" type="file" accept="application/pdf" required />
@@ -137,8 +137,8 @@ export default function Profile() {
         </ul>
       </section>
 
-      <section style={section}>
-        <h2>Template variables</h2>
+      <section className="card" style={{ marginTop: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Template variables</h2>
         {vars && (
           <>
             <p>

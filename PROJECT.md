@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.46
+- **Spec version:** 1.47
 - **Last updated:** 2026-09-28
 
 ---
@@ -423,6 +423,11 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **Compose step 2:** when Personalize is ticked, a coverage line ("N of M leads have verified facts; the others get your fallback sentence") computed in the browser from the facts endpoint, with links to research the missing ones.
   - Done when: E2E proves the status header changes after a research run (fake fetcher in the test stack), claims are grouped and one can be reworded and verified into a fact with its source, Remove asks in-app, the Compose coverage line counts correctly; phone layout and both themes; all existing tests pass.
 - **F8 Setup area.** Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity in one layout; first-run checklist (connect Gmail, profile, CV, template, import).
+  - Frontend only (existing APIs); no new backend, dependency or service. Sending stays OFF and no secret is ever shown.
+  - **One Setup layout:** a sub-nav (Settings, Email account, Profile & CV, Do-not-contact, Backup & export, Activity) shared by the six pages, and a single "Setup" sidebar entry; the old URLs keep working.
+  - **Restyle:** each of the six pages uses the F1 design system (cards, in-app dialogs and toasts, empty and error states, phone layout).
+  - **First-run checklist** on the dashboard until all steps are done: connect Gmail, fill in the profile, upload a CV, create a template, import companies; each step links to its page, ticks itself from existing API data, and can be dismissed.
+  - Done when: E2E proves the sub-nav switches pages, the checklist ticks as steps are completed and can be dismissed, and the layout works at phone width; all existing tests pass.
 - **F9 Quality pass.** Mobile layout and accessibility (keyboard, labels, contrast) on every page; consistent states; E2E extended to every page.
 
 ### Phase 3: Extend (Later)
@@ -538,3 +543,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-10-01 | 1.44 | F5 detailed: two-pane inbox with counted label tabs, keyboard navigation and URL-kept selection; analysis panel; chat-style conversation page with deep-link highlight; day-grouped notifications; links from emails stay plain text. | Owner |
 | 2026-10-01 | 1.45 | F6 detailed: stage chip strip, By-stage and Table views, open/closed switch, AI-suggestion accept; opportunity page with stepper and history timeline; Interviews grouped by day with both time zones. | Owner |
 | 2026-10-01 | 1.46 | F7 detailed: Research tab status header, grouped claim cards with inline reword, facts table with Add dialog, pages-read table; Compose coverage line for personalization. | Owner |
+| 2026-10-01 | 1.47 | F8 detailed: shared Setup layout and sub-nav, six restyled pages, dismissible first-run checklist on the dashboard; frontend only. | Owner |

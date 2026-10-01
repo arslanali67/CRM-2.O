@@ -468,7 +468,7 @@ test("duplicates: pair side by side, merge through the UI, then undo", async () 
 test("shell: every sidebar link opens its page inside the app shell", async () => {
   await page.goto("/");
   const links = await page.locator("nav.sidebar a.nav-link").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
-  expect(links.length).toBe(19);
+  expect(links.length).toBe(14);
   for (const href of links) {
     await page.goto(href);
     await expect(page.locator("nav.sidebar a.nav-link[aria-current=page]")).toHaveAttribute("href", href);
@@ -568,4 +568,42 @@ test("F7 research: status header, claims by category, reword and verify, in-app 
   await page.getByRole("dialog").getByRole("button", { name: "Remove" }).click();
   await expect(page.getByText("Fact removed.")).toBeVisible();
   await expect(page.locator("[data-fact]")).toHaveCount(0);
+});
+
+test("F8 setup: one sub-nav for the six pages, the checklist ticks itself and can be dismissed, phone layout", async ({ browser }) => {
+  await page.goto("/settings");
+  const sub = page.getByRole("navigation", { name: "Setup" });
+  for (const [name, heading] of [["Email account", "Email account"], ["Profile & CV", "Profile & CV"], ["Do-not-contact", "Do-not-contact"],
+                                 ["Backup & export", "Backup & export"], ["Activity", "Activity"], ["Settings", "Settings"]]) {
+    await sub.getByRole("link", { name }).click();
+    await expect(page.getByRole("heading", { name: heading, exact: true, level: 1 })).toBeVisible();
+    await expect(sub.getByRole("link", { name })).toHaveAttribute("aria-current", "page");
+  }
+  await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Setup" })).toHaveAttribute("aria-current", "page");
+
+  await page.goto("/");
+  const list = page.locator("[data-first-run]");
+  await expect(list).toContainText("Getting started");
+  await expect(list.locator('[data-step="template"]')).toHaveClass(/done/);   // earlier tests created one
+  await expect(list.locator('[data-step="import"]')).toHaveClass(/done/);
+  await expect(list.locator('[data-step="gmail"]')).not.toHaveClass(/done/);   // no Gmail in the test stack
+  await expect(list.locator('[data-step="profile"]')).not.toHaveClass(/done/);
+  await page.goto("/profile");
+  await page.getByLabel("Full name").fill("E2E Tester");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+  await page.goto("/");
+  await expect(page.locator('[data-first-run] [data-step="profile"]')).toHaveClass(/done/);
+  await page.locator("[data-first-run]").getByRole("button", { name: "Dismiss" }).click();
+  await expect(page.locator("[data-first-run]")).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(page.locator("[data-first-run]")).toHaveCount(0);
+
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 }, storageState: await page.context().storageState() });
+  const p = await ctx.newPage();
+  await p.goto("/settings");
+  await expect(p.getByRole("navigation", { name: "Setup" })).toBeVisible();
+  expect(await p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await ctx.close();
 });

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { errorText } from "../companies/shared";
-import { useDialog } from "../ui";
+import { useDialog, PageHeader, Loading } from "../ui";
 
 async function call(url, method = "GET", body) {
   const res = await fetch(url, {
@@ -58,16 +58,15 @@ export default function EmailAccount() {
     load();
   }
 
-  if (!acc) return <p>Loading…</p>;
+  if (!acc) return <Loading what="email account" />;
   const d = acc.last_test_detail || {};
 
   return (
     <main style={{ maxWidth: 640 }}>
-      <p><Link href="/">← Home</Link></p>
-      <h1>Email account</h1>
+      <PageHeader title="Email account" sub="The Gmail account used for sending and reading replies." />
 
       {acc.configured ? (
-        <div style={{ border: "1px solid var(--border)", padding: 12 }}>
+        <div className="card">
           <p>
             <b>{acc.email_address}</b>{" "}
             {acc.connected ? <mark style={{ background: "var(--success-bg)" }}>connected</mark>
