@@ -181,7 +181,8 @@ tbody tr:hover td { background: var(--surface-2); }
 .filters { margin-bottom: var(--s3); }
 .filter-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
 .filter-row > input:not([type=checkbox]):not([type=date]) { flex: 1 1 160px; }
-.range { display: inline-flex; align-items: center; gap: 4px; }
+.range { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; max-width: 100%; }
+.range input { min-width: 0; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--s3); }
 .chip button { min-height: 0; padding: 0 0 0 4px; border: none; background: none; color: inherit; font-size: 11px; }
 .th-sort { border: none; background: none; padding: 0; min-height: 0; font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; }
