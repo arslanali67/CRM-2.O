@@ -1,8 +1,10 @@
 "use client";
+// F4: Outbox. Sending card (status, daily-cap bar, queue) and status tabs with counts. Starting sending still asks
+// for an explicit confirmation; every email is approved on its own page.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useDialog } from "../ui";
+import { Badge, EmptyState, Loading, PageHeader, Tabs, ago, useDialog } from "../ui";
 
 const TABS = ["draft", "queued", "sending", "sent", "failed", "cancelled"];
 
@@ -25,20 +27,32 @@ function SendingSwitch() {
     if (res.ok) setS(data);
   }
 
-  if (!s) return null;
+  if (!s) return <div className="card skeleton" style={{ minHeight: 110 }} />;
+  const used = Math.min(100, Math.round((s.sent_24h / s.daily_cap) * 100));
   return (
-    <div style={{ border: `2px solid ${s.enabled ? "var(--danger)" : "var(--muted)"}`, padding: 12, margin: "12px 0" }}>
-      <b>Sending is {s.enabled ? "ON" : "OFF"}</b>{" "}
-      <button onClick={toggle} disabled={!s.enabled && !s.account_ready} style={{ fontWeight: "bold" }}>
-        {s.enabled ? "Stop sending" : "Enable sending"}
-      </button>
-      <div><small>
-        {s.queued} queued · {s.sending} sending · {s.sent_24h}/{s.daily_cap} sent in the last 24 h
-        {s.last_sent_at && ` · last sent ${new Date(s.last_sent_at).toLocaleString()}`}
-        {!s.account_ready && <> · <Link href="/email-account">connect and test an email account</Link> to enable</>}
-      </small></div>
-      {msg && <p role="alert" style={{ color: "var(--danger)" }}>{msg}</p>}
-    </div>
+    <section className="card sending-card" data-on={s.enabled || undefined} aria-label="Sending">
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: s.enabled ? "var(--danger)" : undefined }}>Sending is {s.enabled ? "ON" : "OFF"}</div>
+          <small style={{ color: "var(--muted)" }}>{s.enabled ? `Queued emails go out one at a time from ${s.account}.` : "Nothing is sent until you switch sending on."}</small>
+        </div>
+        <button onClick={toggle} disabled={!s.enabled && !s.account_ready} className={s.enabled ? "btn-danger" : "btn-primary"}>
+          {s.enabled ? "Stop sending" : "Enable sending"}
+        </button>
+      </div>
+      <div className="mini-stats" style={{ marginTop: 12 }}>
+        <span><b>{s.queued}</b> queued</span><span><b>{s.sending}</b> sending</span>
+        <span>gap <b>{s.min_gap_seconds} s</b></span>
+        <span>last sent <b>{s.last_sent_at ? ago(s.last_sent_at) : "never"}</b></span>
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <small style={{ color: "var(--muted)" }}>{s.sent_24h} / {s.daily_cap} sent in the last 24 h</small>
+        <div className="cap-bar" role="progressbar" aria-label="Daily cap used" aria-valuenow={s.sent_24h} aria-valuemin={0} aria-valuemax={s.daily_cap}>
+          <span style={{ width: `${used}%`, background: used >= 100 ? "var(--danger)" : undefined }} /></div>
+      </div>
+      {!s.account_ready && <p style={{ margin: "10px 0 0" }}><small><Link href="/email-account">Connect and test an email account</Link> to enable sending.</small></p>}
+      {msg && <p role="alert" className="error-box" style={{ marginTop: 10 }}>{msg}</p>}
+    </section>
   );
 }
 
@@ -48,40 +62,51 @@ export default function Outbox() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("status");
+    if (TABS.includes(q)) setStatus(q);
+  }, []);
+  useEffect(() => {
     fetch(`/api/outbox?status=${status}`).then(async (res) => {
       if (res.status === 401) return router.replace("/login");
       setData(await res.json());
     });
   }, [status, router]);
 
-  if (!data) return <p>Loading…</p>;
+  function pick(label) {
+    const s = label.split(" ")[0];
+    setStatus(s);
+    window.history.replaceState(null, "", `/outbox?status=${s}`);
+  }
 
   return (
-    <main style={{ maxWidth: 900 }}>
-      <p><Link href="/">← Home</Link> · <Link href="/compose">Compose list</Link></p>
-      <h1>Outbox</h1>
+    <main>
+      <PageHeader title="Outbox" sub="Review each email and approve it on its own. Approved emails wait in the queue until sending is on."
+                  actions={<Link className="btn" href="/compose">Compose</Link>} />
       <SendingSwitch />
-      <p style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-        {TABS.map((t) => (
-          <button key={t} onClick={() => setStatus(t)} style={{ fontWeight: t === status ? "bold" : "normal" }}>
-            {t} ({data.counts[t] || 0})
-          </button>
-        ))}
-      </p>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead><tr><th align="left">To</th><th align="left">Company</th><th align="left">Subject</th><th align="left">When</th></tr></thead>
-        <tbody>
-          {data.emails.map((e) => (
-            <tr key={e.id} style={{ borderTop: "1px solid var(--border)" }}>
-              <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link>{e.has_attachment && " 📎"}</td>
-              <td>{e.company_name}</td>
-              <td>{e.subject}{(e.cancel_reason || e.failure_reason) && <div style={{ color: "var(--danger)" }}><small>{e.cancel_reason || e.failure_reason}</small></div>}</td>
-              <td><small>{new Date(e.sent_at || e.approved_at || e.created_at).toLocaleString()}</small></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {data.emails.length === 0 && <p>No {status} emails.</p>}
+      <div style={{ marginTop: 16 }}>
+        <Tabs tabs={TABS.map((t) => `${t} (${data?.counts[t] || 0})`)} value={`${status} (${data?.counts[status] || 0})`} onChange={pick} />
+      </div>
+      {!data ? <Loading what="emails" /> : data.emails.length === 0 ? (
+        <EmptyState title={`No ${status} emails`}>{status === "draft" ? <>Create drafts on the <Link href="/compose">Compose</Link> page.</> : null}</EmptyState>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>To</th><th>Company</th><th>Subject</th><th>When</th></tr></thead>
+            <tbody>
+              {data.emails.map((e) => (
+                <tr key={e.id}>
+                  <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link>
+                    <div style={{ display: "flex", gap: 4, marginTop: 2 }}>
+                      {e.has_attachment && <Badge>CV</Badge>}{e.personalized && <Badge tone="warning">AI-personalized</Badge>}</div></td>
+                  <td>{e.company_id ? <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link> : "—"}</td>
+                  <td>{e.subject}{(e.cancel_reason || e.failure_reason) && <div><small style={{ color: "var(--danger)" }}>{e.cancel_reason || e.failure_reason}</small></div>}</td>
+                  <td><small title={new Date(e.sent_at || e.approved_at || e.created_at).toLocaleString()}>{ago(e.sent_at || e.approved_at || e.created_at)}</small></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </main>
   );
 }

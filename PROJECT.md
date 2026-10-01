@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.42
+- **Spec version:** 1.43
 - **Last updated:** 2026-09-28
 
 ---
@@ -397,6 +397,13 @@ Goal: a complete, consistent frontend on top of the finished backend. **No behav
   - **Duplicates:** pairs side by side with match reasons, Keep left / Keep right / Not a duplicate; merge history table with Undo.
   - Done when: E2E proves filters survive a reload, sorting and paging, the bulk bar (stage + compose list), company header actions and tabs, the import wizard end to end, a merge and its undo through the UI; phone layout and both themes; all existing tests pass.
 - **F4 Outreach.** Template editor with live preview against a real lead; Compose as a stepper; Outbox list and detail (preview, safety-check panel, Approve); prominent sending switch; History.
+  - **One backend addition (owner-approved):** `POST /templates/preview` renders unsaved subject/body against a chosen lead with the same strict rules as M8 and saves nothing (read-only).
+  - **Templates:** list as a table (name, current subject, version, archive/restore); template page in two columns: editor (name, subject, body, grouped variable picker) and a live preview against a chosen lead that re-renders while typing, flags unresolved variables in red and marks fallbacks; version history with view and "Use this version" (saved as a new version).
+  - **Compose stepper:** 1 Leads (compose list with recipient and problems) → 2 Template & options (template, CV, personalize) → 3 Create (summary, then result with skipped reasons and a link to the drafts).
+  - **Outbox list:** sending card (ON/OFF, daily-cap bar "n / cap today", queued, last sent, gap; start/stop through the in-app dialog, unchanged); status tabs with counts; table (recipient, company, subject, time, CV, AI-personalized badge).
+  - **Outbox email page:** exact preview (AI sentences highlighted) beside a panel with status, timeline, the 12 safety checks as a ✓/✗ checklist with details, and actions (Approve & queue, Pull back to draft, Discard, Edit in a dialog). Approval unchanged: one email, bound to its exact content.
+  - **History:** sent emails table with status and bounce badges, search, links to the email and the conversation.
+  - Done when: E2E proves the live preview updates while typing and flags an unresolved variable, the Compose stepper creates drafts end to end, Outbox tab counts equal the API, the email page shows all 12 checks and approving there queues exactly that email, the sending dialog appears, History lists sent emails; phone layout and both themes; all existing tests including S1–S12 pass.
 - **F5 Inbox & threads.** Two-pane inbox (list + reading pane) with labels and AI analysis panel; conversation view; notifications page.
 - **F6 Pipeline.** Opportunities grouped by stage (lists), opportunity page, Interviews page (upcoming/past timeline).
 - **F7 Research & personalization.** Research tab (facts / claims / scraped) and AI-sentence review in the Outbox, polished.
@@ -512,3 +519,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-09-30 | 1.40 | F1 detailed: tokens with light/dark, component set, grouped sidebar with live badges, always-visible sending pill, mobile drawer, in-app dialogs replace browser pop-ups; done-when with no-pop-up test and extended E2E. | Owner |
 | 2026-09-30 | 1.41 | F2 detailed: dashboard with needs-attention strip, clickable KPI cards, SVG sent-per-day chart, replies / tasks / activity panels, next interview, system status; E2E compares every KPI with the API. | Owner |
 | 2026-09-30 | 1.42 | F3 detailed: leads filter panel with URL-kept chips, sortable paged table, bulk bar; company header + counted tabs; contact page; 3-step import wizard; side-by-side duplicates; E2E for each. | Owner |
+| 2026-10-01 | 1.43 | F4 detailed: read-only POST /templates/preview for unsaved text; two-column template editor with live preview and version reuse; Compose stepper; Outbox sending card, counted tabs, email page with 12-check panel; History table. | Owner |

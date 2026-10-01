@@ -18,7 +18,7 @@ THREAD_KEY = "coalesce(e.gmail_thrid, 'email-' || e.id)"
 EMAIL_COLUMNS = f"""
     e.id, e.to_email, e.subject, e.status, e.company_id, c.name AS company_name, e.contact_id,
     e.created_at, e.approved_at, e.send_started_at, e.sent_at, e.cancel_reason, e.failure_reason,
-    e.provider_message_id, e.gmail_msgid, e.gmail_thrid, {THREAD_KEY} AS thread_key,
+    e.provider_message_id, e.gmail_msgid, e.gmail_thrid, {THREAD_KEY} AS thread_key, e.bounce_type, e.bounced_at,
     coalesce(e.sent_at, e.send_started_at, e.approved_at, e.created_at) AS last_activity_at
 """
 FROM = "FROM outbound_emails e LEFT JOIN companies c ON c.id = e.company_id"

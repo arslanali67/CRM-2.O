@@ -75,12 +75,19 @@ test("leads: both companies listed and handed to the compose list", async () => 
 
 test("template and drafts: nothing is approved by creating drafts", async () => {
   await page.goto("/templates");
-  await page.getByLabel("Name").fill("E2E intro");
-  await page.getByLabel("Subject").fill("Hello {{company_name}}");
-  await page.getByLabel("Body (plain text)").fill("Hi there,\nI'd like to join {{company_name}}.\nBest regards");
-  await page.getByRole("button", { name: "Create template" }).click();
+  await page.getByRole("button", { name: "New template" }).first().click();
+  const dlg = page.getByRole("dialog", { name: "New template" });
+  await dlg.getByLabel("Name", { exact: true }).fill("E2E intro");
+  await dlg.getByLabel("Subject").fill("Hello {{company_name}}");
+  await dlg.getByLabel("Body (plain text)").fill("Hi there,\nI'd like to join {{company_name}}.\nBest regards");
+  await expect(dlg.locator("[data-preview-subject]")).toContainText("Hello E2E"); // live preview rendered a real lead
+  await dlg.getByRole("button", { name: "Create template" }).click();
   await page.goto("/compose");
+  await expect(page.locator('.step[aria-current="step"]')).toContainText("Leads");
+  await page.getByRole("button", { name: "Next: template" }).click();
   await page.getByLabel("Template", { exact: true }).selectOption({ label: "E2E intro (v1)" });
+  await page.getByRole("button", { name: "Next: review" }).click();
+  await expect(page.getByText("Creating drafts sends nothing and approves nothing.")).toBeVisible();
   await page.getByRole("button", { name: "Create 2 draft(s)" }).click();
   await expect(page.getByText("2 draft(s) created.")).toBeVisible();
   const queued = await (await page.request.get("/api/outbox?status=queued")).json();
@@ -92,6 +99,8 @@ test("approve one email: it is queued, and with sending OFF it is never sent", a
   await page.goto("/outbox");
   await expect(page.getByText("Sending is OFF")).toBeVisible();
   await page.getByRole("link", { name: "jobs@e2e-alpha-robotics.de" }).click();
+  await expect(page.locator("[data-checks]")).toHaveAttribute("data-checks", "12"); // all 12 safety checks listed
+  await expect(page.locator("[data-check]")).toHaveCount(12);
   await page.getByRole("button", { name: "Approve & queue this email" }).click();
   await expect(page.getByText("Approved and queued.")).toBeVisible();
   await page.waitForTimeout(40_000); // longer than one sender tick (30 s)
@@ -178,6 +187,34 @@ test("dashboard: every KPI equals the API, the chart has one bar per day, panels
   await expect(page).toHaveURL(/\/activity$/);
 });
 
+test("template page: live preview follows typing and flags an unresolved variable; sending card and history", async () => {
+  const list = await (await page.request.get("/api/templates")).json();
+  const t = list.find((x) => x.name === "E2E intro");
+  await page.goto(`/templates/${t.id}`);
+  const subject = page.getByLabel("Subject");
+  await subject.fill("Hi {{company_name}} team");
+  await expect(page.locator("[data-preview-subject]")).toContainText("team"); // re-rendered while typing
+  await subject.fill("Phone: {{my_phone}}"); // not in the E2E profile
+  await expect(page.locator("[data-preview-error]")).toContainText("my_phone");
+  await subject.fill("Hi {{my_phone | friend}}"); // a fallback resolves it and is announced
+  await expect(page.locator("[data-preview-subject]")).toContainText("Hi friend");
+  await expect(page.getByText("Fallback text used for: my_phone")).toBeVisible();
+  await expect(page.getByText("unsaved changes")).toBeVisible();
+  await page.getByRole("button", { name: "Discard changes" }).click();
+  await expect(page.getByText("unsaved changes")).toHaveCount(0);
+  await page.goto("/outbox");
+  const counts = (await (await page.request.get("/api/outbox?status=draft")).json()).counts;
+  for (const st of ["draft", "queued", "sent", "failed", "cancelled"]) {
+    await expect(page.getByRole("tab", { name: new RegExp(`^${st} \\(${counts[st] || 0}\\)$`) })).toBeVisible();
+  }
+  await expect(page.getByRole("button", { name: "Enable sending" })).toBeDisabled(); // no Gmail in E2E
+  await expect(page.getByText("Connect and test an email account")).toBeVisible();
+  await expect(page.getByRole("progressbar", { name: "Daily cap used" })).toBeVisible();
+  await page.goto("/history");
+  await expect(page.getByRole("heading", { name: "Email history" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^all \(\d+\)$/ })).toBeVisible();
+});
+
 test("analytics: the page loads with its breakdowns", async () => {
   await page.goto("/analytics");
   await expect(page.getByRole("heading", { name: "Analytics" })).toBeVisible();
@@ -213,11 +250,15 @@ test("personalization: offered on Compose; without AI it says so, and drafts use
   const beta = leads.leads.find((l) => l.name === "E2E Beta Vision");
   await page.request.post("/api/compose-list", { headers: { Origin: origin }, data: { company_ids: [beta.id] } });
   await page.goto("/compose");
+  await page.getByRole("button", { name: "Next: template" }).click();
   await page.getByLabel("Template", { exact: true }).selectOption({ label: "Personal (v1)" });
   await page.getByLabel(/Personalize from verified facts/).check();
+  await page.getByRole("button", { name: "Next: review" }).click();
   await page.getByRole("button", { name: /Create 1 draft/ }).click();
   await expect(page.locator('p[role="alert"]')).toContainText("AI is off");
+  await page.getByRole("button", { name: "Back" }).click();
   await page.getByLabel(/Personalize from verified facts/).uncheck();
+  await page.getByRole("button", { name: "Next: review" }).click();
   await page.getByRole("button", { name: /Create 1 draft/ }).click();
   await expect(page.getByText("1 draft(s) created.")).toBeVisible();
   const drafts = await (await page.request.get("/api/outbox?status=draft")).json();

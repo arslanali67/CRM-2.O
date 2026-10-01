@@ -6,8 +6,8 @@ from app.companies import conflict_as_409, fetch
 from app.deps import audit, get_db, require_owner
 from app.leads import best_recipients
 from app.profile import load_profile, resolve_variables
-from app.templating import (COMPANY_VARIABLES, CONTACT_VARIABLES, MY_VARIABLES, PERSONAL_VARIABLES, RenderError, problems,
-                            render_strict)
+from app.templating import (COMPANY_VARIABLES, CONTACT_VARIABLES, MY_VARIABLES, PERSONAL_VARIABLES, TOKEN_RE, RenderError,
+                            problems, render_strict)
 
 router = APIRouter(dependencies=[Depends(require_owner)])
 
@@ -139,6 +139,29 @@ def restore_template(template_id: int, conn=Depends(get_db)):
         conn.execute("UPDATE templates SET archived_at = NULL WHERE id = %s", (template_id,))
     audit(conn, "template.restored", "template", template_id)
     return {"restored": template_id}
+
+
+class DraftPreviewIn(BaseModel):
+    subject: str = Field("", max_length=300)
+    body: str = Field("", max_length=20000)
+    company_id: int
+    contact_id: int | None = None
+
+
+@router.post("/templates/preview")
+def preview_unsaved(body: DraftPreviewIn, conn=Depends(get_db)):
+    """F4: live preview of text that is not saved yet. Same strict rules as saved versions; writes nothing."""
+    values, contact = variable_values(conn, body.company_id, body.contact_id)
+    recipient = {k: contact[k] for k in ("id", "name", "email", "email_class")} if contact else None
+    text = body.subject + "\n" + body.body
+    fallbacks = sorted({m.group(1) for m in TOKEN_RE.finditer(text)
+                        if m.group(2) is not None and not (values.get(m.group(1)) or "").strip()})
+    found = [f"subject: {p}" for p in problems(body.subject)] + [f"body: {p}" for p in problems(body.body)]
+    base = {"recipient": recipient, "problems": found, "fallbacks": fallbacks}
+    try:
+        return {"ok": not found, **base, **render_strict(body.subject, body.body, values)}
+    except RenderError as e:
+        return {"ok": False, **base, "unresolved": e.unresolved}
 
 
 @router.post("/templates/{template_id}/preview")

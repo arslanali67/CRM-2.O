@@ -145,3 +145,24 @@ def test_audit_trail(client, test_url):
             "SELECT action FROM audit_log WHERE entity_type = 'template' AND entity_id = %s ORDER BY id", (t["id"],))]
     assert actions == ["template.created", "template.version_created", "template.renamed", "template.archived",
                        "template.restored"]
+
+
+def test_live_preview_of_unsaved_text_writes_nothing(client, test_url):
+    """F4: POST /templates/preview renders text that is not saved, with the same strict rules."""
+    from fakes import db
+    client.put("/profile", json={"full_name": "Arslan Ali"})
+    cid = client.post("/companies", json={"name": "Acme", "domain": "acme.de"}).json()["id"]
+    client.post(f"/companies/{cid}/contacts", json={"name": "Anna Schmidt", "email": "anna@acme.de"})
+    before = db(test_url, "SELECT (SELECT count(*) FROM templates), (SELECT count(*) FROM template_versions), "
+                          "(SELECT count(*) FROM audit_log)")
+    ok = client.post("/templates/preview", json={"subject": "Hello {{company_name}}",
+                                                 "body": "Hi {{contact_first_name}}, {{my_headline | I build ML systems}}.",
+                                                 "company_id": cid}).json()
+    assert ok["ok"] and ok["subject"] == "Hello Acme" and ok["body"] == "Hi Anna, I build ML systems."
+    assert ok["fallbacks"] == ["my_headline"] and ok["recipient"]["email"] == "anna@acme.de"
+    bad = client.post("/templates/preview", json={"subject": "Hi", "body": "{{my_phone}} {{nonsense}}",
+                                                  "company_id": cid}).json()
+    assert not bad["ok"] and "my_phone" in bad["unresolved"] and any("nonsense" in p for p in bad["problems"])
+    assert db(test_url, "SELECT (SELECT count(*) FROM templates), (SELECT count(*) FROM template_versions), "
+                        "(SELECT count(*) FROM audit_log)") == before
+    assert client.post("/templates/preview", json={"subject": "x", "body": "y", "company_id": 999999}).status_code == 404

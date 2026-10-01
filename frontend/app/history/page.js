@@ -1,11 +1,13 @@
 "use client";
+// F4: history of every email past draft, newest activity first, with status and bounce badges and filters.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Badge, EmptyState, Loading, PageHeader, Tabs, ago } from "../ui";
 
 const STATUSES = ["queued", "sending", "sent", "failed", "cancelled"];
 const NO_FILTERS = { status: "", q: "", since: "", until: "" };
-const COLOR = { sent: "var(--success)", failed: "var(--danger)", cancelled: "var(--muted)", sending: "var(--warning)", queued: "var(--accent)" };
+const TONE = { sent: "success", failed: "danger", cancelled: "", sending: "warning", queued: "accent" };
 
 export default function History() {
   const router = useRouter();
@@ -21,45 +23,51 @@ export default function History() {
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (k, v) => setFilters({ ...filters, [k]: v });
-  if (!data) return <p>Loading…</p>;
+  function pickStatus(label) {
+    const status = label.startsWith("all") ? "" : label.split(" ")[0];
+    const f = { ...filters, status };
+    setFilters(f); load(f);
+  }
+  const total = data ? Object.values(data.counts).reduce((a, b) => a + b, 0) : 0;
 
   return (
-    <main style={{ maxWidth: 1000 }}>
-      <p><Link href="/">← Home</Link> · <Link href="/outbox">Outbox</Link></p>
-      <h1>Email history</h1>
-      <p><small>{STATUSES.map((s) => `${s}: ${data.counts[s] || 0}`).join(" · ")}</small></p>
-      <form onSubmit={(e) => { e.preventDefault(); load(); }} style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <select aria-label="Status" value={filters.status} onChange={(e) => set("status", e.target.value)}>
-          <option value="">Status: any</option>
-          {STATUSES.map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <input placeholder="Search recipient or subject" aria-label="Search" value={filters.q} onChange={(e) => set("q", e.target.value)} />
-        <label>From <input type="date" value={filters.since} onChange={(e) => set("since", e.target.value)} /></label>
-        <label>to <input type="date" value={filters.until} onChange={(e) => set("until", e.target.value)} /></label>
-        <button type="submit">Filter</button>
-        <button type="button" onClick={() => { setFilters(NO_FILTERS); load(NO_FILTERS); }}>Clear</button>
+    <main>
+      <PageHeader title="Email history" sub="Every email that left draft, newest activity first." />
+      <Tabs tabs={[`all (${total})`, ...STATUSES.map((s) => `${s} (${data?.counts[s] || 0})`)]}
+            value={filters.status ? `${filters.status} (${data?.counts[filters.status] || 0})` : `all (${total})`} onChange={pickStatus} />
+      <form className="card filters" onSubmit={(e) => { e.preventDefault(); load(); }}>
+        <div className="filter-row" style={{ marginBottom: 0 }}>
+          <input placeholder="Search recipient or subject" aria-label="Search" value={filters.q} onChange={(e) => set("q", e.target.value)} />
+          <span className="range"><small>From</small><input type="date" aria-label="From date" value={filters.since} onChange={(e) => set("since", e.target.value)} />
+            <small>to</small><input type="date" aria-label="To date" value={filters.until} onChange={(e) => set("until", e.target.value)} /></span>
+          <button type="submit" className="btn-primary">Filter</button>
+          <button type="button" className="btn-ghost" onClick={() => { setFilters(NO_FILTERS); load(NO_FILTERS); }}>Clear</button>
+        </div>
       </form>
 
-      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
-        <thead><tr><th align="left">Status</th><th align="left">To</th><th align="left">Company</th><th align="left">Subject</th><th align="left">When</th><th /></tr></thead>
-        <tbody>
-          {data.emails.map((e) => (
-            <tr key={e.id} style={{ borderTop: "1px solid var(--border)", verticalAlign: "top" }}>
-              <td style={{ color: COLOR[e.status] }}>{e.status}</td>
-              <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link></td>
-              <td>{e.company_id ? <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link> : "—"}</td>
-              <td>
-                {e.subject}
-                {(e.failure_reason || e.cancel_reason) && <div style={{ color: "var(--danger)" }}><small>{e.failure_reason || e.cancel_reason}</small></div>}
-              </td>
-              <td><small>{new Date(e.last_activity_at).toLocaleString()}</small></td>
-              <td><Link href={`/threads/${e.thread_key}`}><small>thread</small></Link></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {data.emails.length === 0 && <p>No emails match.</p>}
-      {data.truncated && <p>Showing the 500 most recent; narrow the filters to see older ones.</p>}
+      {!data ? <Loading what="history" /> : data.emails.length === 0 ? (
+        <EmptyState title="No emails match">Sent, queued and failed emails appear here once you approve and send drafts.</EmptyState>
+      ) : (
+        <div className="table-wrap">
+          <table>
+            <thead><tr><th>Status</th><th>To</th><th>Company</th><th>Subject</th><th>When</th><th /></tr></thead>
+            <tbody>
+              {data.emails.map((e) => (
+                <tr key={e.id}>
+                  <td><Badge tone={TONE[e.status]}>{e.status}</Badge>
+                    {e.bounce_type && <> <Badge tone={e.bounce_type === "hard" ? "danger" : "warning"}>{e.bounce_type} bounce</Badge></>}</td>
+                  <td><Link href={`/outbox/${e.id}`}>{e.to_email}</Link></td>
+                  <td>{e.company_id ? <Link href={`/companies/${e.company_id}`}>{e.company_name}</Link> : "—"}</td>
+                  <td>{e.subject}{(e.failure_reason || e.cancel_reason) && <div><small style={{ color: "var(--danger)" }}>{e.failure_reason || e.cancel_reason}</small></div>}</td>
+                  <td><small title={new Date(e.last_activity_at).toLocaleString()}>{ago(e.last_activity_at)}</small></td>
+                  <td><Link href={`/threads/${e.thread_key}`}><small>conversation</small></Link></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {data?.truncated && <p><small style={{ color: "var(--muted)" }}>Showing the 500 most recent; narrow the filters to see older ones.</small></p>}
     </main>
   );
 }

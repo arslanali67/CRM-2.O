@@ -140,7 +140,8 @@ def outbox(status: str = "draft", conn=Depends(get_db)):
     emails = conn.execute(
         "SELECT e.id, e.to_email, e.subject, e.status, e.created_at, e.approved_at, e.sent_at, e.cancel_reason, "
         "e.failure_reason, "
-        "e.cv_version_id IS NOT NULL AS has_attachment, c.name AS company_name, e.company_id "
+        "e.cv_version_id IS NOT NULL AS has_attachment, e.personalization <> '{}' AS personalized, "
+        "c.name AS company_name, e.company_id "
         "FROM outbound_emails e LEFT JOIN companies c ON c.id = e.company_id WHERE e.status = %s "
         "ORDER BY coalesce(e.sent_at, e.approved_at, e.created_at) DESC, e.id DESC LIMIT 500", (status,)).fetchall()
     return {"counts": counts, "emails": emails}

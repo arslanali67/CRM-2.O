@@ -55,7 +55,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 - [x] F1 Design system & app shell
 - [x] F2 Dashboard
 - [ ] F3 Leads & companies (built; E2E 21/21 pass; awaiting batch verification)
-- [ ] F4 Outreach
+- [ ] F4 Outreach (built; E2E 22/22 pass; awaiting batch verification)
 - [ ] F5 Inbox & threads
 - [ ] F6 Pipeline
 - [ ] F7 Research & personalization
