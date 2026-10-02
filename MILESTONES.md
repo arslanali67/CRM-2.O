@@ -2,7 +2,7 @@
 
 Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milestone's "Done when" criteria in PROJECT.md pass.
 
-**Progress: 42 / 44**
+**Progress: 43 / 44**
 
 ## Phase 0: Discovery
 - [x] M0 Project discovery
@@ -29,7 +29,7 @@ Progress against [PROJECT.md](PROJECT.md). A box is ticked only when the milesto
 ## Phase 1C: Replies (Wk 13–16)
 - [x] M14 Inbox synchronization (24 h soak passed 2026-09-28 18:21 UTC; no relevant mail arrived during it)
 - [x] M15 Reply detection
-- [ ] M16 AI reply analysis (built; sample eval pending: 12 items, pass >= 11/12, waits for the Gemini free-tier quota)
+- [x] M16 AI reply analysis (sample eval passed 2026-10-02 on OpenRouter nvidia/nemotron-3-ultra-550b-a55b:free: 12/12, 0 unproven fields)
 - [x] M17 Notifications
 - [x] M18 Dashboard
 

@@ -15,7 +15,7 @@ Each ticked box names its evidence.
 ## B. Open items from earlier milestones
 
 - [x] **M12 real test send:** one email to the owner's **own second address**. The owner approves it and switches sending on and off; see "How to do the test send" below. Closes M12's gate waiver. **Done 2026-09-29:** email #1 to arslanali223321@gmail.com sent 18:22:36 UTC and #2 to awejutt@gmail.com (added by the owner, PROJECT.md v1.33) sent 18:29:06 UTC. Both owner-approved (audit log), both accepted by Gmail with Message-ID and thread recorded.
-- [ ] **M16 AI eval on a sample** (owner decision 2026-09-29, PROJECT.md v1.32): 12 synthetic replies, one per label; pass = at least 11/12 correct and 0 stored fields without evidence. Fits one day's free quota.
+- [x] **M16 AI eval on a sample** (**Done 2026-10-02:** 12/12 correct, 0 unproven fields, model nvidia/nemotron-3-ultra-550b-a55b:free via OpenRouter; the earlier Gemini attempts were stopped by quota) (owner decision 2026-09-29, PROJECT.md v1.32): 12 synthetic replies, one per label; pass = at least 11/12 correct and 0 stored fields without evidence. Fits one day's free quota.
   - Earlier attempts (2026-09-28 and 2026-09-29) were stopped by quota and Gemini overload; nothing was saved. The eval now stops at once on "rate limited" and retries "busy" only twice.
   - Run after the daily quota resets at 12:00 UTC+5 (07:00 UTC):
     `docker compose run --rm api python -m scripts.run_ai_eval --sample`
