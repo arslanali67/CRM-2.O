@@ -82,8 +82,8 @@ def test_new_daily_cap_applies_to_the_next_send_without_restart(world, client, g
 def test_model_is_validated_against_the_key(client, monkeypatch):
     assert put(client, ai_model="gemini-x-flash").status_code == 409  # no key
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key-not-real")
-    monkeypatch.setattr(ai_analysis, "list_models", lambda: ["gemini-x-flash", "gemini-y-pro"])
-    assert client.get("/settings/ai-models").json() == {"models": ["gemini-x-flash", "gemini-y-pro"]}
+    monkeypatch.setattr(ai_analysis, "list_models", lambda provider="gemini": ["gemini-x-flash", "gemini-y-pro"])
+    assert client.get("/settings/ai-models").json() == {"provider": "gemini", "models": ["gemini-x-flash", "gemini-y-pro"]}
     assert put(client, ai_model="gemini-nope").status_code == 422
     assert put(client, ai_model="gemini-x-flash").status_code == 200
     assert client.get("/ai/status").json()["model"] == "gemini-x-flash"
@@ -93,7 +93,7 @@ def test_next_analysis_uses_the_new_model_and_can_be_switched_off(sent, client, 
     fake = FakeGemini(GOOD)
     monkeypatch.setattr(ai_analysis, "post_json", fake)
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "test-key-not-real")
-    monkeypatch.setattr(ai_analysis, "list_models", lambda: ["gemini-x-flash"])
+    monkeypatch.setattr(ai_analysis, "list_models", lambda provider="gemini": ["gemini-x-flash"])
     monkeypatch.setattr(ai_analysis, "THROTTLE_SECONDS", 0)
     put(client, ai_model="gemini-x-flash", ai_enabled=False)
     reply(gmail, sent, body=GOOD["label_evidence"])

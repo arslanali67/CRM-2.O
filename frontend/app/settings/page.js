@@ -15,7 +15,7 @@ const NUMBERS = [
 const KINDS = [["reply", "Replies"], ["auto_reply", "Auto-replies"], ["bounce", "Bounces"],
                ["sending", "Sending problems (failed / not sent)"], ["system", "System (sync failing, AI failed)"],
                ["interview", "Interview reminders (24 h and 1 h before)"]];
-const FIELDS = [...NUMBERS.map(([k]) => k), "ai_enabled", "ai_model", "notify_kinds"];
+const FIELDS = [...NUMBERS.map(([k]) => k), "ai_enabled", "ai_provider", "ai_model", "notify_kinds"];
 
 export default function Settings() {
   const router = useRouter();
@@ -70,14 +70,21 @@ export default function Settings() {
         ))}
 
         <h3>AI analysis</h3>
-        <p><small>API key: {s.ai_key_present ? "present in .env" : "missing (add GEMINI_API_KEY to .env)"}. The key is never shown or stored here.</small></p>
+        <p><small>API keys in .env: OpenRouter {s.ai_keys.openrouter ? "present" : "missing"} · Gemini {s.ai_keys.gemini ? "present" : "missing"}. Keys are never shown or stored here.</small></p>
+        <p><label>Provider{" "}
+          <select value={form.ai_provider || ""} onChange={(e) => { set("ai_provider", e.target.value || null); set("ai_model", null); }}>
+            <option value="">Automatic (OpenRouter if its key is present, else Gemini)</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="gemini">Gemini</option>
+          </select></label>
+          <br /><small style={{ color: "var(--muted)" }}>Free models may log or train on what is sent (reply text, company pages, verified facts; never your CV or contacts).</small></p>
         <p><label><input type="checkbox" checked={form.ai_enabled} onChange={(e) => set("ai_enabled", e.target.checked)} /> Analyse replies with AI</label></p>
         <p>
-          <label>Model: <input list="ai-models" value={form.ai_model || ""} placeholder={`default: ${s.ai_default_model}`}
+          <label>Model: <input list="ai-models" value={form.ai_model || ""} placeholder={`default: ${s.ai_defaults[form.ai_provider || s.ai_effective_provider]}`}
                                onChange={(e) => set("ai_model", e.target.value.trim() || null)} /></label>{" "}
-          <button type="button" onClick={loadModels} disabled={!s.ai_key_present}>Show available models</button>
+          <button type="button" onClick={loadModels} disabled={!s.ai_keys[form.ai_provider || s.ai_effective_provider]}>Show available models</button>
           <datalist id="ai-models">{(models || []).map((m) => <option key={m} value={m} />)}</datalist>
-          <br /><small style={{ color: "var(--muted)" }}>In use: {s.ai_effective_model}. A new model is checked against Google&apos;s list before saving.</small>
+          <br /><small style={{ color: "var(--muted)" }}>In use: {s.ai_effective_model} ({s.ai_effective_provider}). A new model is checked against Google&apos;s list before saving.</small>
         </p>
 
         <h3>Notifications</h3>

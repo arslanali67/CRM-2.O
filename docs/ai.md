@@ -26,6 +26,15 @@ Everything is optional. Without a key the app works fully; replies are simply no
 - On the free tier, **Google may use your inputs to improve its products.** The reply text is sent to Google, with the quoted history of your own email removed.
 - A paid key removes both limits.
 
+## Using OpenRouter instead (default when its key is present)
+
+Create a key at https://openrouter.ai/keys and set, in `.env`:
+```
+OPENROUTER_API_KEY=your-key-here
+OPENROUTER_MODEL=nvidia/nemotron-3-ultra-550b-a55b:free
+```
+Then `docker compose up -d`. When this key is present the app uses OpenRouter automatically; **Settings -> AI analysis -> Provider** switches between OpenRouter and Gemini. Free OpenRouter models may log or train on what you send (reply text, company pages, verified facts; never your CV or contact list), and some have no enforced JSON mode: the app asks for JSON, parses it, and drops anything it cannot verify against the email or page, so a weak answer is an error to retry, never a wrong fact. Re-run the eval (`docker compose run --rm api python -m scripts.run_ai_eval --sample`) after changing the model.
+
 ## 2. Add the key to `.env`
 
 Open `.env` in a text editor (e.g. Notepad) and set:

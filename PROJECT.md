@@ -4,7 +4,7 @@
 > Nothing is implemented unless it is described here. See [CLAUDE.md](CLAUDE.md) for the change process.
 
 - **Source:** CRM_MILESTONES.pdf (v1.0 draft, Sept 25, 2026)
-- **Spec version:** 1.48
+- **Spec version:** 1.49
 - **Last updated:** 2026-09-28
 
 ---
@@ -46,7 +46,7 @@ Suppression and safety checks are built **before** any sending code exists.
 | Queue / cache | Redis |
 | Background jobs | Celery |
 | Email | Personal Gmail over SMTP+IMAP with an app password (see §8 Q1) |
-| AI | Gemini API free tier, for testing; provider stays switchable in Settings (see §8 Q2) |
+| AI | OpenRouter (default model NVIDIA Nemotron 3 Ultra, free) or Gemini API free tier as the second option; the provider is switchable in Settings (see §8 Q2) |
 | Hosting | Owner's laptop only, localhost (see §8 Q3) |
 
 Users: exactly one (the owner). Owner login only.
@@ -270,6 +270,12 @@ Goal: ready for daily use.
   - **UI:** Opportunities page grouped by stage (Kanban is Phase 3); opportunity page (stage, history, linked reply/thread, contact, AI suggestion, notes, tasks); the company Opportunity tab and dashboard Opportunities KPI become real. Notes and tasks accept `opportunity`.
   - Depends on: M16. Done when: reply → opportunity → all stages, with history.
 - **M29 Settings.** Email account, AI provider, limits, notifications, cooldowns.
+  - **AI provider (v1.49, owner decision 2026-10-02): OpenRouter default, Gemini second.** Backend and Settings change; the three AI features (reply analysis, research, personalization) keep their prompts and all their verification.
+    - **One call path** `generate_json` in `ai_analysis.py` for all three features; the provider follows the model id (OpenRouter ids contain `/`). Keys only in `.env` (`OPENROUTER_API_KEY`, `GEMINI_API_KEY`), never stored or shown; both are redacted from logs.
+    - **Settings (`ai_provider`)** automatic by default (OpenRouter when its key is present, else Gemini), or chosen; the model list comes from the chosen provider and a new model is checked against it. Migration 0028 adds the column and widens the model-id pattern.
+    - **Free Nemotron 3 Ultra has no enforced JSON mode:** the prompt asks for JSON, the reply is parsed from text, and anything not valid JSON is an error that is retried later. Every field is still verified against the email text or page quote, so bad output is dropped, never trusted.
+    - **Safety:** S11 allowlist gains `openrouter.ai`; nothing else is contacted. Free OpenRouter models may log or train on inputs (like the Gemini free tier); the CV and real contacts are never sent. M16's eval must be re-run on this model; Gemini results do not carry over.
+    - Done when: tests with a fake OpenRouter prove the request shape, JSON extraction from fenced or chatty replies, error handling (429, 5xx, empty), the provider choice and model check in Settings, S11 and key redaction; all existing tests pass; Settings shows the provider choice.
   - **Settings page `/settings`:** sending limits (daily cap 1–100, gap 30–3600 s, approval validity 1–30 days); cooldowns (recipient / company 0–365 days); AI (on/off, model name validated against Google's model list, key presence only); notification kinds (reply, auto-reply, bounce, sending problems, system problems; all on by default); email account summary linking to its page.
   - **Rules:** the kill switch stays on the Outbox (settings cannot enable sending); the AI key stays in `.env`; every change audited with before/after; all values read fresh from the DB on use (no restart).
   - Depends on: M11, M16. Done when: settings are validated, audited and applied without restart.
@@ -317,7 +323,7 @@ Goal: ready for daily use.
     - S8 Limits: daily cap, minimum gap and recipient/company cooldowns enforced at send time.
     - S9 Inbound never triggers outbound: replies, auto-replies, bounces, unrelated mail and spam never create or send an email.
     - S10 AI cannot act: AI output (even from a hostile email) never sends, approves, changes a stage or creates an opportunity.
-    - S11 No other channels: the code only contacts Gmail SMTP/IMAP and Gemini (network calls scanned against an allowlist); no LinkedIn or job sites.
+    - S11 No other channels: the code only contacts Gmail SMTP/IMAP, OpenRouter and Gemini (network calls scanned against an allowlist); no LinkedIn or job sites.
     - S12 No negotiation or applying: emails are only created from the owner's template by the owner's action; no endpoint or background task creates emails by itself.
   - **E2E:** Playwright (`@playwright/test`, dev-only) against the real Docker stack with sending OFF and no Gmail account: login, lockout, CSV import, leads, compose → approve (stays queued, never sent), settings, backup page, security headers. Runs in CI.
 - **M33 Documentation.** README, setup, email integration, AI, troubleshooting, user guide.
@@ -491,7 +497,7 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | # | Question | Blocks | Answer |
 |---|---|---|---|
 | Q1 | Which mailbox sends outreach: Gmail/Workspace (Gmail API), Outlook/M365 (Graph), or other (SMTP+IMAP)? | M11 | **Personal Gmail over SMTP+IMAP with an app password** (requires 2-step verification). Avoids the 7-day OAuth token expiry. |
-| Q2 | AI provider for reply classification: hosted model or local Ollama? | M16 | **Gemini API free tier, for testing only.** Owner decides the final provider later. Free-tier inputs may be used by Google to improve its products. Provider must stay switchable via Settings (M29). |
+| Q2 | AI provider for reply classification: hosted model or local Ollama? | M16 | **Gemini API free tier, for testing only; since 2026-10-02 OpenRouter is the default provider** (model `nvidia/nemotron-3-ultra-550b-a55b:free`; Gemini stays the second option). Owner decides the final provider later. Free-tier inputs may be used by Google to improve its products. Provider must stay switchable via Settings (M29). |
 | Q3 | Run on this laptop only (localhost), or on a private VPS? | M1, M30 | **Laptop only, localhost.** Inbox sync runs only while the app is running; missed replies are fetched on next start. |
 | Q4 | Daily send cap and custom domain? | M12 | **20 emails/day with a 90 s minimum gap. No custom domain;** send from personal Gmail. |
 
@@ -550,3 +556,4 @@ The PDF refers to a companion `PERSONAL_AI_JOB_OUTREACH_CRM_PROJECT_BLUEPRINT.pd
 | 2026-10-01 | 1.46 | F7 detailed: Research tab status header, grouped claim cards with inline reword, facts table with Add dialog, pages-read table; Compose coverage line for personalization. | Owner |
 | 2026-10-01 | 1.47 | F8 detailed: shared Setup layout and sub-nav, six restyled pages, dismissible first-run checklist on the dashboard; frontend only. | Owner |
 | 2026-10-01 | 1.48 | F9 detailed: every-page sweep (phone/desktop, light/dark), axe-core accessibility checks (new dev-only dependency @axe-core/playwright), fixes, keyboard tests. | Owner |
+| 2026-10-02 | 1.49 | AI provider: OpenRouter (default model Nemotron 3 Ultra free, no enforced JSON mode, parsed from text) with Gemini as second option, switchable in Settings; S11 allowlist gains openrouter.ai; M16 eval to be re-run on the new model. | Owner |

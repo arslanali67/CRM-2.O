@@ -6,7 +6,6 @@ Fetching is read-only, own-domain only, and guarded against SSRF: every request 
 public IP addresses (private, loopback, link-local, reserved and Docker-internal ones are refused).
 """
 import ipaddress
-import json
 import socket
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
@@ -14,7 +13,7 @@ from urllib.parse import urljoin, urlsplit
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
-from app import ai_analysis, settings
+from app import ai_analysis
 from app.deps import audit, get_db, require_owner
 
 router = APIRouter(dependencies=[Depends(require_owner)])
@@ -133,18 +132,7 @@ def ask_model(company_name: str, pages: list[dict], model: str) -> dict:
     for p in pages:
         sent.append({"url": p["url"], "text": p["text"][:max(budget, 0)]})
         budget -= len(p["text"])
-    payload = {
-        "systemInstruction": {"parts": [{"text": SYSTEM}]},
-        "contents": [{"role": "user", "parts": [{"text": json.dumps({"company": company_name, "pages": sent},
-                                                                    ensure_ascii=False)}]}],
-        "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "responseSchema": SCHEMA},
-    }
-    data = ai_analysis.post_json(ai_analysis.API.format(model=model),
-                                 {"x-goog-api-key": settings.GEMINI_API_KEY, "Content-Type": "application/json"}, payload)
-    try:
-        return json.loads(data["candidates"][0]["content"]["parts"][0]["text"])
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
-        raise ai_analysis.AIError("Gemini returned no usable JSON") from None
+    return ai_analysis.generate_json(SYSTEM, {"company": company_name, "pages": sent}, SCHEMA, model)
 
 
 def verify_claims(raw: dict, pages: list[dict]) -> tuple[list[dict], list[dict]]:

@@ -11,8 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from app import settings
-from app.ai_analysis import AIError
+from app.ai_analysis import AIError, default_model, env_provider, key_for
 from app.personalize import ask_model, ground
 
 SET = Path(__file__).resolve().parent.parent / "ai_eval" / "personalization_set.json"
@@ -37,13 +36,13 @@ def main(argv=sys.argv[1:]) -> int:
         print("  grounded but rejected:", x)
 
     if "--real" in argv:
-        if not settings.GEMINI_API_KEY:
-            print("GEMINI_API_KEY is not set in .env")
+        if not key_for(env_provider()):
+            print("No AI key: set OPENROUTER_API_KEY or GEMINI_API_KEY in .env")
             return 2
         for case in cases[:5]:  # 5 requests: stays inside the free tier
             try:
                 kept, dropped = ground(ask_model(case["company"], case["facts"], "Machine Learning Engineer",
-                                                 settings.GEMINI_MODEL), case["facts"], case["company"])
+                                                 default_model(env_provider())), case["facts"], case["company"])
             except AIError as e:
                 print(f"\n{case['company']}: model error: {e}")
                 if "rate limited" in str(e):

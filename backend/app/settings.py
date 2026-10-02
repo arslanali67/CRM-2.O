@@ -13,4 +13,6 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 CREDENTIALS_KEY = os.environ.get("CREDENTIALS_KEY", "")  # Fernet key; only needed once an email account is used
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")    # M16; empty = AI analysis off
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")  # empty = OpenRouter not used
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
 SESSION_MAX_AGE = 60 * 60 * 12  # 12 h

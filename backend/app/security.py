@@ -20,7 +20,7 @@ EMAIL = re.compile(r"([A-Za-z0-9._+-])[A-Za-z0-9._%+-]*?(@|%40)([A-Za-z0-9.-]+\.
 
 def secret_values() -> list[str]:
     """Every secret from .env that must never reach a log line (read live, so rotated values are covered)."""
-    values = [settings.GEMINI_API_KEY, settings.CREDENTIALS_KEY, settings.SESSION_SECRET, settings.OWNER_PASSWORD_HASH]
+    values = [settings.GEMINI_API_KEY, settings.OPENROUTER_API_KEY, settings.CREDENTIALS_KEY, settings.SESSION_SECRET, settings.OWNER_PASSWORD_HASH]
     try:
         values.append(conninfo_to_dict(settings.DATABASE_URL).get("password") or "")
     except Exception:  # noqa: BLE001 - a malformed URL must not break logging

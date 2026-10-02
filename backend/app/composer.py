@@ -81,7 +81,7 @@ def create_drafts(body: DraftsIn, conn=Depends(get_db, scope="function")):
     if body.personalize and not uses_slot:
         raise HTTPException(422, "This template has no {{personal_line}}; add it where the personal sentence should go")
     if body.personalize and not ai["enabled"]:
-        raise HTTPException(409, "AI is off (no GEMINI_API_KEY or switched off in Settings)")
+        raise HTTPException(409, "AI is off (no AI key in .env or switched off in Settings)")
     target_role = (load_profile(conn)["target_roles"] or [""])[0]
     personal = {"asked": 0, "personalized": 0, "fallback": 0, "errors": []}
 

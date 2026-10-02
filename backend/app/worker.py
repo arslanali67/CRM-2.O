@@ -9,7 +9,7 @@ celery_app.conf.beat_schedule = {
     "send-tick": {"task": "app.worker.send_tick", "schedule": 30.0, "options": {"expires": 25}},
     # Read-only inbox sync (M14).
     "inbox-sync": {"task": "app.worker.inbox_sync", "schedule": 120.0, "options": {"expires": 110}},
-    # AI analysis of new replies (M16); does nothing without GEMINI_API_KEY.
+    # AI analysis of new replies (M16); does nothing without an AI key.
     "ai-analysis": {"task": "app.worker.ai_analysis", "schedule": 120.0, "options": {"expires": 110}},
     # Daily catch-up backup (M32): runs when the last good backup is older than 24 h.
     "backup": {"task": "app.worker.backup", "schedule": 600.0, "options": {"expires": 590}},

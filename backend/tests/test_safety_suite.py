@@ -256,7 +256,7 @@ ALLOWED_NETWORK_USE = {"httpx": {"ai_analysis.py", "research.py"},  # research: 
                        "smtplib": {"mail_account.py", "sender.py"},
                        "imaplib": {"mail_account.py", "inbox_sync.py", "sender.py"},
                        "socket": {"research.py"}}  # DNS check of the SSRF guard (M27)
-ALLOWED_HOSTS = {"generativelanguage.googleapis.com"}
+ALLOWED_HOSTS = {"generativelanguage.googleapis.com", "openrouter.ai"}
 
 
 def imported_modules(path: Path) -> set[str]:
@@ -269,7 +269,7 @@ def imported_modules(path: Path) -> set[str]:
     return mods
 
 
-def test_S11_the_app_only_talks_to_gmail_and_gemini(test_url):
+def test_S11_the_app_only_talks_to_gmail_openrouter_and_gemini(test_url):
     for path in APP.glob("*.py"):
         for mod in imported_modules(path) & NETWORK_MODULES:
             assert path.name in ALLOWED_NETWORK_USE.get(mod, set()), f"{path.name} imports {mod}"

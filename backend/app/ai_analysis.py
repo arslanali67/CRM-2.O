@@ -1,4 +1,4 @@
-"""M16: AI analysis of replies (Gemini). The model proposes; this code verifies.
+"""M16: AI analysis of replies (OpenRouter or Gemini). The model proposes; this code verifies.
 
 - Only M15 'reply' messages are analysed; quoted history is stripped first (less data, no mixing
   up our own words with theirs).
@@ -29,6 +29,8 @@ MAX_ATTEMPTS = 3
 RETRY_MINUTES = 10
 TEXT_MAX = 8000
 API = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODELS = "https://openrouter.ai/api/v1/models"
 
 LABELS = ("interview_request", "interested", "needs_info", "scheduling", "application_redirect", "referral",
           "keep_on_file", "not_hiring", "rejection", "offer", "unsubscribe_request", "other")
@@ -111,40 +113,91 @@ def norm(s: str) -> str:
 
 # ---------- the model call (patched in tests; never reached without a key) ----------
 
+def provider_of(model: str | None) -> str:
+    """OpenRouter model ids look like 'vendor/name[:free]'; Gemini names have no slash."""
+    return "openrouter" if "/" in (model or "") else "gemini"
+
+
+def key_for(provider: str) -> str:
+    return settings.OPENROUTER_API_KEY if provider == "openrouter" else settings.GEMINI_API_KEY
+
+
+def default_model(provider: str) -> str:
+    return settings.OPENROUTER_MODEL if provider == "openrouter" else settings.GEMINI_MODEL
+
+
+def env_provider() -> str:
+    """The provider when Settings does not choose one: OpenRouter if its key is present, else Gemini."""
+    return "openrouter" if settings.OPENROUTER_API_KEY else "gemini"
+
+
 def post_json(url: str, headers: dict, payload: dict) -> dict:
+    name = "OpenRouter" if "openrouter.ai" in url else "Gemini"
     try:
-        r = httpx.post(url, headers=headers, json=payload, timeout=60)
+        r = httpx.post(url, headers=headers, json=payload, timeout=120)
     except httpx.HTTPError as e:  # DNS, connect, timeout...: recorded as an error and retried later
-        raise AIError(f"could not reach Gemini ({type(e).__name__})") from None
+        raise AIError(f"could not reach {name} ({type(e).__name__})") from None
     if r.status_code == 429:
-        raise AIError("rate limited by Gemini (free tier); will retry")
-    if r.status_code == 503:
-        raise AIError("Gemini is busy (HTTP 503); will retry")
+        raise AIError(f"rate limited by {name} (free tier); will retry")
+    if r.status_code in (502, 503):
+        raise AIError(f"{name} is busy (HTTP {r.status_code}); will retry")
     if r.status_code >= 400:
         try:
-            detail = str(r.json().get("error", {}).get("message", ""))[:200]
+            err = r.json().get("error", {})
+            detail = str(err.get("message", "") if isinstance(err, dict) else err)[:200]
         except ValueError:
             detail = ""
-        raise AIError(f"Gemini returned HTTP {r.status_code}{': ' + detail if detail else ''}")
+        raise AIError(f"{name} returned HTTP {r.status_code}{': ' + detail if detail else ''}")
     return r.json()
 
 
-def ask_model(subject: str, text: str, received: str, model: str | None = None) -> dict:
-    if not settings.GEMINI_API_KEY:
-        raise AIError("GEMINI_API_KEY is not set")
+def extract_json(text: str) -> dict:
+    """The JSON object in a model reply that may be fenced (```json) or wrapped in chatter."""
+    text = (text or "").strip()
+    start = text.find("{")
+    if start < 0:
+        raise ValueError("no JSON object")
+    obj, _ = json.JSONDecoder().raw_decode(text[start:])
+    if not isinstance(obj, dict):
+        raise ValueError("not an object")
+    return obj
+
+
+def generate_json(system: str, user: dict, schema: dict, model: str, temperature: float = 0) -> dict:
+    """The one model call used by reply analysis, research and personalization. Returns the parsed JSON object;
+    callers verify every field of it. Raises AIError, never anything else."""
+    provider = provider_of(model)
+    key = key_for(provider)
+    if not key:
+        raise AIError(f"{'OPENROUTER' if provider == 'openrouter' else 'GEMINI'}_API_KEY is not set")
+    user_text = json.dumps(user, ensure_ascii=False)
+    if provider == "openrouter":
+        # No enforced JSON mode (the free Nemotron does not offer one): ask for it, parse it, verify it.
+        ask = (system + "\n\nReply with ONLY one JSON object, no prose and no code fence, matching this JSON schema:\n"
+               + json.dumps(schema))
+        data = post_json(OPENROUTER_API, {"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+                         {"model": model, "temperature": temperature, "max_tokens": 4000,
+                          "messages": [{"role": "system", "content": ask}, {"role": "user", "content": user_text}]})
+        try:
+            return extract_json(data["choices"][0]["message"]["content"])
+        except (KeyError, IndexError, TypeError, ValueError):
+            raise AIError("OpenRouter returned no usable JSON") from None
     payload = {
-        "systemInstruction": {"parts": [{"text": SYSTEM}]},
-        "contents": [{"role": "user", "parts": [{"text": json.dumps(
-            {"received_at": received, "subject": subject, "email_text": text}, ensure_ascii=False)}]}],
-        "generationConfig": {"temperature": 0, "responseMimeType": "application/json", "responseSchema": SCHEMA},
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": user_text}]}],
+        "generationConfig": {"temperature": temperature, "responseMimeType": "application/json", "responseSchema": schema},
     }
     # Key in a header, never in the URL (URLs end up in logs).
-    data = post_json(API.format(model=model or settings.GEMINI_MODEL),
-                     {"x-goog-api-key": settings.GEMINI_API_KEY, "Content-Type": "application/json"}, payload)
+    data = post_json(API.format(model=model), {"x-goog-api-key": key, "Content-Type": "application/json"}, payload)
     try:
         return json.loads(data["candidates"][0]["content"]["parts"][0]["text"])
     except (KeyError, IndexError, TypeError, json.JSONDecodeError):
         raise AIError("Gemini returned no usable JSON") from None
+
+
+def ask_model(subject: str, text: str, received: str, model: str | None = None) -> dict:
+    return generate_json(SYSTEM, {"received_at": received, "subject": subject, "email_text": text}, SCHEMA,
+                         model or default_model(env_provider()))
 
 
 # ---------- verification ----------
@@ -200,14 +253,24 @@ def analyse_text(subject: str, body: str, received: str, model: str | None = Non
 
 def ai_config(conn) -> dict:
     """Effective AI settings, read live (M29): the key comes only from .env; on/off and model from app_settings."""
-    s = conn.execute("SELECT ai_enabled, ai_model FROM app_settings WHERE id = 1").fetchone()
-    key = bool(settings.GEMINI_API_KEY)
-    return {"key_present": key, "enabled": key and bool(s["ai_enabled"]),
-            "model": s["ai_model"] or settings.GEMINI_MODEL, "switched_on": bool(s["ai_enabled"])}
+    s = conn.execute("SELECT ai_enabled, ai_model, ai_provider FROM app_settings WHERE id = 1").fetchone()
+    provider = s["ai_provider"] or env_provider()
+    key = bool(key_for(provider))
+    model = s["ai_model"] if s["ai_model"] and provider_of(s["ai_model"]) == provider else default_model(provider)
+    return {"provider": provider, "key_present": key, "enabled": key and bool(s["ai_enabled"]),
+            "model": model, "switched_on": bool(s["ai_enabled"])}
 
 
-def list_models() -> list[str]:
-    """Model names this key may call (generateContent). Patched in tests."""
+def list_models(provider: str = "gemini") -> list[str]:
+    """Model names the provider offers (for Gemini: this key's generateContent models). Patched in tests."""
+    if provider == "openrouter":
+        try:
+            r = httpx.get(OPENROUTER_MODELS, timeout=30)  # public list, no key sent
+        except httpx.HTTPError as e:
+            raise AIError(f"could not reach OpenRouter ({type(e).__name__})") from None
+        if r.status_code != 200:
+            raise AIError(f"OpenRouter returned HTTP {r.status_code} when listing models")
+        return [m["id"] for m in r.json().get("data", []) if m.get("id")]
     try:
         r = httpx.get("https://generativelanguage.googleapis.com/v1beta/models", params={"pageSize": 300},
                       headers={"x-goog-api-key": settings.GEMINI_API_KEY}, timeout=30)
@@ -260,11 +323,12 @@ def get_analysis(conn, message_id: int) -> dict | None:
 
 def analyse_pending() -> dict:
     """Background tick: analyse up to BATCH new replies (and retry errors), throttled."""
-    if not settings.GEMINI_API_KEY:
-        return {"action": "no_key"}
     with psycopg.connect(settings.DATABASE_URL, row_factory=dict_row) as conn:
         conn.execute("SELECT set_config('app.actor', 'system', false)")
-        if not ai_config(conn)["switched_on"]:
+        cfg = ai_config(conn)
+        if not cfg["key_present"]:
+            return {"action": "no_key"}
+        if not cfg["switched_on"]:
             return {"action": "disabled"}
         if not conn.execute("SELECT pg_try_advisory_lock(%s) AS ok", (AI_LOCK,)).fetchone()["ok"]:
             return {"action": "locked"}
@@ -300,7 +364,7 @@ def read_analysis(message_id: int, conn=Depends(get_db, scope="function")):
 @router.post("/inbox/{message_id}/analyse")
 def reanalyse(message_id: int, conn=Depends(get_db, scope="function")):
     if not ai_config(conn)["enabled"]:
-        raise HTTPException(409, "AI analysis is off: add GEMINI_API_KEY to .env or switch it on in Settings")
+        raise HTTPException(409, "AI analysis is off: add an AI key (OPENROUTER_API_KEY or GEMINI_API_KEY) to .env or switch it on in Settings")
     return analyse_message(conn, message_id)
 
 
@@ -311,5 +375,5 @@ def ai_status(conn=Depends(get_db, scope="function")):
     pending = conn.execute("SELECT count(*) FROM inbound_messages m LEFT JOIN ai_analyses a "
                            "ON a.inbound_message_id = m.id WHERE m.label = 'reply' AND a.id IS NULL").fetchone()["count"]
     cfg = ai_config(conn)
-    return {"enabled": cfg["enabled"], "model": cfg["model"], "key_present": cfg["key_present"],
+    return {"enabled": cfg["enabled"], "model": cfg["model"], "provider": cfg["provider"], "key_present": cfg["key_present"],
             "pending": pending, **counts}

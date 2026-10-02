@@ -112,7 +112,7 @@ export default function Home() {
   if (sync?.mailboxes?.some((m) => m.failing_since)) alerts.push({ id: "sync", tone: "danger", title: "Inbox sync is failing.",
     text: "New replies aren't being read.", action: "Details", href: "/email-account" });
   if (ai && !ai.enabled) alerts.push({ id: "ai", tone: "accent", title: "AI analysis is off.",
-    text: ai.key_present ? "It's switched off in Settings." : "No Gemini key in .env; replies aren't analysed.", action: "Settings", href: "/settings" });
+    text: ai.key_present ? "It's switched off in Settings." : "No AI key in .env; replies aren't analysed.", action: "Settings", href: "/settings" });
 
   const k = d?.kpis;
   const next = k?.interviews?.next;

@@ -116,6 +116,8 @@ test("approve one email: it is queued, and with sending OFF it is never sent", a
 
 test("settings: a change is saved and shows in the activity log", async () => {
   await page.goto("/settings");
+  await expect(page.getByLabel("Provider")).toHaveValue("");                       // automatic
+  await expect(page.getByText(/OpenRouter missing · Gemini missing/)).toBeVisible();  // no keys in the test stack
   await page.getByLabel("Daily sending cap (emails/day):").fill("5");
   await page.getByRole("button", { name: "Save settings" }).click();
   await expect(page.getByText(/Saved: daily cap/)).toBeVisible();

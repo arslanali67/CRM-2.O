@@ -76,6 +76,7 @@ def no_real_ai(monkeypatch):
     monkeypatch.setattr(ai_analysis, "post_json", blocked)
     monkeypatch.setattr(ai_analysis, "list_models", blocked)
     monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
+    monkeypatch.setattr(settings, "OPENROUTER_API_KEY", "")
 
 
 @pytest.fixture(autouse=True)

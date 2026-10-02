@@ -17,8 +17,8 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from app import settings
-from app.ai_analysis import THROTTLE_SECONDS, AIError, analyse_text, norm
+from app import settings  # noqa: F401  (tests patch the key through this module)
+from app.ai_analysis import THROTTLE_SECONDS, AIError, analyse_text, default_model, env_provider, key_for, norm
 
 SET = Path(__file__).resolve().parent.parent / "ai_eval" / "eval_set.json"
 RESULTS = Path(__file__).resolve().parent.parent / "ai_eval" / "results"
@@ -26,8 +26,10 @@ BUSY_WAITS = [30, 90]  # seconds before retrying a busy (503) answer
 
 
 def main(argv=sys.argv[1:]) -> int:
-    if not settings.GEMINI_API_KEY:
-        print("GEMINI_API_KEY is not set in .env")
+    provider = env_provider()
+    model = default_model(provider)
+    if not key_for(provider):
+        print("No AI key: set OPENROUTER_API_KEY or GEMINI_API_KEY in .env")
         return 2
     items = json.loads(SET.read_text(encoding="utf-8"))
     if "--sample" in argv:  # one item per label (12): fits one day's free quota; >=90% means >=11/12
@@ -64,7 +66,7 @@ def main(argv=sys.argv[1:]) -> int:
         print(f"{mark}#{it['id']:>2} expected {it['expected']:<21} got {got}")
     if part is not None:
         RESULTS.mkdir(parents=True, exist_ok=True)
-        (RESULTS / f"part{part}.json").write_text(json.dumps({"model": settings.GEMINI_MODEL, "rows": rows}, indent=1))
+        (RESULTS / f"part{part}.json").write_text(json.dumps({"model": model, "rows": rows}, indent=1))
         other = RESULTS / f"part{3 - part}.json"
         if not other.exists():
             print(f"\npart {part} saved; run --part {3 - part} (next day on the free tier) for the full score")
@@ -88,7 +90,7 @@ def score(rows: list[dict], final: bool = True) -> int:
     if not final:
         print("partial result only (M16 is decided on all 40 items)")
         return 0
-    print("M16 EVAL:", "PASS" if passed else "FAIL", f"(model {settings.GEMINI_MODEL}, {len(rows)} items)")
+    print("M16 EVAL:", "PASS" if passed else "FAIL", f"(model {default_model(env_provider())}, {len(rows)} items)")
     return 0 if passed else 1
 
 

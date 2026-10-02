@@ -5,10 +5,9 @@ company (personalization_facts(), M27) and may contain no specific (number, name
 from its cited facts or the company name. Everything else is dropped, so no ungrounded claim reaches a draft.
 The owner still reviews and approves every email one by one (M10); nothing here sends anything.
 """
-import json
 import re
 
-from app import ai_analysis, settings
+from app import ai_analysis
 
 MAX_SENTENCES = 2
 MAX_PER_RUN = 10  # personalized drafts per compose run (one Gemini request each; free tier)
@@ -95,20 +94,10 @@ def ground(raw: dict, facts: list[dict], company_name: str) -> tuple[list[dict],
 
 
 def ask_model(company_name: str, facts: list[dict], target_role: str, model: str) -> dict:
-    payload = {
-        "systemInstruction": {"parts": [{"text": SYSTEM}]},
-        "contents": [{"role": "user", "parts": [{"text": json.dumps(
-            {"company": company_name, "applicant_target_role": target_role,
-             "facts": [{"id": f["id"], "category": f["category"], "fact": f["fact"]} for f in facts]},
-            ensure_ascii=False)}]}],
-        "generationConfig": {"temperature": 0.3, "responseMimeType": "application/json", "responseSchema": SCHEMA},
-    }
-    data = ai_analysis.post_json(ai_analysis.API.format(model=model),
-                                 {"x-goog-api-key": settings.GEMINI_API_KEY, "Content-Type": "application/json"}, payload)
-    try:
-        return json.loads(data["candidates"][0]["content"]["parts"][0]["text"])
-    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
-        raise ai_analysis.AIError("Gemini returned no usable JSON") from None
+    return ai_analysis.generate_json(
+        SYSTEM, {"company": company_name, "applicant_target_role": target_role,
+                 "facts": [{"id": f["id"], "category": f["category"], "fact": f["fact"]} for f in facts]},
+        SCHEMA, model, temperature=0.3)
 
 
 def personalize(conn, company_id: int, company_name: str, target_role: str, model: str) -> dict | None:

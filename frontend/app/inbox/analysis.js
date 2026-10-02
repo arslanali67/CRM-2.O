@@ -29,7 +29,7 @@ export function Analysis({ messageId, analysis, onChange, aiEnabled }) {
         <b>AI analysis</b>
         {aiEnabled && <button className="btn-sm" onClick={run} disabled={busy}>{a ? "Analyse again" : "Analyse now"}</button>}
       </div>
-      {!a && <small style={{ color: "var(--muted)" }}>Not analysed yet{!aiEnabled && " (add GEMINI_API_KEY to .env to enable)"}.</small>}
+      {!a && <small style={{ color: "var(--muted)" }}>Not analysed yet{!aiEnabled && " (add an AI key to .env to enable)"}.</small>}
       {msg && <div className="error-box" role="alert" style={{ marginTop: 6 }}>{msg}</div>}
       {a?.status === "error" && <div style={{ color: "var(--danger)" }}><small>Error: {a.error} (retried automatically)</small></div>}
       {a?.status === "unverified" && <div><small>The model&apos;s label could not be proven from the email text, so it was not used.</small></div>}
